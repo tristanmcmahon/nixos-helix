@@ -1,0 +1,10 @@
+# `nixos-rebuild build` creates this symlink in the current directory.
+/result
+/result-*
+
+# Inventory reports contain host-specific identifiers and do not belong in Git.
+/helix-hardware*.txt
+
+# Keep ad-hoc local backups out of commits if one is placed here accidentally.
+*.backup
+*.bak
