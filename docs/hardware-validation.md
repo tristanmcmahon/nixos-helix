@@ -16,6 +16,9 @@ them before sharing and never commit them.
 
 ## Desktop and NVIDIA
 
+- In SDDM, confirm both Plasma (Wayland) and Hyprland are selectable. Test
+  Plasma first, then Hyprland, then log out with `Super+Shift+E` and return to
+  Plasma. Confirm the previous-session behavior remains controlled by SDDM.
 - Confirm Wayland with `echo "$XDG_SESSION_TYPE"` and
   `loginctl show-session "$XDG_SESSION_ID" -p Type`.
 - Confirm the RTX 5080 driver with `lspci -nnk`, `lsmod`, and `nvidia-smi`.
@@ -26,6 +29,8 @@ them before sharing and never commit them.
 - Suspend with `systemctl suspend`, resume, and inspect
   `journalctl -b -p warning..alert` plus `nvidia-smi`. Repeat with monitors on
   each connector.
+- Repeat renderer, connector, refresh-rate, screen-sharing, suspend/resume, and
+  cursor checks in Hyprland; evaluation alone cannot validate NVIDIA behavior.
 
 ## Audio, camera, and radios
 

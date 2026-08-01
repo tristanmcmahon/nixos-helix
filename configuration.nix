@@ -15,7 +15,10 @@
     ./hardware/firmware.nix
 
     ./desktop/plasma.nix
+    ./desktop/hyprland.nix
     ./desktop/applications.nix
+
+    ./shell/modern-bash.nix
 
     ./system/boot.nix
     ./system/networking.nix

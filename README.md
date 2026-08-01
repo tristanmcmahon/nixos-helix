@@ -1,7 +1,7 @@
 # Helix NixOS configuration
 
 This repository is the canonical configuration for Helix, a NixOS 25.11 Plasma 6
-workstation with an NVIDIA RTX 5080. It uses traditional NixOS modules and the
+workstation with an NVIDIA RTX 5080 and an experimental Hyprland login option. It uses traditional NixOS modules and the
 root Nix channel: no flakes, Home Manager, overlays, or host framework.
 
 The design keeps universal packages small and separates normal workstation
@@ -16,7 +16,8 @@ generated module for this machine and must not be edited or reformatted.
 ├── configuration.nix          # top-level import index and state version
 ├── hardware-configuration.nix # generated filesystems and boot hardware facts
 ├── hardware/                  # NVIDIA, audio, Bluetooth, and firmware policy
-├── desktop/                   # SDDM, Plasma 6, and graphical applications
+├── desktop/                   # SDDM, Plasma 6, optional Hyprland, and applications
+├── shell/                     # declarative interactive shell environment
 ├── system/                    # boot, locale, networking, and users
 ├── packages/                  # package sets without service policy
 ├── profiles/                  # composable workstation and optional features
@@ -33,6 +34,19 @@ development, and gaming profiles. The initial gaming layer contains Steam,
 GameMode, MangoHud, 32-bit graphics, and 32-bit audio support. Local LLM remains
 disabled. See [docs/profiles.md](docs/profiles.md) for profile boundaries and
 validation commands.
+
+Vim is guaranteed in the base system as both `vi` and `vim`; `EDITOR` and
+`VISUAL` both select Vim. The active declarative Bash layer packages
+[`modern-bash`](https://github.com/tristanmcmahon/modern-bash) at commit
+`55b1c4de6bc47e14285d55f6a1dfdf9fb494e806` and activates its secure prompt
+without depending on an external checkout.
+
+The graphical application layer includes Firefox and Obsidian.
+
+Plasma remains the primary, known-good desktop. SDDM also offers an
+experimental **Hyprland** session from its session chooser; selecting it does
+not remove or change Plasma. See [docs/installation.md](docs/installation.md)
+for the baseline bindings and first-login configuration behavior.
 
 ## Canonical source and routine operation
 
@@ -72,8 +86,8 @@ sudo nixos-rebuild dry-build \
 ```
 
 Run `./scripts/check.sh` before activation. It checks formatting, shell scripts,
-Git whitespace, the default gaming-enabled system, and the dormant local-LLM
-profile. A build or dry build does not activate anything. `test` changes only
+Git whitespace, recovery commands, isolated Bash startup, both SDDM sessions,
+the default gaming-enabled system, and the dormant local-LLM profile. A build or dry build does not activate anything. `test` changes only
 the running system; `switch` also makes the result the default boot generation.
 
 ## Rollback

@@ -27,5 +27,5 @@ printf '{ ... }: { imports = [ %s %s ]; }\n' \
   "$repo_root/profiles/$profile.nix" >"$temporary_module"
 
 printf 'Checking optional profile: %s\n' "$profile"
-sudo nixos-rebuild dry-build \
+nixos-rebuild dry-build \
   -I "nixos-config=$temporary_module"
