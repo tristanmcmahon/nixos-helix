@@ -41,7 +41,7 @@ cleanup_program=$(nix-build --no-out-link -E '
 ')
 ./scripts/test-cleanup-plan.sh "$cleanup_program/bin/helix-nix-cleanup"
 
-printf 'Evaluating editor and desktop invariants...\n'
+printf 'Evaluating editor, desktop, gaming, and Corsair invariants...\n'
 nix-instantiate --eval --strict -E '
   let
     system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
@@ -54,16 +54,38 @@ nix-instantiate --eval --strict -E '
   assert config.services.displayManager.sddm.enable;
   assert config.programs.hyprland.enable;
   assert config.programs.hyprland.withUWSM;
+  assert config.programs.steam.enable;
+  assert config.programs.gamemode.enable;
+  assert !config.services.ollama.enable;
+  assert config.hardware.ckb-next.enable;
+  assert builtins.hasAttr "ckb-next" config.systemd.services;
   assert config.environment.variables.EDITOR == "vim";
   assert config.environment.variables.VISUAL == "vim";
   assert builtins.any (name: builtins.match "vim.*" name != null) packageNames;
   true
 '
 
-printf 'Building the default closure for command and session inspection...\n'
+corsair_imports=$(grep -cF './hardware/corsair-k70.nix' configuration.nix)
+[[ $corsair_imports -eq 1 ]] || {
+  printf 'Expected exactly one Corsair module import, found %s.\n' "$corsair_imports" >&2
+  exit 1
+}
+
+printf 'Building the complete default system closure...\n'
 system_closure=$(nix-build --no-out-link '<nixpkgs/nixos>' -A system \
   -I "nixos-config=$repo_root/configuration.nix")
+
+printf 'Checking Vim and modern-bash in the built default system...\n'
 ./scripts/test-modern-bash.sh "$system_closure"
+
+printf 'Verifying the repository-owned Hyprland baseline...\n'
+hyprland_config=$(nix-build --no-out-link -E '
+  let system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
+  in system.config.environment.etc."hypr/helix.conf".source
+')
+"$system_closure/sw/bin/Hyprland" --verify-config --config "$hyprland_config"
+polkit_agent=$(sed -n 's/^exec-once = \(.*polkit-kde-authentication-agent-1\)$/\1/p' "$hyprland_config")
+[[ -x $polkit_agent ]]
 
 printf 'Checking generated display-manager sessions...\n'
 session_data=$(nix-build --no-out-link -E '
@@ -74,8 +96,13 @@ find "$session_data/share" -type f -name '*.desktop' -print
 grep -Rqs '^Name=Plasma' "$session_data/share/wayland-sessions"
 grep -Rqs '^Name=Hyprland' "$session_data/share/wayland-sessions"
 
-printf 'Dry-building default configuration...\n'
-./scripts/rebuild.sh dry-build
+printf 'Checking ckb-next in the built default system...\n'
+[[ -x $system_closure/sw/bin/ckb-next ]]
+[[ -x $system_closure/sw/bin/ckb-next-daemon ]]
+[[ -r $system_closure/etc/systemd/system/ckb-next.service ]]
+ckb_daemon=$(readlink -f "$system_closure/sw/bin/ckb-next-daemon")
+ckb_package=${ckb_daemon%/bin/ckb-next-daemon}
+[[ -r $ckb_package/lib/udev/rules.d/99-ckb-next-daemon.rules ]]
 
 printf 'Dry-building local-LLM profile...\n'
 ./scripts/check-profile.sh local-llm

@@ -41,4 +41,16 @@ HOME=$temporary_home PATH=$system_path "$system_bash" --rcfile "$test_bashrc" -i
 
 "$system_path/vi" --version >/dev/null
 "$system_path/vim" --version >/dev/null
+"$system_path/modern-bash" version >/dev/null
+HOME=$temporary_home "$system_path/modern-bash" doctor --plain >/dev/null
+
+for lifecycle_command in install uninstall; do
+  lifecycle_output="$temporary_home/$lifecycle_command.output"
+  if HOME=$temporary_home "$system_path/modern-bash" "$lifecycle_command" >"$lifecycle_output" 2>&1; then
+    printf 'modern-bash %s unexpectedly succeeded.\n' "$lifecycle_command" >&2
+    exit 1
+  fi
+  grep -Fx 'modern-bash is managed by the Helix NixOS configuration.' "$lifecycle_output" >/dev/null
+  grep -Fx 'Edit shell/modern-bash.nix and rebuild the system instead.' "$lifecycle_output" >/dev/null
+done
 printf 'Vim/vi and modern-bash passed isolated closure tests.\n'

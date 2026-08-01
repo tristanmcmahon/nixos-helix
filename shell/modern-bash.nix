@@ -3,8 +3,8 @@
 let
   # Source: https://github.com/tristanmcmahon/modern-bash
   # Commit: 55b1c4de6bc47e14285d55f6a1dfdf9fb494e806 (2026-08-01 integration)
-  # The upstream runtime is packaged intact. Its installer is available as an
-  # explicit command but is never run by activation or interactive startup.
+  # The upstream runtime is packaged intact. The system-facing wrapper blocks
+  # lifecycle commands so it cannot create a competing mutable installation.
   source = pkgs.fetchFromGitHub {
     owner = "tristanmcmahon";
     repo = "modern-bash";
@@ -12,19 +12,32 @@ let
     hash = "sha256-7H4SkRupATaGTqkACfCqdCLKaNDsd488+hxVmQ//IUY=";
   };
 
-  modern-bash = pkgs.stdenvNoCC.mkDerivation {
-    pname = "modern-bash";
+  runtime = pkgs.stdenvNoCC.mkDerivation {
+    pname = "modern-bash-runtime";
     version = "0.3.0-55b1c4d";
-    inherit source;
     src = source;
     dontBuild = true;
 
     installPhase = ''
       runHook preInstall
-      mkdir -p "$out/bin" "$out/share/modern-bash"
+      mkdir -p "$out/share/modern-bash"
       cp -R bin docs scripts src "$out/share/modern-bash/"
-      ln -s ../share/modern-bash/bin/modern-bash "$out/bin/modern-bash"
       runHook postInstall
+    '';
+  };
+
+  modern-bash = pkgs.writeShellApplication {
+    name = "modern-bash";
+    text = ''
+      case ''${1:-} in
+        install | uninstall)
+          printf '%s\n' \
+            'modern-bash is managed by the Helix NixOS configuration.' \
+            'Edit shell/modern-bash.nix and rebuild the system instead.' >&2
+          exit 2
+          ;;
+      esac
+      exec ${runtime}/share/modern-bash/bin/modern-bash "$@"
     '';
   };
 in

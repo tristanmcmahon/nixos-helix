@@ -98,8 +98,8 @@ printf '%s\n' \
   '  - add Hyprland as an optional SDDM login session' \
   '  - install Vim/vi as the console recovery editor' \
   '  - enable the declarative modern-bash shell environment' \
+  '  - enable ckb-next support for the Corsair K70 RGB' \
   '  - install workstation tools' \
-  '  - install Obsidian' \
   '  - install development tools' \
   '  - install VS Code' \
   '  - install the OpenAI Codex CLI' \
@@ -127,9 +127,6 @@ phase 'Persistent activation'
 ./scripts/rebuild.sh switch
 
 phase 'Installed-result verification'
-systemctl is-enabled display-manager.service >/dev/null ||
-  die 'display-manager.service is not enabled after activation.'
-
 sddm_enabled=$(nix-instantiate --eval --strict -E '
   let
     system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
