@@ -139,7 +139,7 @@ configured_display_manager=$(nix-instantiate --eval --raw -E '
   let
     system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
   in
-  system.config.services.display-manager.execCmd
+  system.config.services.displayManager.execCmd
 ') || die 'Could not evaluate the configured display-manager executable.'
 display_manager_unit=$(systemctl cat display-manager.service) ||
   die 'Could not inspect display-manager.service.'
