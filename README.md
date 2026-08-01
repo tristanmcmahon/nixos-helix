@@ -30,10 +30,11 @@ generated module for this machine and must not be edited or reformatted.
 ## Active configuration
 
 `configuration.nix` enables the base packages plus the workstation,
-development, and gaming profiles. The initial gaming layer contains Steam,
-GameMode, MangoHud, 32-bit graphics, and 32-bit audio support. Local LLM remains
-disabled. See [docs/profiles.md](docs/profiles.md) for profile boundaries and
-validation commands.
+development, and gaming profiles. The workstation applications include Firefox
+and Obsidian. The initial gaming layer contains Steam, GameMode, MangoHud,
+32-bit graphics, and 32-bit audio support. Local LLM remains disabled. See
+[docs/profiles.md](docs/profiles.md) for profile boundaries and validation
+commands.
 
 Vim is guaranteed in the base system as both `vi` and `vim`; `EDITOR` and
 `VISUAL` both select Vim. The active declarative Bash layer packages
