@@ -102,7 +102,8 @@ printf '%s\n' \
   '  - install GitHub CLI and Git LFS' \
   '  - enable the nightly 02:00 generation cleanup timer' \
   '  - retain the active system plus two additional generations' \
-  '  - leave gaming disabled' \
+  '  - enable gaming with Steam, GameMode, and MangoHud' \
+  '  - enable 32-bit graphics and audio support for gaming' \
   '  - leave local LLM disabled'
 
 printf 'Install the Helix configuration now? [y/N] '

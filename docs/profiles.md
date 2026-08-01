@@ -25,24 +25,22 @@ GitHub publishing tools, Codex, compilers, runtimes, the Nix language server and
 formatter, and ShellCheck. It remains separate even though it currently adds no
 system service policy.
 
+### Gaming
+
+The enabled conservative gaming profile provides Steam, GameMode, MangoHud,
+32-bit graphics, and 32-bit PipeWire/ALSA audio support. Steam owns its client
+package and controller udev rules; it is not duplicated in the system package
+list. Emulation remains outside this profile. Heroic, Lutris, Wine, Gamescope,
+and custom Proton tooling have not been added.
+
+The normal default dry build validates this active profile. Disabling the single
+`./profiles/gaming.nix` import returns the evaluated configuration to the
+non-gaming workstation layer.
+
 ## Dormant profiles
 
 Enable an optional profile by uncommenting its import in `configuration.nix`,
 then run `./scripts/check.sh` before `test`.
-
-### Gaming
-
-The conservative gaming profile enables NixOS Steam integration, 32-bit
-graphics, 32-bit PipeWire/ALSA libraries, GameMode, and MangoHud. Steam owns its
-client package and controller udev rules. The profile deliberately excludes
-Lutris, Gamescope, Wine variants, Proton managers, emulators, firewall rules,
-and extra controller daemons.
-
-Validate it independently while it remains disabled:
-
-```bash
-./scripts/check-profile.sh gaming
-```
 
 ### Local LLM
 

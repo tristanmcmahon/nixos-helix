@@ -5,16 +5,16 @@ set -euo pipefail
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 
 if [[ $# -ne 1 ]]; then
-  printf 'Usage: %s {gaming|local-llm}\n' "${0##*/}" >&2
+  printf 'Usage: %s local-llm\n' "${0##*/}" >&2
   exit 2
 fi
 
 case $1 in
-gaming | local-llm)
+local-llm)
   profile=$1
   ;;
 *)
-  printf 'Usage: %s {gaming|local-llm}\n' "${0##*/}" >&2
+  printf 'Usage: %s local-llm\n' "${0##*/}" >&2
   exit 2
   ;;
 esac
