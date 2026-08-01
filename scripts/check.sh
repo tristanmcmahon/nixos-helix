@@ -29,6 +29,18 @@ shellcheck scripts/*.sh
 printf 'Checking Git whitespace...\n'
 git diff --check
 
+printf 'Testing generation-cleanup planning...\n'
+cleanup_program=$(nix-build --no-out-link -E '
+  let
+    system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
+    matches = builtins.filter
+      (package: (package.name or "") == "helix-nix-cleanup")
+      system.config.environment.systemPackages;
+  in
+  builtins.head matches
+')
+./scripts/test-cleanup-plan.sh "$cleanup_program/bin/helix-nix-cleanup"
+
 printf 'Dry-building default configuration...\n'
 ./scripts/rebuild.sh dry-build
 
