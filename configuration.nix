@@ -13,6 +13,7 @@
     ./hardware/audio.nix
     ./hardware/bluetooth.nix
     ./hardware/firmware.nix
+    ./hardware/corsair-k70.nix
 
     ./desktop/plasma.nix
     ./desktop/hyprland.nix

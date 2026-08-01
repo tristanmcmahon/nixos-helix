@@ -31,6 +31,9 @@ from `https://github.com/tristanmcmahon/modern-bash` at source commit
 `55b1c4de6bc47e14285d55f6a1dfdf9fb494e806`. Its prompt, terminal capability
 detection, optional Git context, and user configuration support are preserved.
 No installer runs at shell startup, and the original checkout is not needed.
+The system command rejects `modern-bash install` and `modern-bash uninstall`
+because NixOS owns the installation. Update `shell/modern-bash.nix` and rebuild
+instead of creating a competing mutable copy.
 
 ## Optional Hyprland session
 
@@ -39,10 +42,10 @@ try Hyprland, use SDDM's session chooser before signing in and select
 **Hyprland**. Log out and select **Plasma (Wayland)** to return; Hyprland has
 not replaced or reconfigured Plasma.
 
-The first Hyprland launch copies a conservative system baseline to
-`~/.config/hypr/hyprland.conf` only when that file does not exist. This is
-necessary because the packaged Hyprland 0.52.1 reliably reads the per-user XDG config path,
-not `/etc/xdg` as a fallback. Later launches never overwrite that file.
+The UWSM session passes `--config /etc/hypr/helix.conf` to the standard
+Hyprland compositor command. NixOS installs that repository-owned baseline
+declaratively; it never creates or changes files in the user's home directory.
+Edit `desktop/hyprland.nix` and rebuild to change the baseline.
 
 Baseline bindings are:
 
@@ -55,9 +58,10 @@ Baseline bindings are:
 - `Super+Shift+1` through `Super+Shift+9`: move the active window
 - hardware audio keys: volume and mute through PipeWire
 
-Waybar, Mako, the NetworkManager applet, clipboard/screenshot utilities,
-brightness control, and media controls provide a minimal session. The normal
-NixOS Hyprland portal is added alongside Plasma's KDE portal. NVIDIA,
+Waybar, Mako, Fuzzel, and the NetworkManager applet provide the minimal
+session. Plasma's KDE polkit authentication agent is started so graphical
+privilege prompts work. The normal NixOS Hyprland portal is added alongside
+Plasma's KDE portal. NVIDIA,
 multi-monitor, screen-sharing, suspend/resume, and peripheral behavior still
 require real login testing before Hyprland can be considered validated.
 

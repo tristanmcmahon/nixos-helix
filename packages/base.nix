@@ -5,7 +5,6 @@
   # without a desktop or development toolchain.
   environment.systemPackages = with pkgs; [
     git
-    vim
     curl
     wget
     file

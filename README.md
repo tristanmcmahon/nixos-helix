@@ -39,14 +39,20 @@ Vim is guaranteed in the base system as both `vi` and `vim`; `EDITOR` and
 `VISUAL` both select Vim. The active declarative Bash layer packages
 [`modern-bash`](https://github.com/tristanmcmahon/modern-bash) at commit
 `55b1c4de6bc47e14285d55f6a1dfdf9fb494e806` and activates its secure prompt
-without depending on an external checkout.
-
-The graphical application layer includes Firefox and Obsidian.
+without depending on an external checkout. NixOS owns that installation, so
+the `modern-bash install` and `modern-bash uninstall` lifecycle commands are
+disabled; update the pinned source in `shell/modern-bash.nix` instead.
 
 Plasma remains the primary, known-good desktop. SDDM also offers an
 experimental **Hyprland** session from its session chooser; selecting it does
-not remove or change Plasma. See [docs/installation.md](docs/installation.md)
-for the baseline bindings and first-login configuration behavior.
+not remove or change Plasma. Its reviewed configuration is installed from the
+repository at `/etc/hypr/helix.conf`; changes are made declaratively in
+`desktop/hyprland.nix`. See [docs/installation.md](docs/installation.md) for
+the baseline bindings.
+
+The attached Corsair K70 RGB (`1b1c:1b13`) is supported through the NixOS
+`hardware.ckb-next` module. The build verifies its package, daemon, udev rules,
+and `ckb-next.service`; physical behavior must still be tested after activation.
 
 ## Canonical source and routine operation
 
@@ -86,8 +92,9 @@ sudo nixos-rebuild dry-build \
 ```
 
 Run `./scripts/check.sh` before activation. It checks formatting, shell scripts,
-Git whitespace, recovery commands, isolated Bash startup, both SDDM sessions,
-the default gaming-enabled system, and the dormant local-LLM profile. A build or dry build does not activate anything. `test` changes only
+Git whitespace, recovery commands, isolated Bash startup, the Hyprland config,
+both SDDM sessions, Corsair support, the default gaming-enabled system, and the
+dormant local-LLM profile. A build or dry build does not activate anything. `test` changes only
 the running system; `switch` also makes the result the default boot generation.
 
 ## Rollback

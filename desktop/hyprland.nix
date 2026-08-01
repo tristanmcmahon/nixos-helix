@@ -1,8 +1,8 @@
-{ lib, pkgs, ... }:
+{ pkgs, ... }:
 
 let
-  baselineConfig = pkgs.writeText "helix-hyprland.conf" ''
-    # Helix baseline: deliberately small and safe to replace with a user config.
+  baselineConfig = ''
+    # Helix baseline: deliberately small and owned by this repository.
     monitor = , preferred, auto, 1
 
     $mainMod = SUPER
@@ -12,6 +12,7 @@ let
     exec-once = waybar
     exec-once = mako
     exec-once = nm-applet --indicator
+    exec-once = ${pkgs.kdePackages.polkit-kde-agent-1}/libexec/polkit-kde-authentication-agent-1
 
     bind = $mainMod, RETURN, exec, $terminal
     bind = $mainMod, D, exec, $menu
@@ -67,23 +68,6 @@ let
     }
   '';
 
-  bootstrap = pkgs.writeShellApplication {
-    name = "helix-hyprland-session";
-    runtimeInputs = [ pkgs.coreutils ];
-    text = ''
-      config_home="''${XDG_CONFIG_HOME:-$HOME/.config}"
-      config_dir="$config_home/hypr"
-      config_file="$config_dir/hyprland.conf"
-
-      if [[ ! -e "$config_file" ]]; then
-        install -d -m 0700 -- "$config_dir"
-        install -m 0600 -- ${baselineConfig} "$config_file"
-      fi
-
-      exec ${pkgs.hyprland}/bin/Hyprland "$@"
-    '';
-  };
-
   exitPrompt = pkgs.writeShellApplication {
     name = "helix-hyprland-exit";
     runtimeInputs = [
@@ -104,21 +88,20 @@ in
     withUWSM = true;
   };
 
-  # UWSM supplies the SDDM session and starts the user-owned bootstrap before
-  # Hyprland. Existing ~/.config/hypr/hyprland.conf files are left untouched.
-  programs.uwsm.waylandCompositors.hyprland.binPath =
-    lib.mkForce "${bootstrap}/bin/helix-hyprland-session";
+  # UWSM keeps the standard compositor path and selects the immutable baseline
+  # explicitly. Hyprland never needs to create or update a user config file.
+  programs.uwsm.waylandCompositors.hyprland.extraArgs = [
+    "--config"
+    "/etc/hypr/helix.conf"
+  ];
+
+  environment.etc."hypr/helix.conf".text = baselineConfig;
 
   environment.systemPackages = with pkgs; [
     waybar
     fuzzel
     mako
     networkmanagerapplet
-    wl-clipboard
-    grim
-    slurp
-    brightnessctl
-    playerctl
     exitPrompt
   ];
 }

@@ -44,6 +44,41 @@ them before sharing and never commit them.
   `bluetoothctl devices` and
   `rfkill list`, then reboot once to verify reconnection.
 
+## Corsair K70 RGB
+
+Helix's original Corsair K70 RGB reports USB ID `1b1c:1b13` and kernel name
+`Corsair Corsair K70 RGB Gaming Keyboard`. Before activation it uses
+`usbhid`/`hid-generic`, exposes two USB interfaces and input events
+`/dev/input/event25`, `/dev/input/event26`, and `/dev/input/event27`, and has no
+ckb-next daemon or RGB control. Event numbers are assigned dynamically and may
+change after reconnecting or rebooting.
+
+The supported `hardware.ckb-next` module supplies `ckb-next.service`, the GUI,
+daemon, and device rules. It does not flash firmware or select a lighting
+profile, and no GUI autostart is added: ordinary input and the daemon do not
+depend on opening the GUI.
+
+After activation, inspect the real device and service:
+
+```bash
+lsusb
+systemctl status ckb-next.service
+journalctl -b -u ckb-next.service
+libinput list-devices
+```
+
+- Confirm normal typing with no missing, repeated, or duplicate keystrokes in
+  Plasma, Hyprland, and a text-console login.
+- Test media keys, volume wheel, mute, and supported brightness/profile keys.
+- Open ckb-next manually and confirm RGB control without overwriting the
+  keyboard's existing onboard profile or flashing firmware.
+- Unplug and reconnect the keyboard, checking the journal and input devices.
+- Suspend and resume, then repeat typing, media, volume, mute, and RGB tests.
+- Compare `/proc/bus/input/devices` and `libinput list-devices` before and after
+  activation to ensure multiple interfaces do not produce duplicate input.
+
+These are physical tests; a successful build does not prove they pass.
+
 ## Network, USB, and storage
 
 - Check Ethernet using `nmcli device status`, `ip -brief address`, and
