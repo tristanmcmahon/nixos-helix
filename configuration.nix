@@ -14,7 +14,7 @@
     ./hardware/bluetooth.nix
     ./hardware/firmware.nix
 
-    ./desktop/gnome.nix
+    ./desktop/plasma.nix
     ./desktop/applications.nix
 
     ./system/boot.nix
@@ -23,7 +23,7 @@
     ./system/locale.nix
     ./services/maintenance.nix
 
-    # These profiles form the normal GNOME workstation. Gaming and local
+    # These profiles form the normal Plasma workstation. Gaming and local
     # inference remain opt-in because they add substantial software and policy.
     ./profiles/workstation.nix
     ./profiles/development.nix

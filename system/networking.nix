@@ -4,8 +4,8 @@
   networking = {
     hostName = "helix";
 
-    # NetworkManager handles both Ethernet and Wi-Fi and integrates with GNOME
-    # Settings. Interface names and access-point credentials remain runtime
+    # NetworkManager handles Ethernet and Wi-Fi and integrates with Plasma
+    # System Settings. Interface names and access-point credentials remain runtime
     # state, so neither is guessed or committed here.
     networkmanager.enable = true;
 

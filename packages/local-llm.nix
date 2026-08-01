@@ -1,7 +1,7 @@
 { pkgs, ... }:
 
 {
-  # Use the NVIDIA-enabled Ollama build instead of installing competing local
-  # inference runtimes.
+  # The service profile selects this same CUDA build. Keeping it in the system
+  # path exposes the CLI to users; Nix deduplicates the shared store closure.
   environment.systemPackages = [ pkgs.ollama-cuda ];
 }

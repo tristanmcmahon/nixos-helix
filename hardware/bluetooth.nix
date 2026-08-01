@@ -1,7 +1,7 @@
 { ... }:
 
 {
-  # BlueZ backs GNOME Settings and supports the onboard controller for input
+  # BlueZ backs Plasma System Settings and supports the onboard controller for input
   # devices, headsets, and other user-selected peripherals.
   hardware.bluetooth = {
     enable = true;

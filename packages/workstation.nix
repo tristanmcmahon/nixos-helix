@@ -2,9 +2,6 @@
 
 {
   environment.systemPackages = with pkgs; [
-    vscode
-    gh
-    git-lfs
     ghostty
 
     unzip

@@ -11,15 +11,14 @@
   hardware.graphics.enable = true;
 
   hardware.nvidia = {
-    # GNOME's Wayland compositor needs DRM kernel modesetting. Current NixOS
+    # Plasma's Wayland compositor needs DRM kernel modesetting. Current NixOS
     # also derives the NVIDIA DRM framebuffer parameter from this setting.
     modesetting.enable = true;
 
     open = true;
 
-    # Follow Nixpkgs' highest stable driver rather than pinning a version. That
-    # keeps the kernel module matched to the selected NixOS kernel and avoids a
-    # stale manual checksum/version pair.
+    # No package override is used: Nixpkgs selects a stable driver compatible
+    # with the selected kernel. NixOS 25.11 has no hardware.nvidia.branch option.
 
     # Preserve video memory across suspend. On current stable drivers NixOS
     # uses NVIDIA's kernel suspend notifier when available, otherwise it
@@ -27,7 +26,7 @@
     powerManagement.enable = true;
 
     # This is the one vendor-specific graphical diagnostic retained. It is not
-    # required for GNOME display layout, which remains managed by Settings.
+    # required for Plasma display layout, which remains managed by System Settings.
     nvidiaSettings = true;
   };
 

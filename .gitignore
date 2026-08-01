@@ -8,3 +8,13 @@
 # Keep ad-hoc local backups out of commits if one is placed here accidentally.
 *.backup
 *.bak
+
+# Local environments, editor scratch data, and runtime model storage.
+/.direnv/
+/.env
+/.env.*
+/.history/
+*.code-workspace
+/.vscode/*.local.json
+/.ollama/
+/models/

@@ -2,9 +2,11 @@
 
 {
   environment.systemPackages = with pkgs; [
-    # Helix remains available as the existing terminal editor. VS Code belongs
-    # to the workstation package set rather than the compiler toolchain.
+    vscode
     helix
+    gh
+    git-lfs
+    codex
 
     gcc
     gnumake

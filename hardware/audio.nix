@@ -6,7 +6,7 @@
   # PulseAudio applications.
   services.pulseaudio.enable = false;
 
-  # PipeWire is the audio graph used by modern GNOME. The PulseAudio protocol
+  # PipeWire is the audio graph used by the Plasma desktop. The PulseAudio protocol
   # server is a compatibility interface implemented by PipeWire, not a second
   # competing audio daemon.
   services.pipewire = {

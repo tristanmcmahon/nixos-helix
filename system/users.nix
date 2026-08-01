@@ -6,7 +6,7 @@
     description = "Tristan";
 
     # wheel permits authenticated sudo; networkmanager permits changing wired
-    # and wireless connections from GNOME Settings.
+    # and wireless connections from Plasma System Settings.
     extraGroups = [
       "wheel"
       "networkmanager"
