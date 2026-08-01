@@ -31,7 +31,7 @@ generated module for this machine and must not be edited or reformatted.
 
 `configuration.nix` enables the base packages plus the workstation,
 development, and gaming profiles. The workstation applications include Firefox
-and Obsidian. The initial gaming layer contains Steam, GameMode, MangoHud,
+Chrome, Chromium, Zen Browser, and Obsidian. The initial gaming layer contains Steam, GameMode, MangoHud,
 32-bit graphics, and 32-bit audio support. Local LLM remains disabled. See
 [docs/profiles.md](docs/profiles.md) for profile boundaries and validation
 commands.
@@ -54,6 +54,19 @@ the baseline bindings.
 The attached Corsair K70 RGB (`1b1c:1b13`) is supported through the NixOS
 `hardware.ckb-next` module. The build verifies its package, daemon, udev rules,
 and `ckb-next.service`; physical behavior must still be tested after activation.
+
+## Ghostty and workstation fonts
+
+Ghostty's canonical configuration is
+[`config/ghostty/config.ghostty`](config/ghostty/config.ghostty). A user service
+deploys it as `~/.config/ghostty/config.ghostty`; the first differing local file
+is preserved as `config.ghostty.pre-nixos`. Reload it with `Ctrl+Shift+,`, and
+inspect it with `ghostty +show-config` or validate the repository copy with
+`ghostty +validate-config --config-file=config/ghostty/config.ghostty`.
+Available themes can be checked with `ghostty +list-themes`.
+JetBrains Mono Nerd Font is the default monospace face; Maple Mono and Iosevka
+Nerd Font are installed alternatives. For persistent changes, edit and commit
+the repository copy and rebuild instead of editing the deployed file.
 
 ## Canonical source and routine operation
 

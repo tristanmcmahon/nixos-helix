@@ -18,6 +18,8 @@
     ./desktop/plasma.nix
     ./desktop/hyprland.nix
     ./desktop/applications.nix
+    ./desktop/fonts.nix
+    ./desktop/ghostty.nix
 
     ./shell/modern-bash.nix
 

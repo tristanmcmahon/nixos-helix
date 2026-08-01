@@ -1,0 +1,37 @@
+# ============================================================================
+# Ghostty
+# Clean, restrained terminal configuration for the Helix workstation
+# ============================================================================
+
+theme = Catppuccin Frappe
+
+# Default workstation terminal font.
+font-family = JetBrainsMono Nerd Font Mono
+# Compact modern alternative:
+# font-family = Maple Mono NF
+# Dense high-information alternative:
+# font-family = Iosevka Nerd Font Mono
+font-size = 13.5
+
+cursor-style = block
+cursor-style-blink = false
+
+window-padding-x = 8
+window-padding-y = 8
+
+resize-overlay = never
+confirm-close-surface = false
+
+scrollback-limit = 100000
+
+mouse-hide-while-typing = true
+copy-on-select = clipboard
+
+clipboard-read = allow
+clipboard-write = allow
+
+shell-integration = detect
+
+# Ghostty 1.3 replaced audible-bell with feature flags; disable every bell UI.
+bell-features = no-system,no-audio,no-attention,no-title,no-border
+quit-after-last-window-closed = true
