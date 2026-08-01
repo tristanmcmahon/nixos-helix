@@ -19,6 +19,48 @@ The RTX 5080 uses NVIDIA's open kernel modules with the matching proprietary
 user-space driver. NixOS 25.11 has no `hardware.nvidia.branch` option, so
 Nixpkgs selects the stable driver without a package override.
 
+## Recovery editor and shell
+
+The minimal base closure includes Vim under both `vi` and `vim`, including on a
+text console when the graphical desktop is unavailable. The supported NixOS
+Vim module selects it as `EDITOR`; the base module also sets `VISUAL=vim`
+because the NixOS 25.11 Vim module does not set that variable.
+
+Interactive Bash shells activate the immutable `modern-bash` 0.3.0 runtime
+from `https://github.com/tristanmcmahon/modern-bash` at source commit
+`55b1c4de6bc47e14285d55f6a1dfdf9fb494e806`. Its prompt, terminal capability
+detection, optional Git context, and user configuration support are preserved.
+No installer runs at shell startup, and the original checkout is not needed.
+
+## Optional Hyprland session
+
+Plasma 6 remains the normal desktop and SDDM remains the display manager. To
+try Hyprland, use SDDM's session chooser before signing in and select
+**Hyprland**. Log out and select **Plasma (Wayland)** to return; Hyprland has
+not replaced or reconfigured Plasma.
+
+The first Hyprland launch copies a conservative system baseline to
+`~/.config/hypr/hyprland.conf` only when that file does not exist. This is
+necessary because the packaged Hyprland 0.52.1 reliably reads the per-user XDG config path,
+not `/etc/xdg` as a fallback. Later launches never overwrite that file.
+
+Baseline bindings are:
+
+- `Super+Return`: Ghostty
+- `Super+D`: Fuzzel application launcher
+- `Super+Q`: close the active window
+- `Super+Shift+E`: confirm logout and return to SDDM
+- `Super+Arrow`: move focus
+- `Super+1` through `Super+9`: select a workspace
+- `Super+Shift+1` through `Super+Shift+9`: move the active window
+- hardware audio keys: volume and mute through PipeWire
+
+Waybar, Mako, the NetworkManager applet, clipboard/screenshot utilities,
+brightness control, and media controls provide a minimal session. The normal
+NixOS Hyprland portal is added alongside Plasma's KDE portal. NVIDIA,
+multi-monitor, screen-sharing, suspend/resume, and peripheral behavior still
+require real login testing before Hyprland can be considered validated.
+
 ## First use
 
 Treat this checkout as the only maintained source. `/etc/nixos` may remain as

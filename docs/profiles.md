@@ -8,9 +8,10 @@ system policy.
 
 ### Base
 
-`packages/base.nix` is imported directly and contains only Git, curl, wget,
-`file`, and `tree`. It deliberately excludes editors, language runtimes, GPU
-tools, desktop conveniences, gaming, and inference software.
+`packages/base.nix` is imported directly and contains Git, curl, wget, `file`,
+`tree`, and Vim as the guaranteed console recovery editor (`vi` and `vim`). It
+deliberately excludes language runtimes, GPU tools, desktop conveniences,
+gaming, and inference software.
 
 ### Workstation
 

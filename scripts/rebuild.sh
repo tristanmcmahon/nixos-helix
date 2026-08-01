@@ -22,5 +22,10 @@ esac
 printf 'Configuration: %s/configuration.nix\n' "$repo_root"
 printf 'Action: %s\n' "$action"
 
-sudo nixos-rebuild "$action" \
-  -I "nixos-config=$repo_root/configuration.nix"
+if [[ $action == dry-build ]]; then
+  nixos-rebuild "$action" \
+    -I "nixos-config=$repo_root/configuration.nix"
+else
+  sudo nixos-rebuild "$action" \
+    -I "nixos-config=$repo_root/configuration.nix"
+fi

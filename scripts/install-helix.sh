@@ -94,8 +94,12 @@ nix-shell --run './scripts/check.sh'
 phase 'Pending installation'
 printf '%s\n' \
   'The Helix configuration will:' \
-  '  - replace GNOME/GDM with Plasma 6/SDDM' \
+  '  - keep Plasma 6 as the primary SDDM desktop' \
+  '  - add Hyprland as an optional SDDM login session' \
+  '  - install Vim/vi as the console recovery editor' \
+  '  - enable the declarative modern-bash shell environment' \
   '  - install workstation tools' \
+  '  - install Obsidian' \
   '  - install development tools' \
   '  - install VS Code' \
   '  - install the OpenAI Codex CLI' \
@@ -161,6 +165,8 @@ grep -Eiq 'sddm' <<<"$display_manager_evidence" ||
 systemctl is-enabled helix-nix-cleanup.timer ||
   die 'helix-nix-cleanup.timer is not enabled after activation.'
 export PATH="/run/current-system/sw/bin:$PATH"
+command -v vi >/dev/null || die 'vi is not available in PATH after activation.'
+command -v vim >/dev/null || die 'vim is not available in PATH after activation.'
 command -v code >/dev/null || die 'code is not available in PATH after activation.'
 command -v codex >/dev/null || die 'codex is not available in PATH after activation.'
 command -v gh >/dev/null || die 'gh is not available in PATH after activation.'
