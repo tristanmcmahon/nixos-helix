@@ -1,8 +1,7 @@
 { ... }:
 
 {
-  # PLACEHOLDER: these match the supplied Pacific/Auckland environment and a
-  # New Zealand English workstation. Change them if Helix will live elsewhere.
+  # Helix uses New Zealand time and locale settings.
   time.timeZone = "Pacific/Auckland";
   i18n.defaultLocale = "en_NZ.UTF-8";
 

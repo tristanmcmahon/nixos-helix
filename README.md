@@ -5,9 +5,8 @@ minimal GNOME workstation with an NVIDIA RTX 5080. It deliberately starts
 boring. Every persistent choice should either support known hardware, provide a
 basic workstation function, or document a useful NixOS concept.
 
-It has **not** been tested on the real Helix hardware. In particular, the
-checked-in `hardware-configuration.nix` is an empty placeholder and must not
-replace the file generated on the machine.
+The checked-in `hardware-configuration.nix` is the real generated module for
+Helix. Preserve it byte-for-byte when changing maintained policy modules.
 
 ## Why there are no flakes or Home Manager
 
@@ -26,7 +25,7 @@ single-host learning configuration does not currently have.
 ```text
 /etc/nixos/
 ├── configuration.nix          # readable top-level import index
-├── hardware-configuration.nix # generated machine facts; placeholder in Git
+├── hardware-configuration.nix # generated machine facts; never hand-edit
 ├── hardware/
 │   ├── nvidia.nix             # RTX 5080 driver, KMS, suspend support
 │   ├── audio.nix              # PipeWire and microphone/audio discovery
@@ -36,11 +35,23 @@ single-host learning configuration does not currently have.
 │   ├── gnome.nix              # GDM/GNOME and disabled sharing services
 │   └── applications.nix       # deliberately small graphical application set
 ├── system/
-│   ├── boot.nix               # loader-neutral boot and sleep policy
+│   ├── boot.nix               # verified UEFI systemd-boot and sleep policy
 │   ├── networking.nix         # NetworkManager, hostname, firewall
 │   ├── users.nix              # the local tristan account (no secret material)
-│   ├── locale.nix             # time zone, locale, and keyboard placeholders
-│   └── packages.nix           # base command-line and hardware diagnostics
+│   └── locale.nix             # time zone, locale, and keyboard policy
+├── packages/
+│   ├── base.nix               # universal retrieval and file inspection tools
+│   ├── workstation.nix        # everyday desktop and command-line tools
+│   ├── development.nix        # editor, compilers, runtimes, and code checks
+│   ├── hardware-tools.nix     # hardware diagnostics (no services)
+│   ├── fonts.nix              # conservative workstation font set
+│   ├── gaming.nix             # gaming packages (no system policy)
+│   └── local-llm.nix          # NVIDIA-enabled Ollama package
+├── profiles/
+│   ├── workstation.nix        # workstation tools, diagnostics, and fonts
+│   ├── development.nix        # software development tools
+│   ├── gaming.nix             # Steam, 32-bit graphics, and GameMode policy
+│   └── local-llm.nix          # loopback-only CUDA Ollama service
 ├── services/
 │   └── maintenance.nix        # firmware service and safe store optimisation
 ├── scripts/
@@ -72,21 +83,20 @@ module.
 
 ## Required review before the first rebuild
 
-1. Preserve the real `/etc/nixos/hardware-configuration.nix`. The repository
-   version is only a marker. Confirm that the real file accounts for root/boot
-   filesystems, swap, initrd storage modules, `nixpkgs.hostPlatform`, and exactly
-   the detected CPU vendor's microcode option.
+1. Preserve the real `/etc/nixos/hardware-configuration.nix`. Confirm that it
+   accounts for root/boot filesystems, swap, initrd storage modules,
+   `nixpkgs.hostPlatform`, and exactly the detected CPU vendor's microcode
+   option.
 2. In `configuration.nix`, keep the installation's original
-   `system.stateVersion`. Use `26.05` only for a machine first installed with
-   NixOS 26.05. Updating NixOS later is **not** a reason to change it.
+   `system.stateVersion` at `25.11`. Updating NixOS later is **not** a reason to
+   change it.
 3. Confirm `Pacific/Auckland`, `en_NZ.UTF-8`, and the US keymap in
    `system/locale.nix`.
 4. Confirm that `tristan` is the desired account name and set its password
    locally with `sudo passwd tristan`. No password or hash is provided here.
-5. Restore the installation's real boot-loader settings in `system/boot.nix`
-   from the backed-up configuration, after confirming firmware mode. Also
-   confirm disk layout, encryption, and resume/swap design. This repository
-   intentionally chooses none of them.
+5. Keep the verified UEFI systemd-boot settings in `system/boot.nix`. Disk
+   layout, boot-critical drivers, and swap remain in the generated hardware
+   module.
 6. Use the inventory to record the CPU/chipset, network controllers and their
    drivers, audio devices, USB topology, cameras, storage, monitors, and any
    Thunderbolt/USB4 controller. Keep `services.hardware.bolt` disabled unless a
@@ -119,18 +129,20 @@ standard NixOS command in the current stable package set.
 ## Install these files without losing generated hardware data
 
 Run these commands from the repository root. The backup is deliberately outside
-the source tree, and the install list deliberately omits the repository's
-placeholder `hardware-configuration.nix`:
+the source tree:
 
 ```bash
 backup="/etc/nixos.backup-$(date +%Y%m%d-%H%M%S)"
 sudo cp -a /etc/nixos "$backup"
 
-sudo install -d -m 0755 /etc/nixos/{hardware,desktop,system,services,scripts}
+sudo install -d -m 0755 /etc/nixos/{hardware,desktop,system,packages,profiles,services,scripts}
 sudo install -m 0644 configuration.nix /etc/nixos/configuration.nix
+sudo install -m 0644 hardware-configuration.nix /etc/nixos/hardware-configuration.nix
 sudo install -m 0644 hardware/*.nix /etc/nixos/hardware/
 sudo install -m 0644 desktop/*.nix /etc/nixos/desktop/
 sudo install -m 0644 system/*.nix /etc/nixos/system/
+sudo install -m 0644 packages/*.nix /etc/nixos/packages/
+sudo install -m 0644 profiles/*.nix /etc/nixos/profiles/
 sudo install -m 0644 services/*.nix /etc/nixos/services/
 sudo install -m 0755 scripts/hardware-inventory.sh /etc/nixos/scripts/
 sudo install -m 0644 README.md /etc/nixos/README.md
@@ -146,8 +158,9 @@ hardware file for that target and use `/mnt/etc/nixos` instead of `/etc/nixos`:
 sudo nixos-generate-config --root /mnt
 ```
 
-Never copy the placeholder over the generated file. Do not apply this
-configuration to a running machine until the required review above is complete.
+Do not apply this configuration to a different machine without generating that
+machine's own hardware module. Do not apply it until the required review above
+is complete.
 
 ## Inspect, test, and activate a rebuild
 
@@ -223,11 +236,11 @@ easier to diagnose and roll back.
 
 ## Make small changes
 
-To add one package, edit `system/packages.nix`, add its Nix attribute to
-`environment.systemPackages`, then run `nixos-rebuild build` and `test`. Search
-the current channel with `nix search nixpkgs <name>` or the NixOS package search
-site. Installing a package provides binaries; it does not usually enable a
-service.
+To add one package, edit the single-purpose file under `packages/`, add its Nix
+attribute to `environment.systemPackages`, then run `nixos-rebuild build` and
+`test`. Search the current channel with `nix search nixpkgs <name>` or the NixOS
+package search site. Installing a package provides binaries; it does not usually
+enable a service.
 
 To enable a service, find its current option with:
 
@@ -346,19 +359,15 @@ parameter copied from another computer is not evidence about Helix.
 
 ## NVIDIA choices and current references
 
-The configuration targets the current NixOS 26.05 option model:
+The configuration targets the NixOS 25.11 option model:
 `services.displayManager.gdm`, `services.desktopManager.gnome`,
-`hardware.graphics`, and `hardware.nvidia.branch`. GNOME 50 no longer supports
-disabling GDM's Wayland backend, so there is no `gdm.wayland` setting. NixOS
-documents `stable` as
-its highest stable NVIDIA branch and recommends selecting a branch instead of
-manually assigning a driver package. DRM modesetting is required for reliable
-Wayland operation. NVIDIA's supported-products table marks the GeForce RTX 5080
-(PCI device 2C02) for the open kernel-module flavour, and NVIDIA recommends open
-kernel modules on supported GPUs.
+and `hardware.graphics`. NixOS 25.11 has no `hardware.nvidia.branch` option, so
+Nixpkgs selects the appropriate stable driver. DRM modesetting is required for
+reliable Wayland operation. The GeForce RTX 5080 uses NVIDIA's open kernel
+modules while retaining the matching proprietary user-space graphics drivers.
 
-- [NixOS 26.05 manual](https://nixos.org/manual/nixos/stable/)
-- [NixOS 26.05 option reference](https://nixos.org/manual/nixos/stable/options)
+- [NixOS 25.11 manual](https://nixos.org/manual/nixos/stable/)
+- [NixOS 25.11 option reference](https://nixos.org/manual/nixos/stable/options)
 - [Official NixOS NVIDIA guidance](https://wiki.nixos.org/wiki/NVIDIA)
 - [NVIDIA open kernel module documentation](https://download.nvidia.com/XFree86/Linux-x86_64/570.144/README/kernel_open.html)
 - [NVIDIA supported GPU table](https://download.nvidia.com/XFree86/Linux-x86_64/595.45.04/README/supportedchips.html)

@@ -1,4 +1,4 @@
-{ ... }:
+{ lib, ... }:
 
 {
   # PipeWire and PulseAudio cannot both own the audio devices. This disables
@@ -16,7 +16,7 @@
 
     # 32-bit audio libraries are primarily needed by legacy games and Wine;
     # neither is part of this workstation, so they are deliberately omitted.
-    alsa.support32Bit = false;
+    alsa.support32Bit = lib.mkDefault false;
   };
 
   # PipeWire uses realtime scheduling for reliable low-latency playback and
