@@ -132,6 +132,7 @@ rollback is intentionally limited to the two retained alternatives.
 - [Local development, VS Code, GitHub, and Codex](docs/local-development.md)
 - [Package and profile boundaries](docs/profiles.md)
 - [Real-hardware validation checklist](docs/hardware-validation.md)
+- [Infernalnexus NAS](docs/nas.md)
 
 Hardware evaluation is not proof that devices work. Complete the hardware
 checklist after `test` and before making a new generation permanent.

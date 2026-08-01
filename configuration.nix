@@ -25,6 +25,7 @@
 
     ./system/boot.nix
     ./system/networking.nix
+    ./system/nas.nix
     ./system/users.nix
     ./system/locale.nix
     ./services/maintenance.nix

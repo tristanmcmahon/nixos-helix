@@ -104,3 +104,20 @@ These are physical tests; a successful build does not prove they pass.
 
 Record observed failures before adding hardware-specific workarounds. Settings
 copied from another machine are not evidence about Helix.
+
+## Infernalnexus NAS
+
+After activation, complete the focused setup and diagnostic steps in
+[nas.md](nas.md), then verify:
+
+- [ ] Helix boots normally while `192.168.1.8` is offline.
+- [ ] The automount waits without mounting before first access.
+- [ ] Accessing `/mnt/infernalnexus/nas1` mounts the share.
+- [ ] Tristan can list, create, rename, and delete a temporary test file where
+      the NAS account permits it.
+- [ ] The mount disconnects after its idle timeout and later access remounts it.
+- [ ] Authentication failure is clear and does not destabilise the desktop.
+- [ ] Shutdown remains clean while the NAS is unavailable.
+
+These checks require the real network, NAS, and credentials; evaluation cannot
+establish that they pass.
