@@ -122,7 +122,41 @@ phase 'Persistent activation'
 ./scripts/rebuild.sh switch
 
 phase 'Installed-result verification'
-systemctl is-enabled sddm.service || die 'sddm.service is not enabled after activation.'
+systemctl is-enabled display-manager.service >/dev/null ||
+  die 'display-manager.service is not enabled after activation.'
+
+sddm_enabled=$(nix-instantiate --eval --strict -E '
+  let
+    system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
+  in
+  system.config.services.displayManager.sddm.enable
+') || die 'Could not evaluate the configured SDDM state after activation.'
+[[ $sddm_enabled == true ]] || die 'The repository configuration does not enable SDDM.'
+
+configured_display_manager=$(nix-instantiate --eval --raw -E '
+  let
+    system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
+  in
+  system.config.services.display-manager.execCmd
+') || die 'Could not evaluate the configured display-manager executable.'
+display_manager_unit=$(systemctl cat display-manager.service) ||
+  die 'Could not inspect display-manager.service.'
+display_manager_exec=$(systemctl show display-manager.service --property=ExecStart --value) ||
+  die 'Could not inspect the display-manager.service executable.'
+printf '%s\n' "$display_manager_unit"
+printf 'ExecStart: %s\n' "$display_manager_exec"
+printf 'Configured display manager: %s\n' "$configured_display_manager"
+
+display_manager_evidence="$display_manager_unit
+$display_manager_exec"
+exec_start_path=$(sed -n 's/.*path=\([^ ;}]*\).*/\1/p' <<<"$display_manager_exec" | head -n 1)
+if [[ -n $exec_start_path && -r $exec_start_path ]]; then
+  display_manager_evidence+=$'\n'
+  display_manager_evidence+=$(<"$exec_start_path")
+fi
+grep -Eiq 'sddm' <<<"$display_manager_evidence" ||
+  die 'display-manager.service does not reference SDDM or its configured executable.'
+
 systemctl is-enabled helix-nix-cleanup.timer ||
   die 'helix-nix-cleanup.timer is not enabled after activation.'
 export PATH="/run/current-system/sw/bin:$PATH"
