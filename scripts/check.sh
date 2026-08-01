@@ -44,8 +44,5 @@ cleanup_program=$(nix-build --no-out-link -E '
 printf 'Dry-building default configuration...\n'
 ./scripts/rebuild.sh dry-build
 
-printf 'Dry-building gaming profile...\n'
-./scripts/check-profile.sh gaming
-
 printf 'Dry-building local-LLM profile...\n'
 ./scripts/check-profile.sh local-llm

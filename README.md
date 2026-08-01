@@ -4,10 +4,10 @@ This repository is the canonical configuration for Helix, a NixOS 25.11 Plasma 6
 workstation with an NVIDIA RTX 5080. It uses traditional NixOS modules and the
 root Nix channel: no flakes, Home Manager, overlays, or host framework.
 
-The design keeps universal packages small, separates normal workstation tools
-from development tools, and leaves gaming and local inference explicitly
-opt-in. `hardware-configuration.nix` is the real generated module for this
-machine and must not be edited or reformatted.
+The design keeps universal packages small and separates normal workstation
+tools from development tools. The conservative gaming profile is enabled;
+local inference remains opt-in. `hardware-configuration.nix` is the real
+generated module for this machine and must not be edited or reformatted.
 
 ## Layout
 
@@ -28,10 +28,11 @@ machine and must not be edited or reformatted.
 
 ## Active configuration
 
-`configuration.nix` enables the base packages plus the workstation and
-development profiles. Gaming and local LLM profiles are present but commented
-out. See [docs/profiles.md](docs/profiles.md) for their boundaries and validation
-commands.
+`configuration.nix` enables the base packages plus the workstation,
+development, and gaming profiles. The initial gaming layer contains Steam,
+GameMode, MangoHud, 32-bit graphics, and 32-bit audio support. Local LLM remains
+disabled. See [docs/profiles.md](docs/profiles.md) for profile boundaries and
+validation commands.
 
 ## Canonical source and routine operation
 
@@ -71,9 +72,9 @@ sudo nixos-rebuild dry-build \
 ```
 
 Run `./scripts/check.sh` before activation. It checks formatting, shell scripts,
-Git whitespace, the default system, and both dormant profiles. A build or dry
-build does not activate anything. `test` changes only the running system;
-`switch` also makes the result the default boot generation.
+Git whitespace, the default gaming-enabled system, and the dormant local-LLM
+profile. A build or dry build does not activate anything. `test` changes only
+the running system; `switch` also makes the result the default boot generation.
 
 ## Rollback
 
