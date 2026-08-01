@@ -88,6 +88,17 @@ polkit_agent=$(sed -n 's/^exec-once = \(.*polkit-kde-authentication-agent-1\)$/\
 [[ -x $polkit_agent ]]
 
 printf 'Checking generated display-manager sessions...\n'
+configured_display_manager=$(nix-instantiate --eval --raw -E '
+  let
+    system = import <nixpkgs/nixos> {
+      configuration = ./configuration.nix;
+    };
+  in
+  system.config.services.displayManager.execCmd
+')
+[[ -n $configured_display_manager ]]
+grep -qi 'sddm' <<<"$configured_display_manager"
+
 session_data=$(nix-build --no-out-link -E '
   let system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
   in system.config.services.displayManager.sessionData.desktops
