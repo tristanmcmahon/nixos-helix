@@ -38,6 +38,21 @@ commands.
 Edit this checkout under `~/Projects/nixos-helix`. `/etc/nixos` is only the
 installer-created fallback; it is not a second maintained copy.
 
+## One-command installation
+
+From the repository root, run:
+
+```bash
+./scripts/install-helix.sh
+```
+
+It requires a clean checkout, fast-forwards `main` from `origin`, and runs the
+complete validation suite before it can activate anything. It asks separately
+before persistent activation and before rebooting.
+
+The manual rebuild workflow below remains useful for debugging and incremental
+configuration changes.
+
 The helper resolves this repository from its own path, so it works from any
 directory:
 
