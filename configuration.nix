@@ -35,5 +35,5 @@
   # channel. Keep the value from the original NixOS installation forever.
   # 26.05 is correct only for a machine first installed with NixOS 26.05.
   # PLACEHOLDER: replace it if Helix was installed with another release.
-  system.stateVersion = "26.05";
+  system.stateVersion = "25.11";
 }

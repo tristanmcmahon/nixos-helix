@@ -20,7 +20,6 @@
     # Follow Nixpkgs' highest stable driver rather than pinning a version. That
     # keeps the kernel module matched to the selected NixOS kernel and avoids a
     # stale manual checksum/version pair.
-    branch = "stable";
 
     # Preserve video memory across suspend. On current stable drivers NixOS
     # uses NVIDIA's kernel suspend notifier when available, otherwise it
