@@ -21,6 +21,7 @@
     ./desktop/fonts.nix
     ./desktop/ghostty.nix
     ./desktop/onepassword.nix
+    ./desktop/theme.nix
 
     ./shell/modern-bash.nix
 

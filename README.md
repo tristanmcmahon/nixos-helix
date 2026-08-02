@@ -136,6 +136,8 @@ rollback is intentionally limited to the two retained alternatives.
 - [Media applications](docs/media.md)
 - [1Password integration](docs/onepassword.md)
 - [Alpha 3 release notes](docs/alpha-3.md)
+- [Helix Abyss appearance](docs/theme.md)
+- [Alpha 4 release notes](docs/alpha-4.md)
 
 Hardware evaluation is not proof that devices work. Complete the hardware
 checklist after `test` and before making a new generation permanent.

@@ -7,10 +7,11 @@ let
 
     $mainMod = SUPER
     $terminal = ghostty
-    $menu = fuzzel
+    $menu = fuzzel --config /etc/helix/theme/fuzzel.ini
 
-    exec-once = waybar
-    exec-once = mako
+    exec-once = ${pkgs.swaybg}/bin/swaybg --image /etc/helix/theme/wallpaper.svg --mode fill
+    exec-once = waybar --style /etc/helix/theme/waybar.css
+    exec-once = mako --config /etc/helix/theme/mako.conf
     exec-once = nm-applet --indicator
     exec-once = ${pkgs.kdePackages.polkit-kde-agent-1}/libexec/polkit-kde-authentication-agent-1
 
@@ -57,6 +58,8 @@ let
       gaps_in = 4
       gaps_out = 8
       border_size = 2
+      col.active_border = rgb(7396F5)
+      col.inactive_border = rgb(252C37)
     }
 
     decoration {
@@ -75,7 +78,8 @@ let
       pkgs.hyprland
     ];
     text = ''
-      answer=$(printf 'Cancel\nLog out\n' | fuzzel --dmenu --prompt='Hyprland: ')
+      answer=$(printf 'Cancel\nLog out\n' |
+        fuzzel --config /etc/helix/theme/fuzzel.ini --dmenu --prompt='Hyprland: ')
       if [[ $answer == 'Log out' ]]; then
         hyprctl dispatch exit
       fi
@@ -101,6 +105,7 @@ in
     waybar
     fuzzel
     mako
+    swaybg
     networkmanagerapplet
     exitPrompt
   ];

@@ -29,6 +29,9 @@ shellcheck scripts/*.sh
 printf 'Checking Git whitespace...\n'
 git diff --check
 
+printf 'Validating Helix Abyss assets and merge fixtures...\n'
+python3 scripts/test-theme-settings.py
+
 printf 'Testing generation-cleanup planning...\n'
 cleanup_program=$(nix-build --no-out-link -E '
   let
@@ -41,7 +44,7 @@ cleanup_program=$(nix-build --no-out-link -E '
 ')
 ./scripts/test-cleanup-plan.sh "$cleanup_program/bin/helix-nix-cleanup"
 
-printf 'Evaluating editor, desktop, gaming, media, 1Password, and Corsair invariants...\n'
+printf 'Evaluating editor, desktop, theme, gaming, media, 1Password, and Corsair invariants...\n'
 nix-instantiate --eval --strict -E '
   let
     system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
@@ -62,10 +65,22 @@ nix-instantiate --eval --strict -E '
   assert config.programs._1password-gui.enable;
   assert config.programs._1password-gui.polkitPolicyOwners == [ "tristan" ];
   assert config.programs.chromium.enable;
-  assert config.programs.chromium.extensions == [ "aeblfdkhhhdcdjpifhhbdiojplfjncoa" ];
+  assert config.programs.chromium.extensions == [
+    "aeblfdkhhhdcdjpifhhbdiojplfjncoa"
+    "eimadpbcbfnmbkopoojfekhnkhdbieeh"
+  ];
+  assert config.programs.chromium.extraOpts.BrowserThemeColor == "#080A0D";
   assert !config.programs.chromium.extraOpts.PasswordManagerEnabled;
   assert config.programs.firefox.enable;
   assert !config.programs.firefox.policies.OfferToSaveLogins;
+  assert builtins.hasAttr "addon@darkreader.org" config.programs.firefox.policies.ExtensionSettings;
+  assert config.programs.firefox.preferences."ui.systemUsesDarkTheme" == 1;
+  assert config.services.displayManager.sddm.theme == "helix-abyss";
+  assert config.programs.dconf.enable;
+  assert config.systemd.user.services.helix-abyss-theme.unitConfig.ConditionUser == "tristan";
+  assert !(builtins.hasAttr "GTK_THEME" config.environment.variables);
+  assert !(builtins.hasAttr "QT_STYLE_OVERRIDE" config.environment.variables);
+  assert !(builtins.hasAttr "QT_QPA_PLATFORMTHEME" config.environment.variables);
   assert builtins.all
     (name: builtins.elem name packageNames)
     [ "spotify" "vlc" "haruna" "strawberry" "plex-desktop" "gridplayer" ];
@@ -120,6 +135,41 @@ find "$session_data/share" -type f -name '*.desktop' -print
 grep -Rqs '^Name=Plasma' "$session_data/share/wayland-sessions"
 grep -Rqs '^Name=Hyprland' "$session_data/share/wayland-sessions"
 
+printf 'Checking Helix Abyss in the built default system...\n'
+[[ -r $system_closure/sw/share/color-schemes/HelixAbyss.colors ]]
+QT_QPA_PLATFORM=offscreen XDG_DATA_DIRS="$system_closure/sw/share" \
+  "$system_closure/sw/bin/plasma-apply-colorscheme" --list-schemes |
+  grep -qF 'HelixAbyss'
+[[ -r $system_closure/sw/share/wallpapers/HelixAbyss/contents/images/wallpaper.svg ]]
+[[ -r $system_closure/sw/share/sddm/themes/helix-abyss/theme.conf ]]
+grep -qF 'HelixAbyss/contents/images/wallpaper.svg' \
+  "$system_closure/sw/share/sddm/themes/helix-abyss/theme.conf"
+for theme_command in plasma-apply-colorscheme plasma-apply-desktoptheme \
+  plasma-apply-cursortheme plasma-apply-wallpaperimage kwriteconfig6 helix-apply-theme; do
+  [[ -x $system_closure/sw/bin/$theme_command ]]
+done
+theme_unit=$system_closure/etc/systemd/user/helix-abyss-theme.service
+[[ -r $theme_unit ]]
+grep -qF 'ConditionUser=tristan' "$theme_unit"
+grep -qF 'HOME=/home/tristan' "$theme_unit"
+grep -qF 'XDG_CONFIG_HOME=/home/tristan/.config' "$theme_unit"
+for theme_asset in gtk-3.0-settings.ini gtk-4.0-settings.ini waybar.css mako.conf \
+  fuzzel.ini wallpaper.svg apply-theme-settings.py; do
+  [[ -r $system_closure/etc/helix/theme/$theme_asset ]]
+done
+[[ -r $system_closure/sw/share/themes/Breeze-Dark/settings.ini ]]
+[[ -r $system_closure/sw/share/icons/breeze-dark/index.theme ]]
+grep -qF 'swaybg --image /etc/helix/theme/wallpaper.svg' "$hyprland_config"
+grep -qF 'waybar --style /etc/helix/theme/waybar.css' "$hyprland_config"
+grep -qF 'mako --config /etc/helix/theme/mako.conf' "$hyprland_config"
+grep -qF 'fuzzel --config /etc/helix/theme/fuzzel.ini' "$hyprland_config"
+"$system_closure/sw/bin/ghostty" +validate-config \
+  --config-file=config/ghostty/config.ghostty
+grep -qF 'theme = Catppuccin Mocha' config/ghostty/config.ghostty
+vscode_executable=$(readlink -f "$system_closure/sw/bin/code")
+vscode_package=${vscode_executable%%/bin/*}
+find "$vscode_package" -path '*/theme-abyss/package.json' -print -quit | grep -q .
+
 printf 'Checking ckb-next in the built default system...\n'
 [[ -x $system_closure/sw/bin/ckb-next ]]
 [[ -x $system_closure/sw/bin/ckb-next-daemon ]]
@@ -164,9 +214,12 @@ find "$onepassword_gui/share/applications" -type f -name '*.desktop' | grep -q .
 [[ -r $system_closure/etc/opt/chrome/policies/managed/default.json ]]
 grep -qF 'aeblfdkhhhdcdjpifhhbdiojplfjncoa' "$system_closure/etc/chromium/policies/managed/default.json"
 grep -qF 'aeblfdkhhhdcdjpifhhbdiojplfjncoa' "$system_closure/etc/opt/chrome/policies/managed/default.json"
+grep -qF 'eimadpbcbfnmbkopoojfekhnkhdbieeh' "$system_closure/etc/chromium/policies/managed/default.json"
+grep -qF 'eimadpbcbfnmbkopoojfekhnkhdbieeh' "$system_closure/etc/opt/chrome/policies/managed/default.json"
 firefox_policy=$system_closure/etc/firefox/policies/policies.json
 [[ -r $firefox_policy ]]
 grep -qF '{d634138d-c276-4fc8-924b-40a0ea21d284}' "$firefox_policy"
+grep -qF 'addon@darkreader.org' "$firefox_policy"
 grep -qxF 'zen-bin' "$system_closure/etc/1password/custom_allowed_browsers"
 if git diff -- . ':(exclude)scripts/check.sh' |
   grep -Eq 'OP_SERVICE_ACCOUNT_TOKEN[[:space:]]*=|OP_SESSION_[A-Za-z0-9_]*[[:space:]]='; then

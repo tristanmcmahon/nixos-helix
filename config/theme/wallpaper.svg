@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3840" height="2160" viewBox="0 0 3840 2160">
+  <defs>
+    <radialGradient id="abyss" cx="50%" cy="42%" r="78%">
+      <stop offset="0" stop-color="#151A22"/>
+      <stop offset="0.48" stop-color="#0B0E12"/>
+      <stop offset="1" stop-color="#080A0D"/>
+    </radialGradient>
+  </defs>
+  <rect width="3840" height="2160" fill="url(#abyss)"/>
+</svg>

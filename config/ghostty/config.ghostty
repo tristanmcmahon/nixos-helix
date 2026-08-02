@@ -3,7 +3,7 @@
 # Clean, restrained terminal configuration for the Helix workstation
 # ============================================================================
 
-theme = Catppuccin Frappe
+theme = Catppuccin Mocha
 
 # Default workstation terminal font.
 font-family = JetBrainsMono Nerd Font Mono

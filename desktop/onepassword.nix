@@ -2,7 +2,9 @@
 
 let
   chromeExtensionId = "aeblfdkhhhdcdjpifhhbdiojplfjncoa";
+  chromeDarkReaderId = "eimadpbcbfnmbkopoojfekhnkhdbieeh";
   firefoxExtensionId = "{d634138d-c276-4fc8-924b-40a0ea21d284}";
+  firefoxDarkReaderId = "addon@darkreader.org";
 in
 {
   programs._1password.enable = true;
@@ -16,19 +18,37 @@ in
   # respective policy directories without touching either user profile.
   programs.chromium = {
     enable = true;
-    extensions = [ chromeExtensionId ];
-    extraOpts.PasswordManagerEnabled = false;
+    extensions = [
+      chromeExtensionId
+      chromeDarkReaderId
+    ];
+    extraOpts = {
+      BrowserThemeColor = "#080A0D";
+      PasswordManagerEnabled = false;
+    };
   };
 
   # Enabling this module owns the already-selected nixpkgs Firefox package and
   # its enterprise policy, avoiding a second Firefox installation.
   programs.firefox = {
     enable = true;
+    preferences = {
+      "browser.theme.content-theme" = 0;
+      "browser.theme.toolbar-theme" = 0;
+      "layout.css.prefers-color-scheme.content-override" = 0;
+      "ui.systemUsesDarkTheme" = 1;
+    };
     policies = {
       OfferToSaveLogins = false;
-      ExtensionSettings.${firefoxExtensionId} = {
-        installation_mode = "force_installed";
-        install_url = "https://addons.mozilla.org/firefox/downloads/latest/1password-x-password-manager/latest.xpi";
+      ExtensionSettings = {
+        ${firefoxExtensionId} = {
+          installation_mode = "force_installed";
+          install_url = "https://addons.mozilla.org/firefox/downloads/latest/1password-x-password-manager/latest.xpi";
+        };
+        ${firefoxDarkReaderId} = {
+          installation_mode = "force_installed";
+          install_url = "https://addons.mozilla.org/firefox/downloads/latest/darkreader/latest.xpi";
+        };
       };
     };
   };

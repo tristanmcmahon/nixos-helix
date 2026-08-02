@@ -91,6 +91,27 @@ These are physical tests; a successful build does not prove they pass.
 - [ ] PipeWire audio works in every relevant player.
 - [ ] NVIDIA hardware decoding is inspected separately rather than assumed.
 
+## Helix Abyss appearance
+
+- [ ] SDDM is dark with readable login fields and clear password focus.
+- [ ] Plasma is dark immediately after login on every monitor.
+- [ ] The panel, tray, menus, notifications, task switcher, lock screen, and
+      logout/shutdown screen are dark.
+- [ ] The Helix Abyss wallpaper appears on every monitor.
+- [ ] Active and inactive windows, selected text, and disabled controls remain readable.
+- [ ] Dolphin, System Settings, Ark, Haruna, Strawberry, VLC, and ckb-next are dark.
+- [ ] At least one GTK 3 and one GTK 4 application, their file pickers, and portals are dark.
+- [ ] Ghostty uses Catppuccin Mocha and VS Code uses Abyss.
+- [ ] Obsidian follows dark mode or its documented per-vault setting works.
+- [ ] 1Password is dark; Spotify and Plex remain dark.
+- [ ] Firefox, Chrome, Chromium, and Zen browser chrome are dark and websites
+      report a dark preference.
+- [ ] Dark Reader appears in managed browsers, can be disabled per site, and
+      does not blindly invert photographs, video, or PDFs.
+- [ ] Existing 1Password extensions remain installed and connected.
+- [ ] In Hyprland, the wallpaper, borders, Waybar, Mako, Fuzzel, Qt, and GTK
+      applications are dark and logout still works.
+
 ## 1Password
 
 - [ ] The desktop app launches, its tray integration appears, and Quick Access works.

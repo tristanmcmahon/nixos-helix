@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+
+import configparser
+import importlib.util
+import json
+import pathlib
+import sys
+import tempfile
+import xml.etree.ElementTree as element_tree
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.dont_write_bytecode = True
+SPEC = importlib.util.spec_from_file_location("theme_settings", ROOT / "scripts/apply-theme-settings.py")
+MODULE = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(MODULE)
+
+colors_path = ROOT / "config/theme/HelixAbyss.colors"
+colors = configparser.ConfigParser()
+colors.optionxform = str
+colors.read(colors_path)
+required_groups = {
+    "ColorEffects:Disabled",
+    "ColorEffects:Inactive",
+    "Colors:Button",
+    "Colors:Complementary",
+    "Colors:Header",
+    "Colors:Selection",
+    "Colors:Tooltip",
+    "Colors:View",
+    "Colors:Window",
+    "General",
+    "WM",
+}
+assert required_groups.issubset(colors.sections())
+for section in colors.sections():
+    for key, value in colors[section].items():
+        if key.startswith(("Background", "Decoration", "Foreground")) or key.endswith(
+            ("Background", "Blend", "Foreground")
+        ):
+            channels = value.split(",")
+            assert len(channels) == 3 and all(0 <= int(channel) <= 255 for channel in channels)
+assert colors["Colors:Window"]["BackgroundNormal"] == "11,14,18"
+assert colors["Colors:Selection"]["BackgroundNormal"] == "49,78,138"
+
+wallpaper = ROOT / "config/theme/wallpaper.svg"
+element_tree.parse(wallpaper)
+wallpaper_text = wallpaper.read_text(encoding="utf-8")
+assert "http://www.w3.org/2000/svg" in wallpaper_text
+assert "href=" not in wallpaper_text and "url(http" not in wallpaper_text
+
+for gtk_version in ("3.0", "4.0"):
+    gtk_settings = configparser.ConfigParser()
+    gtk_settings.read(ROOT / f"config/theme/gtk-{gtk_version}-settings.ini")
+    assert gtk_settings["Settings"]["gtk-theme-name"] == "Breeze-Dark"
+    assert gtk_settings["Settings"]["gtk-application-prefer-dark-theme"] == "true"
+
+waybar = (ROOT / "config/theme/waybar.css").read_text(encoding="utf-8")
+assert waybar.count("{") == waybar.count("}") and "#080a0d" in waybar
+
+mako = (ROOT / "config/theme/mako.conf").read_text(encoding="utf-8")
+for key in ("background-color", "text-color", "border-color", "default-timeout"):
+    assert f"{key}=" in mako
+
+fuzzel = configparser.ConfigParser()
+fuzzel.read(ROOT / "config/theme/fuzzel.ini")
+assert {"main", "colors", "border"}.issubset(fuzzel.sections())
+for key in ("background", "text", "input", "selection", "border"):
+    assert len(fuzzel["colors"][key]) == 8
+
+
+with tempfile.TemporaryDirectory() as temporary_directory:
+    temporary = pathlib.Path(temporary_directory)
+    gtk = temporary / "settings.ini"
+    gtk.write_text("[Settings]\nunrelated-key=preserved\ngtk-theme-name=Old\n", encoding="utf-8")
+    MODULE.merge_ini(ROOT / "config/theme/gtk-3.0-settings.ini", gtk)
+    parsed = configparser.ConfigParser()
+    parsed.read(gtk)
+    assert parsed["Settings"]["unrelated-key"] == "preserved"
+    assert parsed["Settings"]["gtk-theme-name"] == "Breeze-Dark"
+
+    vscode = temporary / "settings.json"
+    vscode.write_text('{\n  // retain the setting value\n  "editor.fontSize": 17,\n}\n', encoding="utf-8")
+    MODULE.merge_vscode(vscode)
+    settings = json.loads(vscode.read_text(encoding="utf-8"))
+    assert settings["editor.fontSize"] == 17
+    assert settings["workbench.colorTheme"] == "Abyss"
+    assert settings["workbench.colorCustomizations"]["sideBar.background"] == "#080A0D"
+
+print("Theme settings merge fixtures passed.")
