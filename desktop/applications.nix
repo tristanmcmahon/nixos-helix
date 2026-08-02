@@ -12,7 +12,6 @@ in
     pkgs.google-chrome
     pkgs.chromium
     zen-browser
-    pkgs.firefox
     pkgs.obsidian
   ];
 }

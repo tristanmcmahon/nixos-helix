@@ -41,7 +41,7 @@ cleanup_program=$(nix-build --no-out-link -E '
 ')
 ./scripts/test-cleanup-plan.sh "$cleanup_program/bin/helix-nix-cleanup"
 
-printf 'Evaluating editor, desktop, gaming, and Corsair invariants...\n'
+printf 'Evaluating editor, desktop, gaming, media, 1Password, and Corsair invariants...\n'
 nix-instantiate --eval --strict -E '
   let
     system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
@@ -58,6 +58,19 @@ nix-instantiate --eval --strict -E '
   assert config.programs.gamemode.enable;
   assert !config.services.ollama.enable;
   assert config.hardware.ckb-next.enable;
+  assert config.programs._1password.enable;
+  assert config.programs._1password-gui.enable;
+  assert config.programs._1password-gui.polkitPolicyOwners == [ "tristan" ];
+  assert config.programs.chromium.enable;
+  assert config.programs.chromium.extensions == [ "aeblfdkhhhdcdjpifhhbdiojplfjncoa" ];
+  assert !config.programs.chromium.extraOpts.PasswordManagerEnabled;
+  assert config.programs.firefox.enable;
+  assert !config.programs.firefox.policies.OfferToSaveLogins;
+  assert builtins.all
+    (name: builtins.elem name packageNames)
+    [ "spotify" "vlc" "haruna" "strawberry" "plex-desktop" "gridplayer" ];
+  assert builtins.any (name: builtins.match "mpv.*" name != null) packageNames;
+  assert !(builtins.elem "plexmediaserver" packageNames);
   assert builtins.hasAttr "ckb-next" config.systemd.services;
   assert config.environment.variables.EDITOR == "vim";
   assert config.environment.variables.VISUAL == "vim";
@@ -114,6 +127,52 @@ printf 'Checking ckb-next in the built default system...\n'
 ckb_daemon=$(readlink -f "$system_closure/sw/bin/ckb-next-daemon")
 ckb_package=${ckb_daemon%/bin/ckb-next-daemon}
 [[ -r $ckb_package/lib/udev/rules.d/99-ckb-next-daemon.rules ]]
+
+printf 'Checking media applications in the built default system...\n'
+for media_executable in spotify vlc mpv haruna strawberry plex-desktop gridplayer; do
+  [[ -x $system_closure/sw/bin/$media_executable ]]
+done
+for desktop_pattern in 'Spotify' 'VLC media player' 'Haruna' 'Strawberry' 'Plex' 'GridPlayer'; do
+  grep -Rqs "^Name=.*$desktop_pattern" "$system_closure/sw/share/applications"
+done
+[[ -r $system_closure/sw/share/icons/hicolor/scalable/apps/gridplayer.svg ]]
+gridplayer_wrapper=$(readlink -f "$system_closure/sw/bin/gridplayer")
+grep -Eq '/nix/store/[^/]+-vlc-[^/]+/lib' "$gridplayer_wrapper"
+
+printf 'Checking 1Password modules, wrappers, and browser policies...\n'
+onepassword_gui=$(nix-build --no-out-link -E '
+  let system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
+  in system.config.programs._1password-gui.package
+')
+onepassword_cli=$(nix-build --no-out-link -E '
+  let system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
+  in system.config.programs._1password.package
+')
+[[ -x $onepassword_cli/bin/op ]]
+[[ -x $onepassword_gui/bin/1password ]]
+[[ -x $onepassword_gui/share/1password/1Password-BrowserSupport ]]
+find "$onepassword_gui/share/applications" -type f -name '*.desktop' | grep -q .
+[[ -n $(nix-instantiate --eval --raw -E '
+  let system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
+  in system.config.security.wrappers.op.source
+') ]]
+[[ -n $(nix-instantiate --eval --raw -E '
+  let system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
+  in system.config.security.wrappers."1Password-BrowserSupport".source
+') ]]
+[[ -r $system_closure/etc/chromium/policies/managed/default.json ]]
+[[ -r $system_closure/etc/opt/chrome/policies/managed/default.json ]]
+grep -qF 'aeblfdkhhhdcdjpifhhbdiojplfjncoa' "$system_closure/etc/chromium/policies/managed/default.json"
+grep -qF 'aeblfdkhhhdcdjpifhhbdiojplfjncoa' "$system_closure/etc/opt/chrome/policies/managed/default.json"
+firefox_policy=$system_closure/etc/firefox/policies/policies.json
+[[ -r $firefox_policy ]]
+grep -qF '{d634138d-c276-4fc8-924b-40a0ea21d284}' "$firefox_policy"
+grep -qxF 'zen-bin' "$system_closure/etc/1password/custom_allowed_browsers"
+if git diff -- . ':(exclude)scripts/check.sh' |
+  grep -Eq 'OP_SERVICE_ACCOUNT_TOKEN[[:space:]]*=|OP_SESSION_[A-Za-z0-9_]*[[:space:]]='; then
+  printf 'A forbidden 1Password secret or sign-in pattern entered the diff.\n' >&2
+  exit 1
+fi
 
 printf 'Dry-building local-LLM profile...\n'
 ./scripts/check-profile.sh local-llm

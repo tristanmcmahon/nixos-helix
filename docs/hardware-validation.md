@@ -79,6 +79,31 @@ libinput list-devices
 
 These are physical tests; a successful build does not prove they pass.
 
+## Media applications
+
+- [ ] Spotify launches and plays audio.
+- [ ] VLC and mpv play the same representative local video.
+- [ ] Haruna plays the same video through its graphical interface.
+- [ ] Strawberry can browse and play a local album.
+- [ ] Plex Desktop reaches the existing Plex server after sign-in.
+- [ ] GridPlayer displays multiple local videos simultaneously.
+- [ ] Files beneath `/mnt/infernalnexus/nas1` open successfully.
+- [ ] PipeWire audio works in every relevant player.
+- [ ] NVIDIA hardware decoding is inspected separately rather than assumed.
+
+## 1Password
+
+- [ ] The desktop app launches, its tray integration appears, and Quick Access works.
+- [ ] System authentication can be enabled.
+- [ ] `op --version` works and CLI integration authenticates through the unlocked app.
+- [ ] Chrome, Chromium, and Firefox extensions appear and connect.
+- [ ] Zen's manually installed official extension connects.
+- [ ] Locking and unlocking is shared where supported.
+- [ ] Managed built-in password prompts no longer compete with 1Password.
+- [ ] Existing browser passwords remain intact.
+- [ ] The SSH agent works after it is enabled in the app.
+- [ ] Ordinary SSH still works while 1Password is locked or closed.
+
 ## Network, USB, and storage
 
 - Check Ethernet using `nmcli device status`, `ip -brief address`, and

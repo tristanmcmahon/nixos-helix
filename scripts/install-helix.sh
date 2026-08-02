@@ -100,6 +100,9 @@ printf '%s\n' \
   '  - enable the declarative modern-bash shell environment' \
   '  - enable ckb-next support for the Corsair K70 RGB' \
   '  - install workstation tools' \
+  '  - install media applications, Plex Desktop, and GridPlayer' \
+  '  - install the 1Password desktop application and CLI' \
+  '  - deploy browser extension policies and prepare optional SSH-agent use' \
   '  - install development tools' \
   '  - install VS Code' \
   '  - install the OpenAI Codex CLI' \

@@ -20,6 +20,7 @@
     ./desktop/applications.nix
     ./desktop/fonts.nix
     ./desktop/ghostty.nix
+    ./desktop/onepassword.nix
 
     ./shell/modern-bash.nix
 
