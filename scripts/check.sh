@@ -44,7 +44,7 @@ cleanup_program=$(nix-build --no-out-link -E '
 ')
 ./scripts/test-cleanup-plan.sh "$cleanup_program/bin/helix-nix-cleanup"
 
-printf 'Evaluating editor, desktop, theme, gaming, media, 1Password, and Corsair invariants...\n'
+printf 'Evaluating editor, desktop, theme, gaming, media, 1Password, Corsair, and SSH invariants...\n'
 nix-instantiate --eval --strict -E '
   let
     system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
@@ -61,6 +61,15 @@ nix-instantiate --eval --strict -E '
   assert config.programs.gamemode.enable;
   assert !config.services.ollama.enable;
   assert config.hardware.ckb-next.enable;
+  assert config.services.openssh.enable;
+  assert config.services.openssh.openFirewall;
+  assert config.services.openssh.ports == [ 22 ];
+  assert config.services.openssh.settings.PermitRootLogin == "no";
+  assert config.services.openssh.settings.PubkeyAuthentication;
+  assert !config.services.openssh.settings.PasswordAuthentication;
+  assert !config.services.openssh.settings.KbdInteractiveAuthentication;
+  assert builtins.elem 22 config.networking.firewall.allowedTCPPorts;
+  assert builtins.hasAttr "sshd" config.systemd.services;
   assert config.programs._1password.enable;
   assert config.programs._1password-gui.enable;
   assert config.programs._1password-gui.polkitPolicyOwners == [ "tristan" ];
@@ -177,6 +186,9 @@ printf 'Checking ckb-next in the built default system...\n'
 ckb_daemon=$(readlink -f "$system_closure/sw/bin/ckb-next-daemon")
 ckb_package=${ckb_daemon%/bin/ckb-next-daemon}
 [[ -r $ckb_package/lib/udev/rules.d/99-ckb-next-daemon.rules ]]
+
+printf 'Checking OpenSSH in the built default system...\n'
+[[ -r $system_closure/etc/systemd/system/sshd.service ]]
 
 printf 'Checking media applications in the built default system...\n'
 for media_executable in spotify vlc mpv haruna strawberry plex-desktop gridplayer; do

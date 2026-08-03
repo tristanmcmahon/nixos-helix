@@ -127,6 +127,15 @@ These are physical tests; a successful build does not prove they pass.
 
 ## Network, USB, and storage
 
+After activation, verify the SSH daemon and listener locally, then connect from
+a machine whose public key has already been authorized for `tristan`:
+
+```bash
+systemctl status sshd
+ss -ltn | grep ':22'
+ssh tristan@helix
+```
+
 - Check Ethernet using `nmcli device status`, `ip -brief address`, and
   `sudo ethtool INTERFACE` with the real interface reported by NetworkManager.
 - Compare `lsusb -t` before and after testing every external USB port. Check
@@ -145,8 +154,8 @@ These are physical tests; a successful build does not prove they pass.
 - Test a clean reboot and poweroff. On the next boot, inspect
   `journalctl -b -1 -p warning..alert` for hangs or device errors.
 - Run `sudo ss -lntup` and investigate wildcard listeners. The default
-  configuration intentionally enables no remote shell, discovery, sharing,
-  container, or local-inference listener.
+  configuration intentionally exposes SSH on TCP port 22, but enables no
+  discovery, sharing, container, or local-inference listener.
 
 Record observed failures before adding hardware-specific workarounds. Settings
 copied from another machine are not evidence about Helix.

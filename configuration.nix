@@ -31,6 +31,7 @@
     ./system/users.nix
     ./system/locale.nix
     ./services/maintenance.nix
+    ./services/openssh.nix
 
     # These profiles form the normal Plasma workstation. Gaming is active;
     # local inference remains opt-in because it adds substantial software and policy.

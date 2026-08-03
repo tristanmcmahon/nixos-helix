@@ -55,6 +55,10 @@ The attached Corsair K70 RGB (`1b1c:1b13`) is supported through the NixOS
 `hardware.ckb-next` module. The build verifies its package, daemon, udev rules,
 and `ckb-next.service`; physical behavior must still be tested after activation.
 
+Helix accepts SSH connections on TCP port 22 as `tristan` using public-key
+authentication. Root, password, and keyboard-interactive SSH logins are
+disabled; user keys remain unmanaged runtime state and are not stored here.
+
 ## Ghostty and workstation fonts
 
 Ghostty's canonical configuration is

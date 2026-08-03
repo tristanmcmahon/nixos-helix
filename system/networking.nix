@@ -9,8 +9,8 @@
     # state, so neither is guessed or committed here.
     networkmanager.enable = true;
 
-    # Keep NixOS' stateful firewall even though no server service is enabled.
-    # Desktop clients generally need no inbound port exceptions.
+    # Keep NixOS' stateful firewall. The OpenSSH module owns the sole inbound
+    # exception for TCP port 22; desktop clients need no additional exceptions.
     firewall.enable = true;
   };
 
