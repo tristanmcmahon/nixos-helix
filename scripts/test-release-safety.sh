@@ -22,6 +22,10 @@ script_plan=$("$repo_root/scripts/prepare-release-boot.sh" --plan)
 grep -qxF 'activation=boot' <<<"$plan"
 if grep -Eq 'activation=(test|switch)' <<<"$plan"; then exit 1; fi
 if grep -Eq 'rebuild\.sh (test|switch)' "$repo_root/scripts/prepare-release-boot.sh"; then exit 1; fi
+grep -qF "sudo test -r \"/boot/loader/entries/nixos-generation-\$source_generation.conf\"" \
+  "$repo_root/scripts/prepare-release-boot.sh"
+grep -qF '(root access required to inspect /boot/loader/entries)' \
+  "$repo_root/scripts/qualification-status.sh"
 
 grep -qF './scripts/rebuild.sh test' "$repo_root/scripts/install-helix.sh"
 grep -qF './scripts/rebuild.sh switch' "$repo_root/scripts/install-helix.sh"

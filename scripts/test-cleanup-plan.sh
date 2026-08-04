@@ -30,7 +30,8 @@ assert_plan() {
   local listing=$5
   local output
 
-  output=$("$cleanup" --plan "$listing" "$active")
+  output=$(HELIX_QUALIFICATION_DIR="$temporary_directory/no-qualification-hold" \
+    "$cleanup" --plan "$listing" "$active")
   grep -Fx "Active generation: $active" <<<"$output" >/dev/null
   grep -Fx "Retained generations: $retained" <<<"$output" >/dev/null
   grep -Fx "Deleted generations: $deleted" <<<"$output" >/dev/null
@@ -82,7 +83,8 @@ missing_active="$temporary_directory/missing-active"
 write_listing "$missing_active" \
   '  1 2026-07-30 10:00:00' \
   '  2 2026-08-01 10:00:00'
-if "$cleanup" --plan "$missing_active" 9 >/dev/null 2>&1; then
+if HELIX_QUALIFICATION_DIR="$temporary_directory/no-qualification-hold" \
+  "$cleanup" --plan "$missing_active" 9 >/dev/null 2>&1; then
   printf 'FAIL: missing active generation was accepted\n' >&2
   exit 1
 fi

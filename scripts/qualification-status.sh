@@ -45,6 +45,13 @@ for generation_link in "${generation_links[@]}"; do
 done
 
 printf '\nSystemd-boot entries\n'
-boot_entries=(/boot/loader/entries/*.conf)
-if ((${#boot_entries[@]} == 0)); then printf '(none visible)\n'; fi
-for boot_entry in "${boot_entries[@]}"; do printf '%s\n' "$boot_entry"; done
+if boot_entries=$(sudo -n find /boot/loader/entries -maxdepth 1 -type f \
+  -name '*.conf' -print 2>/dev/null); then
+  if [[ -n $boot_entries ]]; then
+    sort <<<"$boot_entries"
+  else
+    printf '(none present)\n'
+  fi
+else
+  printf '(root access required to inspect /boot/loader/entries)\n'
+fi

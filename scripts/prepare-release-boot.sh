@@ -72,7 +72,7 @@ if [[ $gcroot_plan == create ]]; then
 fi
 [[ $(readlink -f "$qualification_gcroot") == "$running_system" ]] || die 'Rollback GC root verification failed.'
 [[ -e /nix/var/nix/profiles/system-$source_generation-link ]] || die 'Rollback generation disappeared.'
-[[ -r /boot/loader/entries/nixos-generation-$source_generation.conf ]] ||
+sudo test -r "/boot/loader/entries/nixos-generation-$source_generation.conf" ||
   die 'The running rollback generation has no visible systemd-boot entry.'
 
 ./scripts/reinstall-preflight.sh
@@ -99,7 +99,7 @@ for link in /nix/var/nix/profiles/system-*-link; do
   fi
 done
 [[ -n $candidate_generation ]]
-[[ -r /boot/loader/entries/nixos-generation-$candidate_generation.conf ]] ||
+sudo test -r "/boot/loader/entries/nixos-generation-$candidate_generation.conf" ||
   die 'The candidate generation has no visible systemd-boot entry.'
 
 printf '%s\n' \
