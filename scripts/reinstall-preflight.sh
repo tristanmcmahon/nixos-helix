@@ -73,7 +73,9 @@ if [[ -d /sys/firmware/efi ]]; then
 else
   printf 'UEFI runtime: NOT PRESENT\n' >&2
 fi
-bootctl status || true
+if ! sudo -n bootctl status 2>/dev/null; then
+  printf 'systemd-boot status: root access required to inspect the protected ESP\n'
+fi
 printf 'Tracked hardware configuration checksum\n'
 sha256sum "$repo_root/hardware-configuration.nix"
 
