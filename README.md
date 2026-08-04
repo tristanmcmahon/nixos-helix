@@ -103,10 +103,16 @@ A major NixOS release migration is separate and must begin with an explicit
 warning and root-channel change. It can change the kernel, drivers, desktop,
 Nix, and the complete system closure; `system.stateVersion` remains `25.11`.
 Run `./scripts/migrate-release.sh` and see [installation.md](docs/installation.md).
+Major-release activation then uses `./scripts/prepare-release-boot.sh`, which
+protects the rollback closure and selects the candidate for the next boot
+without activating it. Ordinary same-release work continues to use the guided
+`test` and `switch` workflow.
 
 A fresh reinstall is destructive, may change filesystem UUIDs, and uses a newly
-generated hardware configuration in a temporary checkout. It is never performed
-by the normal installer; see [reinstall.md](docs/reinstall.md).
+generated hardware configuration in a temporary checkout. The existing
+in-place installation is release 26.05 with state version 25.11; a wiped fresh
+installation is release 26.05 with state version 26.05. Fresh installation is
+never performed by the normal installer; see [reinstall.md](docs/reinstall.md).
 
 ## Guided configuration installation
 

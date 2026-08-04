@@ -53,8 +53,9 @@ printf 'Expected NixOS release: %s\n' "$expected_release"
 printf 'Selected NixOS release: %s\n' "$selected_release"
 printf 'Persistent state version: %s\n' "$state_version"
 [[ $selected_release == "$expected_release" ]] ||
-  die "Select the nixos-26.05 channel before installation; found $selected_release."
-[[ $state_version == 25.11 ]] || die 'The persistent state version changed unexpectedly.'
+  die "Select the release contract's $expected_release source before installation; found $selected_release."
+expected_state_version=$(nix-instantiate --eval --raw -E '(import ./release.nix).stateVersion')
+[[ $state_version == "$expected_state_version" ]] || die 'The persistent state version changed unexpectedly.'
 
 phase 'Hardware and configuration preflight'
 [[ -s hardware-configuration.nix ]] || die 'hardware-configuration.nix is missing or empty.'
@@ -85,6 +86,7 @@ printf 'NAS protocol: SMB 2.0 with NTLMSSP\n'
 phase 'Complete non-activating validation'
 ./scripts/check.sh
 ./scripts/rebuild.sh dry-build
+./scripts/rebuild.sh dry-activate
 
 phase 'Temporary activation'
 if ! confirm 'Temporarily activate the validated configuration?'; then
@@ -94,6 +96,7 @@ fi
 ./scripts/rebuild.sh test
 
 phase 'Focused runtime verification'
+systemctl --failed
 systemctl is-enabled display-manager.service
 systemctl is-active display-manager.service
 systemctl is-active sshd.service
@@ -102,6 +105,7 @@ sshd -T | tr '[:upper:]' '[:lower:]' |
   grep -E '^(permitrootlogin no|pubkeyauthentication yes|passwordauthentication no|kbdinteractiveauthentication no)$'
 systemctl is-enabled mnt-infernalnexus-nas1.automount
 systemctl is-active mnt-infernalnexus-nas1.automount
+[[ $(systemctl show mnt-infernalnexus-nas1.automount -P SubState) == waiting ]]
 systemctl cat mnt-infernalnexus-nas1.automount
 systemctl cat mnt-infernalnexus-nas1.mount
 systemctl is-enabled helix-nix-cleanup.timer

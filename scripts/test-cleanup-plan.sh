@@ -10,6 +10,18 @@ cleanup=$1
 temporary_directory=$(mktemp -d)
 trap 'rm -rf -- "$temporary_directory"' EXIT
 
+qualification_hold=$temporary_directory/release-qualification
+mkdir "$qualification_hold"
+if HELIX_QUALIFICATION_DIR=$qualification_hold \
+  "$cleanup" --plan /dev/null 1 >"$temporary_directory/held-output" 2>&1; then
+  printf 'FAIL: cleanup planning proceeded during qualification\n' >&2
+  exit 1
+fi
+grep -qF 'Refusing cleanup: release qualification hold exists' \
+  "$temporary_directory/held-output"
+rmdir "$qualification_hold"
+printf 'PASS: qualification hold blocks cleanup planning and execution\n'
+
 assert_plan() {
   local name=$1
   local active=$2

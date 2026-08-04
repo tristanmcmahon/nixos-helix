@@ -18,13 +18,17 @@ The share uses native NixOS `systemd.mounts` and `systemd.automounts`, not an
 fstab-generated automount. Both unit files therefore exist statically in the
 system closure, while the CIFS mount itself remains strictly on demand. Before
 first access, `active (waiting)` is the correct automount state. The credentials
-file is optional for evaluation, building, and activation, but required for access.
+file is optional for evaluation, building, and activation, but required for
+access. Static configuration and dry activation validate unit construction
+only; sustained real-hardware access remains a qualification step.
 
 Real-hardware testing established that the Synology currently rejects SMB 3.0
-and SMB 2.1. The mount deliberately pins `vers=2.0` with `sec=ntlmssp` rather
-than relying on dialect negotiation. SMB1 remains prohibited. If the Synology
-is later configured to support SMB3, test that configuration on real hardware
-before changing the NixOS mount option.
+and SMB 2.1. SMB2 with NTLMSSP gets past dialect negotiation, and brief
+real-hardware access has succeeded. Sustained stability still requires runtime
+qualification. The mount deliberately pins `vers=2.0` with `sec=ntlmssp`
+rather than relying on negotiation. SMB1 remains prohibited. If the Synology is
+later configured to support SMB3, test it on real hardware before changing the
+NixOS mount option.
 
 ## Credentials
 
@@ -68,6 +72,19 @@ ls /mnt/infernalnexus/nas1
 
 The attempt times out after 15 seconds. An unused successful mount disconnects
 after approximately ten minutes, and later access mounts it again.
+
+After temporary activation, Tristan can perform a sustained read-only test
+without creating or changing NAS data:
+
+```bash
+./scripts/nas-sustained-read-test.sh --run
+```
+
+This explicitly opt-in helper safely handles filenames, writes nothing, reads
+at most 1 GiB for at most ten minutes, reports progress, and finishes with
+`findmnt` plus the relevant unit journals. It intentionally triggers the
+automount. Run it only during the manual runtime qualification window, never as
+an automated repository check.
 
 Inspect the path and generated units with:
 

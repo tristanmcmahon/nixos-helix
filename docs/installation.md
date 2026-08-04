@@ -10,8 +10,10 @@ identifiers or run `nixos-generate-config` over this checkout.
 
 Helix is maintained against NixOS 26.05 on the `nixos-26.05` root channel.
 `system.stateVersion = "25.11"` records the original installation's persistent
-state compatibility and must not change during the release upgrade. The
-contract is centralized in `release.nix` and evaluation fails on another release.
+state compatibility and must not change during the release upgrade. A wiped
+installation first created on 26.05 imports `fresh-install.nix` and uses 26.05;
+the two paths are evaluated separately. The upgrade contract is centralized in
+`release.nix` and evaluation fails on another release.
 
 Before a major upgrade, display and acknowledge:
 
@@ -31,6 +33,22 @@ release:
 ```bash
 ./scripts/migrate-release.sh
 ```
+
+Major-release activation is boot-first. After the channel migration, prepare a
+durable qualification hold, protect the exact running rollback closure, run all
+checks, inspect dry activation, and explicitly install the candidate only as
+the next boot default with:
+
+```bash
+./scripts/prepare-release-boot.sh
+```
+
+This never calls `test` or `switch` and never reboots. After manually rebooting,
+run `./scripts/post-reboot-release-check.sh`; repeat with `--record-success` only
+after reviewing a clean result. Release the cleanup hold later with
+`./scripts/finish-release-qualification.sh --keep-rollback`. Removing the
+dedicated rollback root requires a separate explicit `--release-rollback`
+choice; neither completion mode garbage-collects.
 
 For transparency, the state-changing operations inside it are
 `sudo systemctl stop helix-nix-cleanup.timer`, `sudo nix-channel --add` using

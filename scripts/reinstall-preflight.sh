@@ -3,28 +3,78 @@
 set -euo pipefail
 
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+root_channel=/nix/var/nix/profiles/per-user/root/channels/nixos
+expected_release=$(nix-instantiate --eval --raw -E "(import $repo_root/release.nix).nixosRelease")
+upgrade_state=$(nix-instantiate --eval --raw -E "(import $repo_root/release.nix).stateVersion")
+fresh_state=$(nix-instantiate --eval --raw -E "(import $repo_root/release.nix).freshStateVersion")
+selected_release=$(NIX_PATH="nixpkgs=$root_channel" nix-instantiate --eval --raw -E \
+  '(import <nixpkgs> {}).lib.trivial.release' 2>/dev/null || printf unavailable)
 
 printf '%s\n' \
   'HELIX REINSTALL PREFLIGHT — READ ONLY' \
   'No disk is considered safe to erase by this script.' \
   'Partitioning and formatting require a separate manual gate.'
 
-printf '\nRepository\n'
-printf 'Path:   %s\n' "$repo_root"
-printf 'Branch: %s\n' "$(git -C "$repo_root" symbolic-ref --quiet --short HEAD 2>/dev/null || printf '(detached)')"
-printf 'Commit: %s\n' "$(git -C "$repo_root" rev-parse HEAD)"
+printf '\nRepository and release\n'
+printf 'Path:             %s\n' "$repo_root"
+printf 'Branch:           %s\n' "$(git -C "$repo_root" symbolic-ref --quiet --short HEAD 2>/dev/null || printf '(detached)')"
+printf 'Commit:           %s\n' "$(git -C "$repo_root" rev-parse HEAD)"
+printf 'Origin:           %s\n' "$(git -C "$repo_root" remote get-url origin 2>/dev/null || printf '(missing)')"
+printf 'Origin/main:      %s\n' "$(git -C "$repo_root" rev-parse origin/main 2>/dev/null || printf '(missing)')"
+printf 'Root channel:     %s\n' "$root_channel"
+printf 'Selected release: %s\n' "$selected_release"
+printf 'Expected release: %s\n' "$expected_release"
+printf 'Upgrade state:    %s\n' "$upgrade_state"
+printf 'Fresh state:      %s\n' "$fresh_state"
+[[ $repo_root == /home/tristan/Projects/nixos-helix ]] || {
+  printf 'FAIL: this is not the canonical Helix checkout.\n' >&2
+  exit 1
+}
+[[ $(git -C "$repo_root" remote get-url origin 2>/dev/null) == \
+  https://github.com/tristanmcmahon/nixos-helix.git ]] || {
+  printf 'FAIL: origin is not the expected Helix repository.\n' >&2
+  exit 1
+}
+[[ $selected_release == "$expected_release" ]] || {
+  printf 'FAIL: the root channel does not select the expected release.\n' >&2
+  exit 1
+}
 if [[ -n $(git -C "$repo_root" status --short) ]]; then
-  printf 'State:  dirty; preserve this patch with the backup\n'
+  printf 'State: dirty; preserve this patch with the backup\n'
   git -C "$repo_root" status --short
 else
-  printf 'State:  clean\n'
+  printf 'State: clean\n'
 fi
 
-printf '\nStorage and boot inventory\n'
+printf '\nCapacity\n'
+for capacity_path in / /nix/store; do
+  available_bytes=$(df --output=avail -B1 "$capacity_path" | tail -n 1 | tr -d ' ')
+  printf '%s available bytes: %s\n' "$capacity_path" "$available_bytes"
+  df -h "$capacity_path" | tail -n 1
+  if ((available_bytes < 8 * 1024 * 1024 * 1024)); then
+    printf 'FAIL: fewer than 8 GiB are available at %s; do not attempt qualification builds.\n' \
+      "$capacity_path" >&2
+    exit 1
+  elif ((available_bytes < 25 * 1024 * 1024 * 1024)); then
+    printf 'WARNING: fewer than 25 GiB are available at %s; preserve generations and monitor capacity.\n' \
+      "$capacity_path" >&2
+  fi
+done
+
+printf '\nQualification and generations\n'
+"$repo_root/scripts/qualification-status.sh"
+printf 'Rollback: keep older system generations and use the systemd-boot menu if required.\n'
+
+printf '\nStorage and UEFI boot inventory\n'
 lsblk -o NAME,PATH,SIZE,TYPE,FSTYPE,FSVER,LABEL,UUID,PARTUUID,MOUNTPOINTS,MODEL
 findmnt --real
+if [[ -d /sys/firmware/efi ]]; then
+  printf 'UEFI runtime: present\n'
+else
+  printf 'UEFI runtime: NOT PRESENT\n' >&2
+fi
 bootctl status || true
-printf '\nTracked hardware configuration checksum\n'
+printf 'Tracked hardware configuration checksum\n'
 sha256sum "$repo_root/hardware-configuration.nix"
 
 printf '\nRuntime-data readiness (contents are never printed)\n'
@@ -46,20 +96,11 @@ printf '\nNetwork\n'
 ip -brief link
 ip -brief address
 ip route
-if ping -c 1 -W 2 channels.nixos.org >/dev/null 2>&1; then
-  printf 'channels.nixos.org: reachable\n'
-else
-  printf 'channels.nixos.org: not confirmed reachable\n'
-fi
 
 printf '\nRequired independent backup scope\n'
 printf '%s\n' \
-  '/home/tristan' \
-  '/home/tristan/Projects' \
-  '/home/tristan/.ssh' \
-  '/etc/nixos/secrets' \
-  "$repo_root/hardware-configuration.nix" \
+  '/home/tristan' '/home/tristan/Projects' '/home/tristan/.ssh' \
+  '/etc/nixos/secrets' "$repo_root/hardware-configuration.nix" \
   'repository commit and any uncommitted patch' \
-  'browser bookmarks/profiles that are not synchronised elsewhere' \
-  'Obsidian vaults and all other non-reproducible local data'
-printf '\nRecord a backup destination on a physically separate device and follow docs/reinstall.md.\n'
+  'browser data, Obsidian vaults, and all other non-reproducible local data'
+printf '\nRecord a physically separate backup destination and follow docs/reinstall.md.\n'

@@ -179,4 +179,6 @@ After activation, complete the focused setup and diagnostic steps in
 - [ ] Shutdown remains clean while the NAS is unavailable.
 
 These checks require the real network, NAS, and credentials; evaluation cannot
-establish that they pass.
+establish that they pass. Static unit validation and dry activation do not
+qualify sustained access; exercise real reads and permitted writes during the
+full runtime test.
