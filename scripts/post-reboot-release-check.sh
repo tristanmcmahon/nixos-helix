@@ -22,7 +22,7 @@ persistent=$(readlink -f /nix/var/nix/profiles/system)
 [[ $(nixos-version | sed -E 's/^([0-9]+\.[0-9]+).*/\1/') == "$expected_release" ]]
 printf 'Kernel: %s\n' "$(uname -r)"
 printf 'Booted system: %s\n' "$running"
-bootctl status
+sudo bootctl status
 nvidia_module_version=$(cat /sys/module/nvidia/version)
 nvidia_userspace_version=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -n 1)
 printf 'NVIDIA module/userspace: %s / %s\n' "$nvidia_module_version" "$nvidia_userspace_version"

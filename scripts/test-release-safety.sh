@@ -26,6 +26,8 @@ grep -qF "sudo test -r \"/boot/loader/entries/nixos-generation-\$source_generati
   "$repo_root/scripts/prepare-release-boot.sh"
 grep -qF '(root access required to inspect /boot/loader/entries)' \
   "$repo_root/scripts/qualification-status.sh"
+grep -qF 'sudo -n bootctl status' "$repo_root/scripts/reinstall-preflight.sh"
+grep -qF 'sudo bootctl status' "$repo_root/scripts/post-reboot-release-check.sh"
 
 grep -qF './scripts/rebuild.sh test' "$repo_root/scripts/install-helix.sh"
 grep -qF './scripts/rebuild.sh switch' "$repo_root/scripts/install-helix.sh"
