@@ -76,7 +76,7 @@ sudo test -r "/boot/loader/entries/nixos-generation-$source_generation.conf" ||
   die 'The running rollback generation has no visible systemd-boot entry.'
 
 ./scripts/reinstall-preflight.sh
-./scripts/check.sh
+./scripts/dev-shell.sh --run './scripts/check.sh'
 ./scripts/rebuild.sh dry-build
 candidate=$(./scripts/rebuild.sh build | sed -n 's/^Done. The new configuration is //p' | tail -n 1)
 [[ -n $candidate && -x $candidate/bin/switch-to-configuration ]] || die 'Candidate closure was not identified.'
