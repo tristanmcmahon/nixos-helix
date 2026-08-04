@@ -15,7 +15,7 @@
     # The Nixpkgs Node.js package includes npm.
     nodejs
     nil
-    nixfmt-rfc-style
+    nixfmt
     shellcheck
   ];
 }

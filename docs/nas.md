@@ -14,6 +14,12 @@ Security:     NTLMSSP
 SMB is the initial transport. A later NFS migration can retain the same local
 path, but NFS support is intentionally deferred.
 
+The share uses native NixOS `systemd.mounts` and `systemd.automounts`, not an
+fstab-generated automount. Both unit files therefore exist statically in the
+system closure, while the CIFS mount itself remains strictly on demand. Before
+first access, `active (waiting)` is the correct automount state. The credentials
+file is optional for evaluation, building, and activation, but required for access.
+
 Real-hardware testing established that the Synology currently rejects SMB 3.0
 and SMB 2.1. The mount deliberately pins `vers=2.0` with `sec=ntlmssp` rather
 than relying on dialect negotiation. SMB1 remains prohibited. If the Synology
@@ -83,6 +89,18 @@ sudo systemctl stop mnt-infernalnexus-nas1.mount
 
 ## Troubleshooting
 
+An earlier fstab-generated implementation caused a real persistent activation
+to fail after `/etc` setup with:
+
+```text
+Failed to open unit file .../etc/systemd/system/mnt-infernalnexus-nas1.automount
+No such file or directory (os error 2)
+```
+
+The generator-created unit was absent from the new closure during live switch.
+Native static units repair that mismatch; rebooting is not a workaround for a
+failed `switch`.
+
 The normal configuration uses systemd automount. For troubleshooting only, the
 verified manual diagnostic mount command is:
 
@@ -105,5 +123,6 @@ mismatch. Do not use SMB1 as a fallback.
 - Network errors: confirm `ping 192.168.1.8` and TCP port 445 reach the NAS.
 - Permission errors: local `uid`, `gid`, and mode options only present files as
   `tristan:users`; the Synology account still needs server-side access.
-- A failed `ls` is expected when the NAS is offline. `nofail`, `_netdev`, and
-  automount isolation keep that failure from destabilising boot or the desktop.
+- A failed `ls` is expected when the NAS is offline. Only the automount is
+  pulled into boot; explicit network ordering and on-demand isolation keep an
+  absent NAS from destabilising boot or the desktop.

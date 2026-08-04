@@ -18,6 +18,6 @@
     defaultEditor = true;
   };
 
-  # NixOS' Vim module sets EDITOR but not VISUAL in 25.11.
+  # Keep the recovery-shell contract explicit for tools that read VISUAL.
   environment.variables.VISUAL = "vim";
 }

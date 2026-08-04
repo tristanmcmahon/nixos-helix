@@ -26,8 +26,24 @@ bash -n scripts/*.sh
 printf 'Running ShellCheck...\n'
 shellcheck scripts/*.sh
 
+printf 'Checking Nix dead code and lint...\n'
+deadnix --fail .
+statix check .
+
 printf 'Checking Git whitespace...\n'
 git diff --check
+
+printf 'Checking documentation links and tracked secrets...\n'
+python3 scripts/check-docs.py
+if git ls-files | grep -Eq '(^|/)(id_(rsa|dsa|ecdsa|ed25519)|.*credentials.*|infernalnexus-smb)$'; then
+  printf 'A credential or private-key-shaped file is tracked.\n' >&2
+  exit 1
+fi
+if git grep -Il '' -- ':!.git' | xargs grep -El \
+  -- '-----BEGIN (OPENSSH|RSA|EC|DSA) PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{20,}' >/dev/null; then
+  printf 'A private key or token-shaped value is present in tracked content.\n' >&2
+  exit 1
+fi
 
 printf 'Validating Helix Abyss assets and merge fixtures...\n'
 python3 scripts/test-theme-settings.py
@@ -44,16 +60,26 @@ cleanup_program=$(nix-build --no-out-link -E '
 ')
 ./scripts/test-cleanup-plan.sh "$cleanup_program/bin/helix-nix-cleanup"
 
-printf 'Evaluating editor, desktop, theme, gaming, media, 1Password, Corsair, and SSH invariants...\n'
+printf 'Evaluating release, desktop, security, and native NAS invariants...\n'
 nix-instantiate --eval --strict -E '
   let
     system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
     config = system.config;
+    release = import ./release.nix;
     packageNames = map
       (package: package.pname or package.name or "")
       config.environment.systemPackages;
-    infernalnexusOptions = config.fileSystems."/mnt/infernalnexus/nas1".options;
+    infernalnexusMounts = builtins.filter
+      (mount: mount.where == "/mnt/infernalnexus/nas1") config.systemd.mounts;
+    infernalnexusAutomounts = builtins.filter
+      (automount: automount.where == "/mnt/infernalnexus/nas1") config.systemd.automounts;
+    infernalnexusMount = builtins.head infernalnexusMounts;
+    infernalnexusAutomount = builtins.head infernalnexusAutomounts;
+    infernalnexusOptions = builtins.filter builtins.isString
+      (builtins.split "," infernalnexusMount.options);
   in
+  assert config.system.nixos.release == release.nixosRelease;
+  assert config.system.stateVersion == release.stateVersion;
   assert config.services.desktopManager.plasma6.enable;
   assert config.services.displayManager.sddm.enable;
   assert config.programs.hyprland.enable;
@@ -71,9 +97,30 @@ nix-instantiate --eval --strict -E '
   assert !config.services.openssh.settings.KbdInteractiveAuthentication;
   assert config.networking.hosts."192.168.1.2" == [ "mister" ];
   assert config.networking.hosts."192.168.1.8" == [ "infernalnexus" ];
+  assert !(builtins.hasAttr "/mnt/infernalnexus/nas1" config.fileSystems);
+  assert builtins.length infernalnexusMounts == 1;
+  assert infernalnexusMount.what == "//192.168.1.8/nas1";
+  assert infernalnexusMount.type == "cifs";
+  assert builtins.all (option: builtins.elem option infernalnexusOptions) [
+    "credentials=/etc/nixos/secrets/infernalnexus-smb"
+    "uid=tristan"
+    "gid=users"
+    "dir_mode=0775"
+    "file_mode=0664"
+  ];
   assert builtins.elem "vers=2.0" infernalnexusOptions;
   assert builtins.elem "sec=ntlmssp" infernalnexusOptions;
   assert !(builtins.elem "vers=1.0" infernalnexusOptions);
+  assert !(builtins.elem "x-systemd.automount" infernalnexusOptions);
+  assert builtins.all
+    (option: builtins.match "x-systemd\\.(mount-timeout|idle-timeout).*" option == null)
+    infernalnexusOptions;
+  assert builtins.elem "network-online.target" infernalnexusMount.wants;
+  assert builtins.elem "network-online.target" infernalnexusMount.after;
+  assert infernalnexusMount.mountConfig.TimeoutSec == "15s";
+  assert builtins.length infernalnexusAutomounts == 1;
+  assert builtins.elem "multi-user.target" infernalnexusAutomount.wantedBy;
+  assert infernalnexusAutomount.automountConfig.TimeoutIdleSec == "10min";
   assert builtins.elem 22 config.networking.firewall.allowedTCPPorts;
   assert builtins.hasAttr "sshd" config.systemd.services;
   assert config.programs._1password.enable;
@@ -84,7 +131,7 @@ nix-instantiate --eval --strict -E '
     "aeblfdkhhhdcdjpifhhbdiojplfjncoa"
     "eimadpbcbfnmbkopoojfekhnkhdbieeh"
   ];
-  assert config.programs.chromium.extraOpts.BrowserThemeColor == "#080A0D";
+  assert config.programs.chromium.extraOpts.BrowserThemeColor == "#030405";
   assert !config.programs.chromium.extraOpts.PasswordManagerEnabled;
   assert config.programs.firefox.enable;
   assert !config.programs.firefox.policies.OfferToSaveLogins;
@@ -93,6 +140,11 @@ nix-instantiate --eval --strict -E '
   assert config.services.displayManager.sddm.theme == "helix-abyss";
   assert config.programs.dconf.enable;
   assert config.systemd.user.services.helix-abyss-theme.unitConfig.ConditionUser == "tristan";
+  assert config.systemd.user.services.helix-ghostty-config.unitConfig.ConditionUser == "tristan";
+  assert builtins.elem "HOME=/home/tristan"
+    config.systemd.user.services.helix-ghostty-config.serviceConfig.Environment;
+  assert builtins.elem "XDG_CONFIG_HOME=/home/tristan/.config"
+    config.systemd.user.services.helix-ghostty-config.serviceConfig.Environment;
   assert !(builtins.hasAttr "GTK_THEME" config.environment.variables);
   assert !(builtins.hasAttr "QT_STYLE_OVERRIDE" config.environment.variables);
   assert !(builtins.hasAttr "QT_QPA_PLATFORMTHEME" config.environment.variables);
@@ -175,11 +227,35 @@ for theme_command in plasma-apply-colorscheme plasma-apply-desktoptheme \
   plasma-apply-cursortheme plasma-apply-wallpaperimage kwriteconfig6 helix-apply-theme; do
   [[ -x $system_closure/sw/bin/$theme_command ]]
 done
+"$system_closure/sw/bin/helix-apply-theme" --help | grep -qF -- '--force'
+if "$system_closure/sw/bin/helix-apply-theme" --invalid >/dev/null 2>&1; then
+  printf 'helix-apply-theme accepted an invalid argument.\n' >&2
+  exit 1
+fi
+theme_helper=$(readlink -f "$system_closure/sw/bin/helix-apply-theme")
+mapfile -t theme_closure < <(nix-store -qR "$theme_helper")
+for theme_runtime_command in gsettings python3 plasma-apply-colorscheme \
+  plasma-apply-desktoptheme plasma-apply-cursortheme plasma-apply-wallpaperimage \
+  kwriteconfig6 install; do
+  found_runtime_command=0
+  for closure_path in "${theme_closure[@]}"; do
+    if [[ -x $closure_path/bin/$theme_runtime_command ]]; then
+      found_runtime_command=1
+      break
+    fi
+  done
+  ((found_runtime_command))
+done
 theme_unit=$system_closure/etc/systemd/user/helix-abyss-theme.service
 [[ -r $theme_unit ]]
 grep -qF 'ConditionUser=tristan' "$theme_unit"
 grep -qF 'HOME=/home/tristan' "$theme_unit"
 grep -qF 'XDG_CONFIG_HOME=/home/tristan/.config' "$theme_unit"
+ghostty_unit=$system_closure/etc/systemd/user/helix-ghostty-config.service
+[[ -r $ghostty_unit ]]
+grep -qF 'ConditionUser=tristan' "$ghostty_unit"
+grep -qF 'HOME=/home/tristan' "$ghostty_unit"
+grep -qF 'XDG_CONFIG_HOME=/home/tristan/.config' "$ghostty_unit"
 for theme_asset in gtk-3.0-settings.ini gtk-4.0-settings.ini waybar.css mako.conf \
   fuzzel.ini wallpaper.svg apply-theme-settings.py; do
   [[ -r $system_closure/etc/helix/theme/$theme_asset ]]
@@ -207,6 +283,39 @@ ckb_package=${ckb_daemon%/bin/ckb-next-daemon}
 
 printf 'Checking OpenSSH in the built default system...\n'
 [[ -r $system_closure/etc/systemd/system/sshd.service ]]
+sshd_test_key=$temporary_directory/ssh_host_ed25519_key
+"$system_closure/sw/bin/ssh-keygen" -q -t ed25519 -N '' -f "$sshd_test_key"
+sshd_effective=$(
+  "$system_closure/sw/bin/sshd" -T \
+    -f "$system_closure/etc/ssh/sshd_config" \
+    -h "$sshd_test_key" 2>/dev/null
+)
+for ssh_setting in \
+  'permitrootlogin no' \
+  'pubkeyauthentication yes' \
+  'passwordauthentication no' \
+  'kbdinteractiveauthentication no'; do
+  grep -qxF "$ssh_setting" <<<"$sshd_effective"
+done
+
+printf 'Checking static native Infernalnexus units...\n'
+nas_mount_unit=$system_closure/etc/systemd/system/mnt-infernalnexus-nas1.mount
+nas_automount_unit=$system_closure/etc/systemd/system/mnt-infernalnexus-nas1.automount
+[[ -r $nas_mount_unit ]]
+[[ -r $nas_automount_unit ]]
+[[ -L $system_closure/etc/systemd/system/multi-user.target.wants/mnt-infernalnexus-nas1.automount ]]
+grep -qF 'What=//192.168.1.8/nas1' "$nas_mount_unit"
+grep -qF 'Where=/mnt/infernalnexus/nas1' "$nas_mount_unit"
+grep -qF 'Type=cifs' "$nas_mount_unit"
+grep -qF 'Options=' "$nas_mount_unit"
+grep -qF 'TimeoutSec=15s' "$nas_mount_unit"
+grep -qF 'TimeoutIdleSec=10min' "$nas_automount_unit"
+if grep -Eq '//192\.168\.1\.8/nas1|/mnt/infernalnexus/nas1|x-systemd\.automount' \
+  "$system_closure/etc/fstab"; then
+  printf 'Infernalnexus still appears in generated fstab.\n' >&2
+  exit 1
+fi
+"$system_closure/sw/bin/systemd-analyze" verify "$nas_mount_unit" "$nas_automount_unit"
 
 printf 'Checking media applications in the built default system...\n'
 for media_executable in spotify vlc mpv haruna strawberry plex-desktop gridplayer; do

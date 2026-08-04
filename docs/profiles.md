@@ -16,7 +16,8 @@ gaming, and inference software.
 ### Workstation
 
 `profiles/workstation.nix` imports daily interactive tools, hardware diagnostic
-clients, and a modest font set. It contains no compiler toolchain or code
+clients, and desktop media clients. Font policy is owned once by
+`desktop/fonts.nix`. The profile contains no compiler toolchain or code
 publishing tools.
 
 ### Development

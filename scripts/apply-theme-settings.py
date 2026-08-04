@@ -2,15 +2,44 @@
 """Merge Helix Abyss-owned keys without discarding unrelated user settings."""
 
 import argparse
+import configparser
 import json
+import os
 import pathlib
 import re
+import tempfile
+
+
+def atomic_write(destination: pathlib.Path, text: str) -> None:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(
+        dir=destination.parent, prefix=f".{destination.name}.", text=True
+    )
+    temporary = pathlib.Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            handle.write(text)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, destination)
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
 
 
 def merge_ini(source: pathlib.Path, destination: pathlib.Path) -> None:
+    source_text = source.read_text(encoding="utf-8")
+    destination_text = destination.read_text(encoding="utf-8") if destination.exists() else ""
+    for name, text in (("managed source", source_text), (str(destination), destination_text)):
+        parser = configparser.ConfigParser(strict=True)
+        try:
+            parser.read_string(text)
+        except configparser.Error as error:
+            raise ValueError(f"invalid INI in {name}: {error}") from error
+
     owned = {}
     section = None
-    for raw_line in source.read_text(encoding="utf-8").splitlines():
+    for raw_line in source_text.splitlines():
         line = raw_line.strip()
         if line.startswith("[") and line.endswith("]"):
             section = line[1:-1]
@@ -18,13 +47,18 @@ def merge_ini(source: pathlib.Path, destination: pathlib.Path) -> None:
             key, value = line.split("=", 1)
             owned[(section, key.strip())] = value.strip()
 
-    lines = destination.read_text(encoding="utf-8").splitlines() if destination.exists() else []
+    lines = destination_text.splitlines()
     output = []
     seen = set()
     section = None
-    for raw_line in lines:
+    for index, raw_line in enumerate(lines):
         stripped = raw_line.strip()
         if stripped.startswith("[") and stripped.endswith("]"):
+            if section:
+                for (owned_section, key), value in owned.items():
+                    if owned_section == section and (owned_section, key) not in seen:
+                        output.append(f"{key}={value}")
+                        seen.add((owned_section, key))
             section = stripped[1:-1]
         if section and stripped and not stripped.startswith(('#', ';')) and "=" in stripped:
             key = stripped.split("=", 1)[0].strip()
@@ -35,6 +69,12 @@ def merge_ini(source: pathlib.Path, destination: pathlib.Path) -> None:
                 continue
         output.append(raw_line)
 
+        if index == len(lines) - 1 and section:
+            for (owned_section, key), value in owned.items():
+                if owned_section == section and (owned_section, key) not in seen:
+                    output.append(f"{key}={value}")
+                    seen.add((owned_section, key))
+
     for (owned_section, key), value in owned.items():
         if (owned_section, key) in seen:
             continue
@@ -44,8 +84,7 @@ def merge_ini(source: pathlib.Path, destination: pathlib.Path) -> None:
             output.append(f"[{owned_section}]")
         output.append(f"{key}={value}")
 
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text("\n".join(output).rstrip() + "\n", encoding="utf-8")
+    atomic_write(destination, "\n".join(output).rstrip() + "\n")
 
 
 def parse_jsonc(text: str) -> dict:
@@ -72,18 +111,17 @@ def merge_vscode(destination: pathlib.Path) -> None:
         colors = {}
     colors.update(
         {
-            "activityBar.background": "#080A0D",
-            "editorGroupHeader.tabsBackground": "#0B0E12",
-            "panel.background": "#0B0E12",
-            "sideBar.background": "#080A0D",
-            "statusBar.background": "#10141A",
-            "titleBar.activeBackground": "#080A0D",
-            "titleBar.activeForeground": "#E6EAF0",
+            "activityBar.background": "#030405",
+            "editorGroupHeader.tabsBackground": "#050608",
+            "panel.background": "#050608",
+            "sideBar.background": "#030405",
+            "statusBar.background": "#080A0E",
+            "titleBar.activeBackground": "#030405",
+            "titleBar.activeForeground": "#E8ECF2",
         }
     )
     settings["workbench.colorCustomizations"] = colors
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(json.dumps(settings, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    atomic_write(destination, json.dumps(settings, indent=2, sort_keys=True) + "\n")
 
 
 def main() -> None:

@@ -14,6 +14,10 @@ sudo ./scripts/hardware-inventory.sh > "$HOME/helix-hardware-root.txt"
 Reports may contain UUIDs, MAC addresses, labels, and model information. Review
 them before sharing and never commit them.
 
+The generated hardware configuration defines no swap. Hibernation is not
+supported unless swap is deliberately designed and validated later; suspend
+testing below does not imply hibernation support.
+
 ## Desktop and NVIDIA
 
 - In SDDM, confirm both Plasma (Wayland) and Hyprland are selectable. Test

@@ -1,4 +1,6 @@
-# Alpha 3
+# Alpha 3 historical release notes
+
+This file is historical context, not current operating guidance.
 
 Alpha 3 adds Spotify, VLC, mpv, Haruna, Strawberry, Plex Desktop, and a native
 GridPlayer package. It also enables the 1Password GUI and CLI, managed extension

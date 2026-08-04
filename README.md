@@ -1,6 +1,6 @@
 # Helix NixOS configuration
 
-This repository is the canonical configuration for Helix, a NixOS 25.11 Plasma 6
+This repository is the canonical configuration for Helix, a NixOS 26.05 Plasma 6
 workstation with an NVIDIA RTX 5080 and an experimental Hyprland login option. It uses traditional NixOS modules and the
 root Nix channel: no flakes, Home Manager, overlays, or host framework.
 
@@ -13,7 +13,8 @@ generated module for this machine and must not be edited or reformatted.
 
 ```text
 .
-├── configuration.nix          # top-level import index and state version
+├── release.nix                # maintained release, channel, and state contract
+├── configuration.nix          # top-level module import index
 ├── hardware-configuration.nix # generated filesystems and boot hardware facts
 ├── hardware/                  # NVIDIA, audio, Bluetooth, and firmware policy
 ├── desktop/                   # SDDM, Plasma 6, optional Hyprland, and applications
@@ -30,8 +31,8 @@ generated module for this machine and must not be edited or reformatted.
 ## Active configuration
 
 `configuration.nix` enables the base packages plus the workstation,
-development, and gaming profiles. The workstation applications include Firefox
-Chrome, Chromium, Zen Browser, and Obsidian. The initial gaming layer contains Steam, GameMode, MangoHud,
+development, and gaming profiles. The workstation applications include Firefox,
+Chrome, Chromium, Zen Browser, and Obsidian. The gaming layer contains Steam, GameMode, MangoHud,
 32-bit graphics, and 32-bit audio support. Local LLM remains disabled. See
 [docs/profiles.md](docs/profiles.md) for profile boundaries and validation
 commands.
@@ -71,8 +72,8 @@ is preserved as `config.ghostty.pre-nixos`. Reload it with `Ctrl+Shift+,`, and
 inspect it with `ghostty +show-config` or validate the repository copy with
 `ghostty +validate-config --config-file=config/ghostty/config.ghostty`.
 Available themes can be checked with `ghostty +list-themes`.
-JetBrains Mono Nerd Font is the default monospace face; Maple Mono and Iosevka
-Nerd Font are installed alternatives. For persistent changes, edit and commit
+JetBrains Mono Nerd Font is the default monospace face; Maple Mono, Iosevka,
+Noto Fonts, and Noto Color Emoji are installed alternatives. For persistent changes, edit and commit
 the repository copy and rebuild instead of editing the deployed file.
 
 ## Canonical source and routine operation
@@ -88,9 +89,9 @@ From the repository root, run:
 ./scripts/install-helix.sh
 ```
 
-It requires a clean checkout, fast-forwards `main` from `origin`, and runs the
-complete validation suite before it can activate anything. It asks separately
-before persistent activation and before rebooting.
+It requires a clean checkout and installs that exact checked-out commit without
+switching branches or contacting Git. It runs the complete validation suite,
+then asks separately before temporary and persistent activation and rebooting.
 
 The manual rebuild workflow below remains useful for debugging and incremental
 configuration changes.
@@ -141,6 +142,7 @@ rollback is intentionally limited to the two retained alternatives.
 - [Real-hardware validation checklist](docs/hardware-validation.md)
 - [Infernalnexus NAS](docs/nas.md)
 - [Media applications](docs/media.md)
+- [Custom package pins](docs/custom-packages.md)
 - [1Password integration](docs/onepassword.md)
 - [Alpha 3 release notes](docs/alpha-3.md)
 - [Helix Abyss appearance](docs/theme.md)

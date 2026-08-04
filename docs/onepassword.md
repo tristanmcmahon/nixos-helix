@@ -8,6 +8,10 @@ package. Updates arrive through the selected NixOS package channel.
 
 ## Browser integration
 
+General Firefox, Chrome, and Chromium policy—including Dark Reader and managed
+password-manager behavior—is owned by `desktop/browsers.nix`; this module owns
+only 1Password and its technically required Zen allow-list entry.
+
 - Google Chrome and Chromium receive the official extension ID
   `aeblfdkhhhdcdjpifhhbdiojplfjncoa` through managed Chromium policy. The same
   policy disables new offers from their built-in password manager.

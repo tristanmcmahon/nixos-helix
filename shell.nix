@@ -12,8 +12,10 @@ pkgs.mkShell {
     git-lfs
     nodejs
     nil
-    nixfmt-rfc-style
+    nixfmt
     shellcheck
+    deadnix
+    statix
     ripgrep
     jq
     codex

@@ -11,11 +11,18 @@ in
   systemd.user.services.helix-ghostty-config = {
     description = "Deploy the Helix Ghostty configuration";
     wantedBy = [ "default.target" ];
-    serviceConfig.Type = "oneshot";
+    unitConfig.ConditionUser = "tristan";
+    serviceConfig = {
+      Type = "oneshot";
+      Environment = [
+        "HOME=/home/tristan"
+        "XDG_CONFIG_HOME=/home/tristan/.config"
+      ];
+    };
     script = ''
-      destination="$HOME/.config/ghostty/config.ghostty"
+      destination="$XDG_CONFIG_HOME/ghostty/config.ghostty"
       source=/etc/helix/ghostty/config.ghostty
-      ${pkgs.coreutils}/bin/mkdir -p "$HOME/.config/ghostty"
+      ${pkgs.coreutils}/bin/mkdir -p "$XDG_CONFIG_HOME/ghostty"
       if [[ -e "$destination" ]] && ! ${pkgs.diffutils}/bin/cmp -s "$source" "$destination"; then
         if [[ ! -e "$destination.pre-nixos" ]]; then
           ${pkgs.coreutils}/bin/cp -p "$destination" "$destination.pre-nixos"

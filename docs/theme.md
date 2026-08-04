@@ -6,11 +6,10 @@ desktop rendering stack. Deep backgrounds remain separated, text stays bright,
 and a restrained blue accent provides focus without glow, blur, transparency,
 animated wallpaper, or theme-store content.
 
-The principal palette is `#080A0D` (deep background), `#0B0E12` (window),
-`#10141A` (secondary), `#151A22` (raised), `#0D1117` (input), `#252C37`
-(border), `#E6EAF0` and `#A9B1BD` (text), `#7396F5` (accent), and `#314E8A`
-(selection). Positive, warning, negative, link, and visited-link colours are
-`#7BC89C`, `#D9B66F`, `#E17B85`, `#8AB4FF`, and `#B49CFF`.
+The real-hardware palette uses `#030405` (deep background), `#050608`
+(window), `#07090C` (view), `#0D1118` (raised), `#070A0E` (input), and
+`#1B222C` (border). Text is `#E8ECF2`/`#A9B2BE`, the accent is `#7396F5`,
+and selection is `#29467E`.
 
 ## Desktop integration
 
@@ -63,13 +62,14 @@ updates individual KDE keys, merges only Helix-owned GTK keys, and structurally
 merges theme keys into `~/.config/Code/User/settings.json`. Unrelated user values
 are preserved. It does not run graphical applications.
 
-Inspect or manually reapply it after activation with:
+Normal application is revision-idempotent; the revision includes both assets
+and application logic. Inspect or deliberately force reapplication with:
 
 ```bash
 systemctl --user status helix-abyss-theme.service
 journalctl --user -u helix-abyss-theme.service
-rm ~/.config/helix/theme-revision
-systemctl --user restart helix-abyss-theme.service
+helix-apply-theme --help
+helix-apply-theme --force
 ```
 
 To temporarily return Plasma to ordinary Breeze Dark without deleting settings:
@@ -85,3 +85,16 @@ deployment and service. The service updates only selected keys in `kdeglobals`,
 settings. Appearance cannot safely be universal for every website or application,
 so Zen, Obsidian vaults, and any application-specific preference remain documented
 user choices.
+# Helix Abyss appearance
+
+The real-hardware palette uses near-black desktop (`#030405`), window
+(`#050608`), and view (`#07090C`) surfaces with `#7396F5` accents. Breeze is
+applied first and `HelixAbyss` colours last so the selected scheme is deterministic.
+
+Normal application is revision-idempotent. Troubleshoot or deliberately
+reapply after changing a live session with:
+
+```bash
+helix-apply-theme --force
+helix-apply-theme --help
+```
