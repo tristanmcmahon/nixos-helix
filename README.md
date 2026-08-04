@@ -55,9 +55,37 @@ The attached Corsair K70 RGB (`1b1c:1b13`) is supported through the NixOS
 `hardware.ckb-next` module. The build verifies its package, daemon, udev rules,
 and `ckb-next.service`; physical behavior must still be tested after activation.
 
-Helix accepts SSH connections on TCP port 22 as `tristan` using public-key
-authentication. Root, password, and keyboard-interactive SSH logins are
-disabled; user keys remain unmanaged runtime state and are not stored here.
+## hamkeydist bootstrap
+
+`system/hosts.nix` persistently maps `mister` to `192.168.1.2` and
+`infernalnexus` to `192.168.1.8`. The separate `services/openssh.nix` module
+opens TCP port 22 and enables Helix's SSH server. Password and
+keyboard-interactive authentication are temporarily enabled so `hamkeydist
+setup` can install the remote machines' public keys; generated keys and SSH
+client configuration remain outside this repository.
+
+Test and activate the bootstrap configuration, distribute the keys, and then
+verify that both remote machines can log in to Helix using public keys:
+
+```bash
+sudo nixos-rebuild test -I "nixos-config=$PWD/configuration.nix"
+sudo nixos-rebuild switch -I "nixos-config=$PWD/configuration.nix"
+hamkeydist setup
+# On mister and infernalnexus, verify a public-key login to tristan@helix.
+```
+
+Only after both reverse logins succeed, set `PasswordAuthentication` and
+`KbdInteractiveAuthentication` to `false` in `services/openssh.nix`, then run:
+
+```bash
+sudo nixos-rebuild test -I "nixos-config=$PWD/configuration.nix"
+sudo nixos-rebuild switch -I "nixos-config=$PWD/configuration.nix"
+hamkeydist test
+```
+
+For normal upgrades, `sudo nix-channel --update` followed by
+`sudo nixos-rebuild test --upgrade` and `sudo nixos-rebuild switch --upgrade`
+preserves both settings because the modules are declarative and checked in.
 
 ## Ghostty and workstation fonts
 
