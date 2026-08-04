@@ -78,7 +78,9 @@ sudo test -r "/boot/loader/entries/nixos-generation-$source_generation.conf" ||
 ./scripts/reinstall-preflight.sh
 ./scripts/dev-shell.sh --run './scripts/check.sh'
 ./scripts/rebuild.sh dry-build
-candidate=$(./scripts/rebuild.sh build | sed -n 's/^Done. The new configuration is //p' | tail -n 1)
+./scripts/rebuild.sh build
+candidate=$(nix-build --no-out-link '<nixpkgs/nixos>' -A system \
+  -I "nixos-config=$repo_root/configuration.nix")
 [[ -n $candidate && -x $candidate/bin/switch-to-configuration ]] || die 'Candidate closure was not identified.'
 printf '%s\n' "$candidate" | sudo tee "$qualification_hold/candidate-system-path" >/dev/null
 sudo chmod 0444 "$qualification_hold/candidate-system-path"
