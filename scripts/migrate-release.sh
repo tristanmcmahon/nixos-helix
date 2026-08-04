@@ -5,6 +5,7 @@ set -euo pipefail
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 release_file=$repo_root/release.nix
 root_channel=/nix/var/nix/profiles/per-user/root/channels/nixos
+qualification_hold=/var/lib/helix/release-qualification
 
 expected_release=$(nix-instantiate --eval --raw -E "(import $release_file).nixosRelease")
 upgrade_state_version=$(nix-instantiate --eval --raw -E "(import $release_file).stateVersion")
@@ -43,6 +44,7 @@ elif [[ $# -ne 0 ]]; then
 fi
 
 current_release=$(detect_release)
+running_system=$(readlink -f /run/current-system)
 cat <<EOF
 MAJOR NIXOS RELEASE UPGRADE
 Current: $current_release
@@ -53,6 +55,38 @@ This changes the kernel, drivers, desktop packages and system closure.
 The cleanup timer will be stopped during qualification. Existing generations
 and store paths will not be deleted. Root authentication is required.
 EOF
+
+if [[ -d $qualification_hold ]]; then
+  saved_source=$(sudo cat "$qualification_hold/source-system-path" 2>/dev/null || true)
+  [[ $saved_source == "$running_system" ]] || {
+    printf 'ERROR: an incompatible qualification hold already exists at %s.\n' \
+      "$qualification_hold" >&2
+    exit 1
+  }
+else
+  source_generation=
+  for generation_link in /nix/var/nix/profiles/system-*-link; do
+    if [[ $(readlink -f "$generation_link") == "$running_system" ]]; then
+      source_generation=${generation_link##*/system-}
+      source_generation=${source_generation%-link}
+    fi
+  done
+  [[ -n $source_generation ]]
+  metadata_directory=$(mktemp -d)
+  trap 'rm -rf -- "$metadata_directory"' EXIT
+  date --iso-8601=seconds >"$metadata_directory/started-at"
+  printf '%s\n' "$current_release" >"$metadata_directory/source-release"
+  printf '%s\n' "$expected_release" >"$metadata_directory/target-release"
+  printf '%s\n' "$running_system" >"$metadata_directory/source-system-path"
+  printf '%s\n' "$source_generation" >"$metadata_directory/source-generation"
+  uname -r >"$metadata_directory/source-kernel"
+  nixos-version >"$metadata_directory/source-nixos-version"
+  printf '%s\n' "$root_channel" >"$metadata_directory/source-channel"
+  sudo install -d -m 0755 "$qualification_hold"
+  for metadata in "$metadata_directory"/*; do
+    sudo install -m 0444 "$metadata" "$qualification_hold/${metadata##*/}"
+  done
+fi
 
 sudo systemctl stop helix-nix-cleanup.timer
 if systemctl is-active --quiet helix-nix-cleanup.timer; then

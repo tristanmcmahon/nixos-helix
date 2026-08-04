@@ -6,6 +6,7 @@ repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 root_channel=/nix/var/nix/profiles/per-user/root/channels/nixos
 expected_release=$(nix-instantiate --eval --raw -E "(import $repo_root/release.nix).nixosRelease")
 upgrade_state=$(nix-instantiate --eval --raw -E "(import $repo_root/release.nix).stateVersion")
+fresh_state=$(nix-instantiate --eval --raw -E "(import $repo_root/release.nix).freshStateVersion")
 selected_release=$(NIX_PATH="nixpkgs=$root_channel" nix-instantiate --eval --raw -E \
   '(import <nixpkgs> {}).lib.trivial.release' 2>/dev/null || printf unavailable)
 
@@ -24,7 +25,7 @@ printf 'Root channel:     %s\n' "$root_channel"
 printf 'Selected release: %s\n' "$selected_release"
 printf 'Expected release: %s\n' "$expected_release"
 printf 'Upgrade state:    %s\n' "$upgrade_state"
-printf 'Fresh state:      26.05\n'
+printf 'Fresh state:      %s\n' "$fresh_state"
 [[ $repo_root == /home/tristan/Projects/nixos-helix ]] || {
   printf 'FAIL: this is not the canonical Helix checkout.\n' >&2
   exit 1

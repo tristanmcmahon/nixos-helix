@@ -47,25 +47,15 @@ fi
 printf 'State: clean\n'
 git remote get-url origin >/dev/null 2>&1 || die "This checkout has no 'origin' remote."
 
-phase 'Qualification preservation'
-./scripts/qualification-status.sh
-if systemctl is-active --quiet helix-nix-cleanup.timer; then
-  die 'helix-nix-cleanup.timer must remain stopped during qualification.'
-fi
-running_system=$(readlink -f /run/current-system)
-persistent_system=$(readlink -f /nix/var/nix/profiles/system)
-if [[ $running_system != "$persistent_system" ]]; then
-  printf 'WARNING: running and persistent system paths differ; review them before activation.\n' >&2
-fi
-
 phase 'Release preflight'
 printf 'Release contract: %s\n' "$release"
 printf 'Expected NixOS release: %s\n' "$expected_release"
 printf 'Selected NixOS release: %s\n' "$selected_release"
 printf 'Persistent state version: %s\n' "$state_version"
 [[ $selected_release == "$expected_release" ]] ||
-  die "Select the nixos-26.05 channel before installation; found $selected_release."
-[[ $state_version == 25.11 ]] || die 'The persistent state version changed unexpectedly.'
+  die "Select the release contract's $expected_release source before installation; found $selected_release."
+expected_state_version=$(nix-instantiate --eval --raw -E '(import ./release.nix).stateVersion')
+[[ $state_version == "$expected_state_version" ]] || die 'The persistent state version changed unexpectedly.'
 
 phase 'Hardware and configuration preflight'
 [[ -s hardware-configuration.nix ]] || die 'hardware-configuration.nix is missing or empty.'
@@ -96,6 +86,7 @@ printf 'NAS protocol: SMB 2.0 with NTLMSSP\n'
 phase 'Complete non-activating validation'
 ./scripts/check.sh
 ./scripts/rebuild.sh dry-build
+./scripts/rebuild.sh dry-activate
 
 phase 'Temporary activation'
 if ! confirm 'Temporarily activate the validated configuration?'; then
@@ -105,6 +96,7 @@ fi
 ./scripts/rebuild.sh test
 
 phase 'Focused runtime verification'
+systemctl --failed
 systemctl is-enabled display-manager.service
 systemctl is-active display-manager.service
 systemctl is-active sshd.service
@@ -113,6 +105,7 @@ sshd -T | tr '[:upper:]' '[:lower:]' |
   grep -E '^(permitrootlogin no|pubkeyauthentication yes|passwordauthentication no|kbdinteractiveauthentication no)$'
 systemctl is-enabled mnt-infernalnexus-nas1.automount
 systemctl is-active mnt-infernalnexus-nas1.automount
+[[ $(systemctl show mnt-infernalnexus-nas1.automount -P SubState) == waiting ]]
 systemctl cat mnt-infernalnexus-nas1.automount
 systemctl cat mnt-infernalnexus-nas1.mount
 systemctl is-enabled helix-nix-cleanup.timer

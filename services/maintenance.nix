@@ -10,6 +10,7 @@ let
     ];
     text = ''
       profile=/nix/var/nix/profiles/system
+      qualification_directory=''${HELIX_QUALIFICATION_DIR:-/var/lib/helix/release-qualification}
       planning=false
       temporary_listing=
       active_generation=
@@ -20,6 +21,12 @@ let
         fi
       }
       trap cleanup_temporary_listing EXIT
+
+      if [[ -d $qualification_directory ]]; then
+        printf 'Refusing cleanup: release qualification hold exists at %s.\n' \
+          "$qualification_directory" >&2
+        exit 1
+      fi
 
       case $# in
         0)
@@ -151,6 +158,7 @@ in
 
   systemd.services.helix-nix-cleanup = {
     description = "Trim NixOS generations and collect the Nix store";
+    unitConfig.ConditionPathExists = "!/var/lib/helix/release-qualification";
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${cleanup}/bin/helix-nix-cleanup";
@@ -165,6 +173,7 @@ in
 
   systemd.timers.helix-nix-cleanup = {
     wantedBy = [ "timers.target" ];
+    unitConfig.ConditionPathExists = "!/var/lib/helix/release-qualification";
     timerConfig = {
       OnCalendar = "*-*-* 02:00:00";
       Persistent = true;

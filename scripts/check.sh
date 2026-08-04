@@ -17,12 +17,20 @@ for required_tool in "${required_tools[@]}"; do
 done
 
 printf 'Checking deterministic release selection...\n'
+expected_release=$(nix-instantiate --eval --raw -E '(import ./release.nix).nixosRelease')
+selected_nixpkgs=$(readlink -f /nix/var/nix/profiles/per-user/root/channels/nixos)
 release_selection=$(
   NIX_PATH=/deliberately/invalid \
-    bash -c 'source "$1"; printf "%s|%s\n" "$HELIX_SELECTED_RELEASE" "$NIX_PATH"' \
+    HELIX_NIXPKGS_PATH=/nix/var/nix/profiles/per-user/root/channels/nixos \
+    bash -c 'source "$1" >/dev/null; printf "%s|%s|%s\n" "$HELIX_SELECTED_RELEASE" "$HELIX_SELECTED_NIXPKGS" "$NIX_PATH"' \
     _ "$repo_root/scripts/release-environment.sh"
 )
-[[ $release_selection == "26.05|nixpkgs=/nix/var/nix/profiles/per-user/root/channels/nixos:nixos-config=$repo_root/configuration.nix:/nix/var/nix/profiles/per-user/root/channels/nixos" ]]
+[[ $release_selection == "$expected_release|$selected_nixpkgs|nixpkgs=$selected_nixpkgs:nixos-config=$repo_root/configuration.nix:$selected_nixpkgs" ]]
+if HELIX_NIXPKGS_PATH=/deliberately/missing \
+  bash -c 'source "$1"' _ "$repo_root/scripts/release-environment.sh" >/dev/null 2>&1; then
+  printf 'release-environment accepted an unreadable explicit Nixpkgs source.\n' >&2
+  exit 1
+fi
 
 printf 'Checking Nix formatting...\n'
 temporary_directory=$(mktemp -d)
@@ -88,6 +96,8 @@ cleanup_program=$(nix-build --no-out-link -E '
 
 printf 'Testing release-migration planning...\n'
 ./scripts/test-migrate-release.sh
+./scripts/test-release-safety.sh
+./scripts/test-reinstall-safety.sh
 
 printf 'Evaluating release, desktop, security, and native NAS invariants...\n'
 nix-instantiate --eval --strict -E '
@@ -109,6 +119,10 @@ nix-instantiate --eval --strict -E '
   in
   assert config.system.nixos.release == release.nixosRelease;
   assert config.system.stateVersion == release.stateVersion;
+  assert config.systemd.timers.helix-nix-cleanup.unitConfig.ConditionPathExists
+    == "!/var/lib/helix/release-qualification";
+  assert config.systemd.services.helix-nix-cleanup.unitConfig.ConditionPathExists
+    == "!/var/lib/helix/release-qualification";
   assert !(builtins.hasAttr "helix/fresh-install-state-version" config.environment.etc);
   assert config.services.desktopManager.plasma6.enable;
   assert config.services.displayManager.sddm.enable;
@@ -196,10 +210,12 @@ nix-instantiate --eval --strict -E '
     system = import <nixpkgs/nixos> {
       configuration = ./fresh-install-configuration.nix;
     };
+    release = import ./release.nix;
   in
-  assert system.config.system.nixos.release == "26.05";
-  assert system.config.system.stateVersion == "26.05";
-  assert system.config.environment.etc."helix/fresh-install-state-version".text == "26.05\n";
+  assert system.config.system.nixos.release == release.nixosRelease;
+  assert system.config.system.stateVersion == release.freshStateVersion;
+  assert system.config.environment.etc."helix/fresh-install-state-version".text
+    == release.freshStateVersion + "\n";
   true
 '
 
@@ -229,7 +245,7 @@ printf 'Building the complete fresh-install system closure...\n'
 fresh_system_closure=$(nix-build --no-out-link '<nixpkgs/nixos>' -A system \
   -I "nixos-config=$repo_root/fresh-install-configuration.nix")
 [[ -r $fresh_system_closure/etc/helix/fresh-install-state-version ]]
-grep -qxF '26.05' "$fresh_system_closure/etc/helix/fresh-install-state-version"
+grep -qxF "$expected_release" "$fresh_system_closure/etc/helix/fresh-install-state-version"
 
 printf 'Checking Vim and modern-bash in the built default system...\n'
 ./scripts/test-modern-bash.sh "$system_closure"

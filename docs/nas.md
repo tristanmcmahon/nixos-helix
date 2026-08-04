@@ -77,14 +77,14 @@ After temporary activation, Tristan can perform a sustained read-only test
 without creating or changing NAS data:
 
 ```bash
-find /mnt/infernalnexus/nas1 -xdev -type f -readable -print0 \
-  | head -z -n 1000 \
-  | xargs -0 -r sha256sum > /dev/null
-findmnt /mnt/infernalnexus/nas1
+./scripts/nas-sustained-read-test.sh --run
 ```
 
-This intentionally triggers the automount. Run it only during the manual
-runtime qualification window, never as an automated repository check.
+This explicitly opt-in helper safely handles filenames, writes nothing, reads
+at most 1 GiB for at most ten minutes, reports progress, and finishes with
+`findmnt` plus the relevant unit journals. It intentionally triggers the
+automount. Run it only during the manual runtime qualification window, never as
+an automated repository check.
 
 Inspect the path and generated units with:
 
