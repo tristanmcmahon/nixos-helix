@@ -81,7 +81,34 @@ the repository copy and rebuild instead of editing the deployed file.
 Edit this checkout under `~/Projects/nixos-helix`. `/etc/nixos` is only the
 installer-created fallback; it is not a second maintained copy.
 
-## One-command installation
+## Normal operation and migration boundaries
+
+An ordinary repository check is non-activating:
+
+```bash
+./scripts/dev-shell.sh --run './scripts/check.sh'
+```
+
+A same-release rebuild uses the already-selected root channel:
+
+```bash
+./scripts/rebuild.sh dry-build
+./scripts/rebuild.sh test
+```
+
+`test` changes only the running system. After focused runtime validation,
+`./scripts/rebuild.sh switch` also selects it as the persistent boot generation.
+
+A major NixOS release migration is separate and must begin with an explicit
+warning and root-channel change. It can change the kernel, drivers, desktop,
+Nix, and the complete system closure; `system.stateVersion` remains `25.11`.
+Run `./scripts/migrate-release.sh` and see [installation.md](docs/installation.md).
+
+A fresh reinstall is destructive, may change filesystem UUIDs, and uses a newly
+generated hardware configuration in a temporary checkout. It is never performed
+by the normal installer; see [reinstall.md](docs/reinstall.md).
+
+## Guided configuration installation
 
 From the repository root, run:
 
@@ -102,6 +129,7 @@ directory:
 ```bash
 ./scripts/rebuild.sh dry-build
 ./scripts/rebuild.sh build
+./scripts/rebuild.sh dry-activate
 ./scripts/rebuild.sh test
 ./scripts/rebuild.sh switch
 ```
@@ -113,7 +141,7 @@ sudo nixos-rebuild dry-build \
   -I "nixos-config=$PWD/configuration.nix"
 ```
 
-Run `./scripts/check.sh` before activation. It checks formatting, shell scripts,
+Run the development-shell check before activation. It checks formatting, shell scripts,
 Git whitespace, recovery commands, isolated Bash startup, the Hyprland config,
 both SDDM sessions, Corsair support, the default gaming-enabled system, and the
 dormant local-LLM profile. A build or dry build does not activate anything. `test` changes only
@@ -137,6 +165,7 @@ rollback is intentionally limited to the two retained alternatives.
 ## Focused guides
 
 - [Installation and recovery](docs/installation.md)
+- [Fresh reinstall qualification](docs/reinstall.md)
 - [Local development, VS Code, GitHub, and Codex](docs/local-development.md)
 - [Package and profile boundaries](docs/profiles.md)
 - [Real-hardware validation checklist](docs/hardware-validation.md)

@@ -1,4 +1,4 @@
-{ ... }:
+_:
 
 {
   # Wi-Fi, Bluetooth, audio DSPs, GPUs, and motherboard devices often require

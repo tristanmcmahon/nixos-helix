@@ -13,12 +13,39 @@ Helix is maintained against NixOS 26.05 on the `nixos-26.05` root channel.
 state compatibility and must not change during the release upgrade. The
 contract is centralized in `release.nix` and evaluation fails on another release.
 
-Upgrade the root channel before activation (these commands are documentation;
-the repository never runs them automatically):
+Before a major upgrade, display and acknowledge:
+
+```text
+MAJOR NIXOS RELEASE UPGRADE
+Current: 25.11
+Target:  26.05
+system.stateVersion remains 25.11
+This changes the kernel, drivers, desktop packages and system closure.
+```
+
+Preserve the current generation and run the repository-owned migration helper.
+It requires an exact confirmation phrase, stops the cleanup timer for the
+qualification window, updates only the root channel, and verifies the selected
+release:
 
 ```bash
-sudo nix-channel --add https://channels.nixos.org/nixos-26.05 nixos
-sudo nix-channel --update nixos
+./scripts/migrate-release.sh
+```
+
+For transparency, the state-changing operations inside it are
+`sudo systemctl stop helix-nix-cleanup.timer`, `sudo nix-channel --add` using
+the URL from `release.nix`, and `sudo nix-channel --update nixos`. The root
+channel cannot be declared by the system configuration because Nixpkgs must be
+selected before that configuration can evaluate.
+
+Do not use `nixos-rebuild --upgrade` during this controlled migration. Do not
+delete old generations or run garbage collection. An older boot generation is
+the primary rollback. Reverting the root channel is a separate action, and a
+Nix database schema upgrade may make a complete channel downgrade less direct.
+After 26.05 is fully qualified, restore scheduled cleanup with:
+
+```bash
+sudo systemctl start helix-nix-cleanup.timer
 ```
 
 Helix boots in UEFI mode with systemd-boot. The maintained boot module keeps EFI
@@ -82,7 +109,8 @@ explicitly:
 
 ```bash
 cd ~/Projects/nixos-helix
-./scripts/check.sh
+./scripts/dev-shell.sh --run './scripts/check.sh'
+./scripts/rebuild.sh dry-activate
 ./scripts/rebuild.sh test
 ```
 
@@ -102,13 +130,9 @@ the generation persistent with:
 This configuration follows the root `nixos` channel. Inspect it and read the
 26.05 release notes before updating:
 
-```bash
-sudo nix-channel --list
-sudo nix-channel --add https://channels.nixos.org/nixos-26.05 nixos
-sudo nix-channel --update nixos
-sudo nixos-rebuild build --upgrade \
-  -I "nixos-config=$PWD/configuration.nix"
-```
+Inspect the selected root channel with `sudo nix-channel --list`. Channel
+changes belong only to the explicit major-migration procedure above; ordinary
+checks and rebuilds never update it.
 
 Do not combine a release upgrade with unrelated hardware changes, and never
 bump `system.stateVersion` merely because the channel changed.

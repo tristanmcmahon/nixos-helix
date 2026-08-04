@@ -1,4 +1,4 @@
-{ ... }:
+_:
 
 let
   chrome1PasswordId = "aeblfdkhhhdcdjpifhhbdiojplfjncoa";

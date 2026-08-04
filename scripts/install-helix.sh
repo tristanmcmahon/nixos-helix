@@ -28,11 +28,12 @@ esac
 
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$repo_root"
+# shellcheck source=/dev/null
+source "$repo_root/scripts/release-environment.sh"
 release=$(nix-instantiate --eval --strict release.nix)
 expected_release=$(nix-instantiate --eval --raw -E '(import ./release.nix).nixosRelease')
 state_version=$(nix-instantiate --eval --raw -E '(import ./release.nix).stateVersion')
-selected_release=$(nix-instantiate --eval --raw -E \
-  'let system = import <nixpkgs/nixos> { configuration = ./configuration.nix; }; in system.config.system.nixos.release')
+selected_release=$HELIX_SELECTED_RELEASE
 
 phase 'Repository preflight'
 printf 'Repository: %s\n' "$repo_root"
@@ -97,7 +98,8 @@ systemctl is-enabled display-manager.service
 systemctl is-active display-manager.service
 systemctl is-active sshd.service
 ss -ltn | grep -Eq '(^|[[:space:]])[^[:space:]]*:22[[:space:]]'
-sshd -T | grep -E '^(permitrootlogin no|pubkeyauthentication yes|passwordauthentication no|kbdinteractiveauthentication no)$'
+sshd -T | tr '[:upper:]' '[:lower:]' |
+  grep -E '^(permitrootlogin no|pubkeyauthentication yes|passwordauthentication no|kbdinteractiveauthentication no)$'
 systemctl is-enabled mnt-infernalnexus-nas1.automount
 systemctl is-active mnt-infernalnexus-nas1.automount
 systemctl cat mnt-infernalnexus-nas1.automount

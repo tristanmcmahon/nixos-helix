@@ -1,4 +1,4 @@
-{ ... }:
+_:
 
 {
   # Helix uses New Zealand time and locale settings.

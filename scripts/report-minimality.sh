@@ -3,7 +3,13 @@
 set -euo pipefail
 
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+# shellcheck source=/dev/null
+source "$repo_root/scripts/release-environment.sh"
 cd "$repo_root"
+
+printf 'Release: %s (state version %s)\n' \
+  "$HELIX_SELECTED_RELEASE" \
+  "$(nix-instantiate --eval --raw -E '(import ./release.nix).stateVersion')"
 
 printf 'Top-level system packages:\n'
 nix-instantiate --eval --strict -E '
