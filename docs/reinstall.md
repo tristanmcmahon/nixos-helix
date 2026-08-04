@@ -5,6 +5,9 @@ Helix rebuild or release migration. This guide deliberately provides no
 unattended erase command. Run `./scripts/reinstall-preflight.sh` on the current
 installation first; it is read-only and never labels a disk safe to erase.
 
+A wiped installation using the NixOS 26.05 installer installs only 26.05.
+There is no intermediate 25.11 installation or upgrade step.
+
 ## Verified backup gate
 
 Use a destination on a physically separate device from the intended target.
@@ -74,18 +77,26 @@ diff -u ~/BACKUP/hardware-configuration.nix /tmp/nixos-helix-install/hardware-co
 
 Preserve the newly generated file for later review. Repartitioning can change
 filesystem UUIDs, so never blindly reuse the tracked hardware file and never
-overwrite the canonical checkout merely to install. Keep the deliberate
-`system.stateVersion = "25.11"` compatibility contract unless a separate new-
-installation policy is explicitly approved.
+overwrite the canonical checkout merely to install. The normal configuration's
+`system.stateVersion = "25.11"` remains the upgrade compatibility contract.
+A wiped installation first created on NixOS 26.05 must additionally import
+`fresh-install.nix`, which explicitly selects `system.stateVersion = "26.05"`.
 
 Before `nixos-install`, verify `/mnt`, its EFI mount, all generated UUIDs, the
-explicit target disk, and that no unrelated disk is below `/mnt`. Then, from the
-temporary checkout using the 26.05 source, run:
+explicit target disk, and that no unrelated disk is below `/mnt`. The
+repository-owned `fresh-install-configuration.nix` is the installer entry
+point; it composes the maintained configuration with `fresh-install.nix` and is
+not used by upgrades. From the temporary checkout using the 26.05 source, run:
 
 ```bash
 ./scripts/check.sh
-nixos-rebuild dry-build -I "nixos-config=$PWD/configuration.nix"
+nixos-rebuild dry-build -I "nixos-config=$PWD/fresh-install-configuration.nix"
+sudo nixos-install --root /mnt -I "nixos-config=$PWD/fresh-install-configuration.nix"
 ```
+
+The final command installs to the already reviewed and mounted `/mnt`; it does
+not partition or format a disk. Recheck the mount topology immediately before
+running it.
 
 Also record how the authorized key and root-owned NAS credential will be
 restored without storing either in Git or the Nix store.
@@ -97,7 +108,7 @@ repository to `~/Projects/nixos-helix`, and record the installed commit. Run:
 
 ```bash
 cd ~/Projects/nixos-helix
-./scripts/reinstall-postflight.sh
+HELIX_BACKUP_PATH=/mnt/VERIFIED-BACKUP ./scripts/reinstall-postflight.sh
 ```
 
 The automount must be active and waiting before access. Trigger the NAS only

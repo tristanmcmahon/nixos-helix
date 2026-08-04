@@ -10,8 +10,10 @@ identifiers or run `nixos-generate-config` over this checkout.
 
 Helix is maintained against NixOS 26.05 on the `nixos-26.05` root channel.
 `system.stateVersion = "25.11"` records the original installation's persistent
-state compatibility and must not change during the release upgrade. The
-contract is centralized in `release.nix` and evaluation fails on another release.
+state compatibility and must not change during the release upgrade. A wiped
+installation first created on 26.05 imports `fresh-install.nix` and uses 26.05;
+the two paths are evaluated separately. The upgrade contract is centralized in
+`release.nix` and evaluation fails on another release.
 
 Before a major upgrade, display and acknowledge:
 

@@ -16,6 +16,14 @@ for required_tool in "${required_tools[@]}"; do
   fi
 done
 
+printf 'Checking deterministic release selection...\n'
+release_selection=$(
+  NIX_PATH=/deliberately/invalid \
+    bash -c 'source "$1"; printf "%s|%s\n" "$HELIX_SELECTED_RELEASE" "$NIX_PATH"' \
+    _ "$repo_root/scripts/release-environment.sh"
+)
+[[ $release_selection == "26.05|nixpkgs=/nix/var/nix/profiles/per-user/root/channels/nixos:nixos-config=$repo_root/configuration.nix:/nix/var/nix/profiles/per-user/root/channels/nixos" ]]
+
 printf 'Checking Nix formatting...\n'
 temporary_directory=$(mktemp -d)
 trap 'rm -rf -- "$temporary_directory"' EXIT
@@ -33,6 +41,12 @@ done < <(find . -name '*.nix' -type f ! -name hardware-configuration.nix -print 
 
 printf 'Checking shell syntax...\n'
 bash -n scripts/*.sh
+
+if grep -Eq '\b(mkfs|parted|fdisk|sgdisk|wipefs)\b' \
+  scripts/reinstall-preflight.sh scripts/reinstall-postflight.sh; then
+  printf 'A destructive storage command entered a read-only reinstall helper.\n' >&2
+  exit 1
+fi
 
 printf 'Running ShellCheck...\n'
 shellcheck scripts/*.sh
@@ -72,6 +86,9 @@ cleanup_program=$(nix-build --no-out-link -E '
 ')
 ./scripts/test-cleanup-plan.sh "$cleanup_program/bin/helix-nix-cleanup"
 
+printf 'Testing release-migration planning...\n'
+./scripts/test-migrate-release.sh
+
 printf 'Evaluating release, desktop, security, and native NAS invariants...\n'
 nix-instantiate --eval --strict -E '
   let
@@ -92,6 +109,7 @@ nix-instantiate --eval --strict -E '
   in
   assert config.system.nixos.release == release.nixosRelease;
   assert config.system.stateVersion == release.stateVersion;
+  assert !(builtins.hasAttr "helix/fresh-install-state-version" config.environment.etc);
   assert config.services.desktopManager.plasma6.enable;
   assert config.services.displayManager.sddm.enable;
   assert config.programs.hyprland.enable;
@@ -172,6 +190,19 @@ nix-instantiate --eval --strict -E '
   true
 '
 
+printf 'Evaluating the separate fresh-install compatibility contract...\n'
+nix-instantiate --eval --strict -E '
+  let
+    system = import <nixpkgs/nixos> {
+      configuration = ./fresh-install-configuration.nix;
+    };
+  in
+  assert system.config.system.nixos.release == "26.05";
+  assert system.config.system.stateVersion == "26.05";
+  assert system.config.environment.etc."helix/fresh-install-state-version".text == "26.05\n";
+  true
+'
+
 corsair_imports=$(grep -cF './hardware/corsair-k70.nix' configuration.nix)
 [[ $corsair_imports -eq 1 ]] || {
   printf 'Expected exactly one Corsair module import, found %s.\n' "$corsair_imports" >&2
@@ -193,6 +224,12 @@ openssh_imports=$(grep -cF './services/openssh.nix' configuration.nix)
 printf 'Building the complete default system closure...\n'
 system_closure=$(nix-build --no-out-link '<nixpkgs/nixos>' -A system \
   -I "nixos-config=$repo_root/configuration.nix")
+
+printf 'Building the complete fresh-install system closure...\n'
+fresh_system_closure=$(nix-build --no-out-link '<nixpkgs/nixos>' -A system \
+  -I "nixos-config=$repo_root/fresh-install-configuration.nix")
+[[ -r $fresh_system_closure/etc/helix/fresh-install-state-version ]]
+grep -qxF '26.05' "$fresh_system_closure/etc/helix/fresh-install-state-version"
 
 printf 'Checking Vim and modern-bash in the built default system...\n'
 ./scripts/test-modern-bash.sh "$system_closure"

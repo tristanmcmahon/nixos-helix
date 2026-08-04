@@ -47,6 +47,17 @@ fi
 printf 'State: clean\n'
 git remote get-url origin >/dev/null 2>&1 || die "This checkout has no 'origin' remote."
 
+phase 'Qualification preservation'
+./scripts/qualification-status.sh
+if systemctl is-active --quiet helix-nix-cleanup.timer; then
+  die 'helix-nix-cleanup.timer must remain stopped during qualification.'
+fi
+running_system=$(readlink -f /run/current-system)
+persistent_system=$(readlink -f /nix/var/nix/profiles/system)
+if [[ $running_system != "$persistent_system" ]]; then
+  printf 'WARNING: running and persistent system paths differ; review them before activation.\n' >&2
+fi
+
 phase 'Release preflight'
 printf 'Release contract: %s\n' "$release"
 printf 'Expected NixOS release: %s\n' "$expected_release"
