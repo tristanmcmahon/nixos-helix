@@ -7,10 +7,18 @@ Helix exposes the Synology share `nas1` at the stable local path
 Server:  192.168.1.8
 Source:  //192.168.1.8/nas1
 Mount:   /mnt/infernalnexus/nas1
+SMB dialect: 2.0
+Security:     NTLMSSP
 ```
 
 SMB is the initial transport. A later NFS migration can retain the same local
 path, but NFS support is intentionally deferred.
+
+Real-hardware testing established that the Synology currently rejects SMB 3.0
+and SMB 2.1. The mount deliberately pins `vers=2.0` with `sec=ntlmssp` rather
+than relying on dialect negotiation. SMB1 remains prohibited. If the Synology
+is later configured to support SMB3, test that configuration on real hardware
+before changing the NixOS mount option.
 
 ## Credentials
 
@@ -74,6 +82,23 @@ sudo systemctl stop mnt-infernalnexus-nas1.mount
 ```
 
 ## Troubleshooting
+
+The normal configuration uses systemd automount. For troubleshooting only, the
+verified manual diagnostic mount command is:
+
+```bash
+sudo mount -t cifs //192.168.1.8/nas1 /mnt/infernalnexus/nas1 \
+  -o credentials=/etc/nixos/secrets/infernalnexus-smb,uid="$(id -u)",gid="$(id -g)",file_mode=0664,dir_mode=0775,vers=2.0,sec=ntlmssp
+```
+
+After a failed attempt, inspect recent kernel messages with:
+
+```bash
+sudo dmesg | tail -n 30
+```
+
+Error 95 with “Dialect not supported by server” indicates an SMB dialect
+mismatch. Do not use SMB1 as a fallback.
 
 - Authentication errors: verify the credentials file's format, ownership, and
   mode, then inspect the mount unit journal. Do not print the file in logs.
