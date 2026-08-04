@@ -26,6 +26,7 @@
     ./shell/modern-bash.nix
 
     ./system/boot.nix
+    ./system/hosts.nix
     ./system/networking.nix
     ./system/nas.nix
     ./system/users.nix
