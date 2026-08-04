@@ -1,4 +1,4 @@
-{ ... }:
+_:
 
 {
   # The attached original Corsair K70 RGB reports USB ID 1b1c:1b13. Use the

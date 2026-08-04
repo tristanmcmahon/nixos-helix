@@ -1,4 +1,4 @@
-{ ... }:
+_:
 
 {
   # BlueZ backs Plasma System Settings and supports the onboard controller for input

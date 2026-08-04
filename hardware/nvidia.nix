@@ -1,4 +1,4 @@
-{ ... }:
+_:
 
 {
   # The RTX 5080 is a Blackwell GPU. NVIDIA lists this PCI family as requiring

@@ -5,8 +5,17 @@ development profile is installed:
 
 ```bash
 cd ~/Projects/nixos-helix
-nix-shell
+./scripts/dev-shell.sh
 code .
+```
+
+The helper selects the root NixOS channel deterministically and refuses a
+release other than the `26.05` contract. This prevents user `NIX_PATH` state
+from making checks evaluate a different package set from root rebuilds. Run a
+single command in the same environment with:
+
+```bash
+./scripts/dev-shell.sh --run './scripts/check.sh'
 ```
 
 It supplies VS Code, Git, GitHub CLI, Git LFS, Node.js/npm, `nil`, `nixfmt`,
@@ -21,7 +30,7 @@ extension identifier, `openai.chatgpt`. Recommendations do not install or
 authenticate extensions automatically.
 
 The shared settings use `nil` as the single Nix language server and `nixfmt` as
-the formatter, with format-on-save for Nix files. Start VS Code from `nix-shell`
+the formatter, with format-on-save for Nix files. Start VS Code from `./scripts/dev-shell.sh`
 so those binaries are on its inherited `PATH`.
 
 Confirm extensions without changing them:
@@ -74,7 +83,9 @@ not own those identities or credentials.
 Run the complete non-activating validation suite with:
 
 ```bash
-./scripts/check.sh
+./scripts/dev-shell.sh --run './scripts/check.sh'
 ```
 
-The formatter check uses temporary copies and never rewrites source files.
+The formatter, Deadnix, and Statix checks exclude only the generated
+`hardware-configuration.nix`. Maintained modules remain fully checked, and the
+formatter uses temporary copies without rewriting source files.

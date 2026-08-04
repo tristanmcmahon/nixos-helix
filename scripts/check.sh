@@ -3,7 +3,18 @@
 set -euo pipefail
 
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+# shellcheck source=/dev/null
+source "$repo_root/scripts/release-environment.sh"
 cd "$repo_root"
+
+required_tools=(deadnix nixfmt shellcheck statix)
+for required_tool in "${required_tools[@]}"; do
+  if ! command -v "$required_tool" >/dev/null; then
+    printf 'Missing validation tool: %s\n' "$required_tool" >&2
+    printf "Run: ./scripts/dev-shell.sh --run './scripts/check.sh'\n" >&2
+    exit 1
+  fi
+done
 
 printf 'Checking Nix formatting...\n'
 temporary_directory=$(mktemp -d)
@@ -27,14 +38,15 @@ printf 'Running ShellCheck...\n'
 shellcheck scripts/*.sh
 
 printf 'Checking Nix dead code and lint...\n'
-deadnix --fail .
-statix check .
+deadnix --fail --exclude hardware-configuration.nix -- .
+statix check . -i hardware-configuration.nix
 
 printf 'Checking Git whitespace...\n'
 git diff --check
 
 printf 'Checking documentation links and tracked secrets...\n'
 python3 scripts/check-docs.py
+python3 scripts/check-modules.py
 if git ls-files | grep -Eq '(^|/)(id_(rsa|dsa|ecdsa|ed25519)|.*credentials.*|infernalnexus-smb)$'; then
   printf 'A credential or private-key-shaped file is tracked.\n' >&2
   exit 1
@@ -201,7 +213,7 @@ configured_display_manager=$(nix-instantiate --eval --raw -E '
       configuration = ./configuration.nix;
     };
   in
-  system.config.services.displayManager.execCmd
+  system.config.services.displayManager.generic.execCmd
 ')
 [[ -n $configured_display_manager ]]
 grep -qi 'sddm' <<<"$configured_display_manager"
@@ -288,7 +300,7 @@ sshd_test_key=$temporary_directory/ssh_host_ed25519_key
 sshd_effective=$(
   "$system_closure/sw/bin/sshd" -T \
     -f "$system_closure/etc/ssh/sshd_config" \
-    -h "$sshd_test_key" 2>/dev/null
+    -h "$sshd_test_key" 2>/dev/null | tr '[:upper:]' '[:lower:]'
 )
 for ssh_setting in \
   'permitrootlogin no' \

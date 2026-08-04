@@ -3,6 +3,8 @@
 set -euo pipefail
 
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+# shellcheck source=/dev/null
+source "$repo_root/scripts/release-environment.sh"
 
 if [[ $# -ne 1 ]]; then
   printf 'Usage: %s local-llm\n' "${0##*/}" >&2
