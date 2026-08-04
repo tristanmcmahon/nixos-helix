@@ -17,7 +17,8 @@ the wrapper, and Nix installs its executable, desktop entry, and upstream icon.
 It provides the otherwise-missing configurable simultaneous-video grid.
 
 Select libraries and files beneath `/mnt/infernalnexus/nas1` inside the
-applications after activation. Applications use this stable local path, so a
+applications after activation. A native systemd automount keeps access on
+demand without blocking boot. Applications use this stable local path, so a
 future SMB-to-NFS transport change will not alter their saved paths. No media
 server, downloader, or library automation runs on Helix, and no MIME defaults
 are imposed yet.

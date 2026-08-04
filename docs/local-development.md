@@ -11,7 +11,8 @@ code .
 
 It supplies VS Code, Git, GitHub CLI, Git LFS, Node.js/npm, `nil`, `nixfmt`,
 ShellCheck, ripgrep, jq, and the OpenAI Codex CLI. VS Code is unfree, so
-`shell.nix` permits unfree packages only for its own Nixpkgs import.
+`shell.nix` permits unfree packages only for its own Nixpkgs import. It also
+includes deadnix and statix for the repository's Nix maintenance checks.
 
 ## VS Code and Nix
 
@@ -31,7 +32,7 @@ code --list-extensions --show-versions
 
 ## Codex
 
-NixOS 25.11 packages the official OpenAI Codex CLI as `pkgs.codex`; the
+NixOS 26.05 packages the official OpenAI Codex CLI as `pkgs.codex`; the
 development profile and bootstrap shell install it independently of VS Code.
 The Codex IDE extension also bundles its own CLI, so installing VS Code alone
 must not be treated as installing a user-facing terminal command.

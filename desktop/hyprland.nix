@@ -59,7 +59,7 @@ let
       gaps_out = 8
       border_size = 2
       col.active_border = rgb(7396F5)
-      col.inactive_border = rgb(252C37)
+      col.inactive_border = rgb(1B222C)
     }
 
     decoration {
@@ -94,10 +94,15 @@ in
 
   # UWSM keeps the standard compositor path and selects the immutable baseline
   # explicitly. Hyprland never needs to create or update a user config file.
-  programs.uwsm.waylandCompositors.hyprland.extraArgs = [
-    "--config"
-    "/etc/hypr/helix.conf"
-  ];
+  programs.uwsm.waylandCompositors.hyprland = {
+    prettyName = "Hyprland";
+    comment = "Hyprland compositor managed by UWSM";
+    binPath = "/run/current-system/sw/bin/Hyprland";
+    extraArgs = [
+      "--config"
+      "/etc/hypr/helix.conf"
+    ];
+  };
 
   environment.etc."hypr/helix.conf".text = baselineConfig;
 

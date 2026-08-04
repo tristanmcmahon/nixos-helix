@@ -39,8 +39,8 @@ for section in colors.sections():
         ):
             channels = value.split(",")
             assert len(channels) == 3 and all(0 <= int(channel) <= 255 for channel in channels)
-assert colors["Colors:Window"]["BackgroundNormal"] == "11,14,18"
-assert colors["Colors:Selection"]["BackgroundNormal"] == "49,78,138"
+assert colors["Colors:Window"]["BackgroundNormal"] == "5,6,8"
+assert colors["Colors:Selection"]["BackgroundNormal"] == "41,70,126"
 
 wallpaper = ROOT / "config/theme/wallpaper.svg"
 element_tree.parse(wallpaper)
@@ -55,7 +55,7 @@ for gtk_version in ("3.0", "4.0"):
     assert gtk_settings["Settings"]["gtk-application-prefer-dark-theme"] == "true"
 
 waybar = (ROOT / "config/theme/waybar.css").read_text(encoding="utf-8")
-assert waybar.count("{") == waybar.count("}") and "#080a0d" in waybar
+assert waybar.count("{") == waybar.count("}") and "#030405" in waybar
 
 mako = (ROOT / "config/theme/mako.conf").read_text(encoding="utf-8")
 for key in ("background-color", "text-color", "border-color", "default-timeout"):
@@ -70,20 +70,52 @@ for key in ("background", "text", "input", "selection", "border"):
 
 with tempfile.TemporaryDirectory() as temporary_directory:
     temporary = pathlib.Path(temporary_directory)
-    gtk = temporary / "settings.ini"
-    gtk.write_text("[Settings]\nunrelated-key=preserved\ngtk-theme-name=Old\n", encoding="utf-8")
-    MODULE.merge_ini(ROOT / "config/theme/gtk-3.0-settings.ini", gtk)
-    parsed = configparser.ConfigParser()
-    parsed.read(gtk)
-    assert parsed["Settings"]["unrelated-key"] == "preserved"
-    assert parsed["Settings"]["gtk-theme-name"] == "Breeze-Dark"
+    source = ROOT / "config/theme/gtk-3.0-settings.ini"
+    fixtures = {
+        "absent": None,
+        "settings": "[Settings]\ngtk-theme-name=Old\n",
+        "settings-first": "[Settings]\nunrelated-key=preserved\n[Other]\nvalue=kept\n",
+        "settings-last": "[Other]\nvalue=kept\n[Settings]\nunrelated-key=preserved\n",
+        "missing-settings": "[Other]\nvalue=kept\n",
+        "comments": "# retained\n[Settings]\n; retained too\nunrelated-key=preserved\n",
+    }
+    for name, initial in fixtures.items():
+        gtk = temporary / f"{name}.ini"
+        if initial is not None:
+            gtk.write_text(initial, encoding="utf-8")
+        MODULE.merge_ini(source, gtk)
+        first_result = gtk.read_text(encoding="utf-8")
+        MODULE.merge_ini(source, gtk)
+        assert gtk.read_text(encoding="utf-8") == first_result
+        parsed = configparser.ConfigParser()
+        parsed.read(gtk)
+        assert parsed["Settings"]["gtk-theme-name"] == "Breeze-Dark"
+        if "unrelated-key" in first_result:
+            assert parsed["Settings"]["unrelated-key"] == "preserved"
+        if "[Other]" in first_result:
+            assert parsed["Other"]["value"] == "kept"
+        assert first_result.count("[Settings]") == 1
+
+    malformed = temporary / "malformed.ini"
+    malformed_text = "[Settings\ngtk-theme-name=Old\n"
+    malformed.write_text(malformed_text, encoding="utf-8")
+    try:
+        MODULE.merge_ini(source, malformed)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("malformed INI was accepted")
+    assert malformed.read_text(encoding="utf-8") == malformed_text
 
     vscode = temporary / "settings.json"
     vscode.write_text('{\n  // retain the setting value\n  "editor.fontSize": 17,\n}\n', encoding="utf-8")
     MODULE.merge_vscode(vscode)
+    first_vscode_result = vscode.read_text(encoding="utf-8")
+    MODULE.merge_vscode(vscode)
+    assert vscode.read_text(encoding="utf-8") == first_vscode_result
     settings = json.loads(vscode.read_text(encoding="utf-8"))
     assert settings["editor.fontSize"] == 17
     assert settings["workbench.colorTheme"] == "Abyss"
-    assert settings["workbench.colorCustomizations"]["sideBar.background"] == "#080A0D"
+    assert settings["workbench.colorCustomizations"]["sideBar.background"] == "#030405"
 
 print("Theme settings merge fixtures passed.")

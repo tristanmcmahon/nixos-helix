@@ -1,5 +1,8 @@
-{ ... }:
+{ config, ... }:
 
+let
+  release = import ./release.nix;
+in
 {
   # A NixOS configuration is assembled by importing modules. Each module below
   # contributes option values to one combined system configuration; file order
@@ -20,6 +23,7 @@
     ./desktop/applications.nix
     ./desktop/fonts.nix
     ./desktop/ghostty.nix
+    ./desktop/browsers.nix
     ./desktop/onepassword.nix
     ./desktop/theme.nix
 
@@ -52,5 +56,15 @@
 
   # This is the compatibility floor from Helix's original installation, not
   # the currently selected channel. Keep it unchanged across upgrades.
-  system.stateVersion = "25.11";
+  system.stateVersion = release.stateVersion;
+
+  assertions = [
+    {
+      assertion = config.system.nixos.release == release.nixosRelease;
+      message = ''
+        Helix requires NixOS ${release.nixosRelease} from ${release.channelName}.
+        The selected Nixpkgs reports NixOS ${config.system.nixos.release}.
+      '';
+    }
+  ];
 }

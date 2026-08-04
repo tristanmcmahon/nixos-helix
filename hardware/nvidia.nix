@@ -18,7 +18,7 @@
     open = true;
 
     # No package override is used: Nixpkgs selects a stable driver compatible
-    # with the selected kernel. NixOS 25.11 has no hardware.nvidia.branch option.
+    # with the selected kernel.
 
     # Preserve video memory across suspend. On current stable drivers NixOS
     # uses NVIDIA's kernel suspend notifier when available, otherwise it
@@ -32,6 +32,6 @@
 
   # PRIME is intentionally absent. It requires real PCI bus IDs and knowledge
   # of whether Helix has an active iGPU; inventing those values could prevent
-  # the display manager from starting. Mutter discovers monitors and outputs
+  # the display manager from starting. Plasma's KWin discovers outputs
   # dynamically, so connector names and EDIDs also do not belong here.
 }

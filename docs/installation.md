@@ -8,23 +8,32 @@ identifiers or run `nixos-generate-config` over this checkout.
 
 ## Fixed installation compatibility
 
+Helix is maintained against NixOS 26.05 on the `nixos-26.05` root channel.
 `system.stateVersion = "25.11"` records the original installation's persistent
-state compatibility. Channel upgrades do not change it.
+state compatibility and must not change during the release upgrade. The
+contract is centralized in `release.nix` and evaluation fails on another release.
+
+Upgrade the root channel before activation (these commands are documentation;
+the repository never runs them automatically):
+
+```bash
+sudo nix-channel --add https://channels.nixos.org/nixos-26.05 nixos
+sudo nix-channel --update nixos
+```
 
 Helix boots in UEFI mode with systemd-boot. The maintained boot module keeps EFI
 variable access enabled and a five-second menu timeout. Storage layout and
 boot-critical drivers remain in the generated hardware module.
 
 The RTX 5080 uses NVIDIA's open kernel modules with the matching proprietary
-user-space driver. NixOS 25.11 has no `hardware.nvidia.branch` option, so
-Nixpkgs selects the stable driver without a package override.
+user-space driver. Nixpkgs selects the stable driver without a package override.
 
 ## Recovery editor and shell
 
 The minimal base closure includes Vim under both `vi` and `vim`, including on a
 text console when the graphical desktop is unavailable. The supported NixOS
 Vim module selects it as `EDITOR`; the base module also sets `VISUAL=vim`
-because the NixOS 25.11 Vim module does not set that variable.
+to make the recovery-shell contract explicit.
 
 Interactive Bash shells activate the immutable `modern-bash` 0.3.0 runtime
 from `https://github.com/tristanmcmahon/modern-bash` at source commit
@@ -90,11 +99,12 @@ the generation persistent with:
 
 ## Traditional channel workflow
 
-This configuration follows the root `nixos` channel. Inspect it before an
-update and read the target release notes:
+This configuration follows the root `nixos` channel. Inspect it and read the
+26.05 release notes before updating:
 
 ```bash
 sudo nix-channel --list
+sudo nix-channel --add https://channels.nixos.org/nixos-26.05 nixos
 sudo nix-channel --update nixos
 sudo nixos-rebuild build --upgrade \
   -I "nixos-config=$PWD/configuration.nix"
@@ -102,6 +112,9 @@ sudo nixos-rebuild build --upgrade \
 
 Do not combine a release upgrade with unrelated hardware changes, and never
 bump `system.stateVersion` merely because the channel changed.
+
+The generated hardware configuration defines no swap. Hibernation is therefore
+unsupported unless swap is deliberately designed and validated in a later change.
 
 ## Recovery
 

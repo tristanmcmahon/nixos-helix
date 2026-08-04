@@ -14,8 +14,7 @@
     alsa.enable = true;
     pulse.enable = true;
 
-    # 32-bit audio libraries are primarily needed by legacy games and Wine;
-    # neither is part of this workstation, so they are deliberately omitted.
+    # The gaming profile raises this default to true for Steam and Wine games.
     alsa.support32Bit = lib.mkDefault false;
   };
 

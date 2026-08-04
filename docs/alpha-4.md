@@ -1,4 +1,6 @@
-# Alpha 4: Helix Abyss
+# Alpha 4 historical release notes: Helix Abyss
+
+This file is historical context, not current operating guidance.
 
 Alpha 4 adds the Helix Abyss Plasma colour scheme, dark Breeze-based Qt and GTK
 integration, a dark Breeze SDDM login, and a repository-owned wallpaper. Ghostty

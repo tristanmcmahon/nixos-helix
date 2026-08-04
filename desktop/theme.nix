@@ -1,5 +1,4 @@
 {
-  config,
   lib,
   pkgs,
   ...
@@ -15,7 +14,11 @@ let
         ../config/theme/wallpaper.svg
         ../config/theme/gtk-3.0-settings.ini
         ../config/theme/gtk-4.0-settings.ini
+        ../config/theme/waybar.css
+        ../config/theme/mako.conf
+        ../config/theme/fuzzel.ini
         ../scripts/apply-theme-settings.py
+        ./theme.nix
       ]
     )
   );
@@ -37,7 +40,7 @@ let
     showlogo=hidden
     showClock=true
     type=image
-    color=#080A0D
+    color=#030405
     fontSize=10
     background=${wallpaper}
     needsFullUserModel=false
@@ -49,6 +52,7 @@ let
     runtimeInputs = [
       pkgs.coreutils
       pkgs.dconf
+      pkgs.glib
       pkgs.kdePackages.kconfig
       pkgs.kdePackages.plasma-workspace
       pkgs.python3
@@ -58,8 +62,23 @@ let
       export XDG_CONFIG_HOME="''${XDG_CONFIG_HOME:-$HOME/.config}"
       marker="$XDG_CONFIG_HOME/helix/theme-revision"
       revision=${lib.escapeShellArg themeRevision}
+      force=0
 
-      if [[ -r $marker ]] && [[ $(<"$marker") == "$revision" ]]; then
+      case ''${1:-} in
+      "") ;;
+      --force) force=1 ;;
+      --help)
+        printf 'Usage: helix-apply-theme [--force|--help]\n'
+        exit 0
+        ;;
+      *)
+        printf 'Usage: helix-apply-theme [--force|--help]\n' >&2
+        exit 2
+        ;;
+      esac
+
+      if [[ $force == 0 && -r $marker ]] && [[ $(<"$marker") == "$revision" ]]; then
+        printf 'Helix Abyss is already current.\n'
         exit 0
       fi
       if [[ -z ''${DBUS_SESSION_BUS_ADDRESS:-} || -z ''${XDG_CURRENT_DESKTOP:-} ]]; then
@@ -79,22 +98,23 @@ let
       gsettings set org.gnome.desktop.interface icon-theme breeze-dark
 
       if [[ $XDG_CURRENT_DESKTOP == *KDE* ]]; then
-        plasma-apply-colorscheme HelixAbyss
         plasma-apply-desktoptheme breeze-dark
-        plasma-apply-cursortheme breeze_cursors
-        plasma-apply-wallpaperimage ${lib.escapeShellArg wallpaper}
         kwriteconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage org.kde.breezedark.desktop
         kwriteconfig6 --file kdeglobals --group KDE --key widgetStyle Breeze
         kwriteconfig6 --file kdeglobals --group Icons --key Theme breeze-dark
         kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key library org.kde.breeze
         kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key theme Breeze
         kwriteconfig6 --file plasmarc --group Theme --key name breeze-dark
+        plasma-apply-cursortheme breeze_cursors
+        plasma-apply-colorscheme HelixAbyss
+        plasma-apply-wallpaperimage ${lib.escapeShellArg wallpaper}
         kwriteconfig6 --file kscreenlockerrc --group Greeter --group Wallpaper \
           --group org.kde.image --group General --key Image "file://${wallpaper}"
       fi
 
       install -Dm644 /dev/null "$marker"
       printf '%s\n' "$revision" > "$marker"
+      printf 'Applied Helix Abyss revision %s. Restart applications if needed.\n' "$revision"
     '';
   };
 in
