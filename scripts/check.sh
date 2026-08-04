@@ -52,6 +52,7 @@ nix-instantiate --eval --strict -E '
     packageNames = map
       (package: package.pname or package.name or "")
       config.environment.systemPackages;
+    infernalnexusOptions = config.fileSystems."/mnt/infernalnexus/nas1".options;
   in
   assert config.services.desktopManager.plasma6.enable;
   assert config.services.displayManager.sddm.enable;
@@ -66,10 +67,13 @@ nix-instantiate --eval --strict -E '
   assert config.services.openssh.ports == [ 22 ];
   assert config.services.openssh.settings.PermitRootLogin == "no";
   assert config.services.openssh.settings.PubkeyAuthentication;
-  assert config.services.openssh.settings.PasswordAuthentication;
-  assert config.services.openssh.settings.KbdInteractiveAuthentication;
+  assert !config.services.openssh.settings.PasswordAuthentication;
+  assert !config.services.openssh.settings.KbdInteractiveAuthentication;
   assert config.networking.hosts."192.168.1.2" == [ "mister" ];
   assert config.networking.hosts."192.168.1.8" == [ "infernalnexus" ];
+  assert builtins.elem "vers=2.0" infernalnexusOptions;
+  assert builtins.elem "sec=ntlmssp" infernalnexusOptions;
+  assert !(builtins.elem "vers=1.0" infernalnexusOptions);
   assert builtins.elem 22 config.networking.firewall.allowedTCPPorts;
   assert builtins.hasAttr "sshd" config.systemd.services;
   assert config.programs._1password.enable;
