@@ -25,6 +25,10 @@ if grep -Eq 'rebuild\.sh (test|switch)' "$repo_root/scripts/prepare-release-boot
 grep -qF "./scripts/dev-shell.sh --run './scripts/check.sh'" \
   "$repo_root/scripts/prepare-release-boot.sh"
 if grep -qxF './scripts/check.sh' "$repo_root/scripts/prepare-release-boot.sh"; then exit 1; fi
+grep -qF "candidate=\$(nix-build --no-out-link '<nixpkgs/nixos>' -A system" \
+  "$repo_root/scripts/prepare-release-boot.sh"
+if grep -qF "sed -n 's/^Done. The new configuration is" \
+  "$repo_root/scripts/prepare-release-boot.sh"; then exit 1; fi
 grep -qF "sudo test -r \"/boot/loader/entries/nixos-generation-\$source_generation.conf\"" \
   "$repo_root/scripts/prepare-release-boot.sh"
 grep -qF '(root access required to inspect /boot/loader/entries)' \
