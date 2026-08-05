@@ -9,7 +9,7 @@ import sys
 
 root = pathlib.Path(__file__).resolve().parent.parent
 entry = root / "configuration.nix"
-dormant_roots = {root / "profiles/local-llm.nix"}
+dormant_roots: set[pathlib.Path] = set()
 module_dirs = ("hardware", "desktop", "system", "services", "profiles", "packages", "shell")
 maintained = {
     path.resolve()

@@ -38,12 +38,12 @@ in
     ./services/maintenance.nix
     ./services/openssh.nix
 
-    # These profiles form the normal Plasma workstation. Gaming is active;
-    # local inference remains opt-in because it adds substantial software and policy.
+    # These profiles form the normal Plasma workstation. Gaming and local
+    # inference are enabled by default.
     ./profiles/workstation.nix
     ./profiles/development.nix
     ./profiles/gaming.nix
-    # ./profiles/local-llm.nix
+    ./profiles/local-llm.nix
 
     # The deliberately small package set needed on every Helix installation.
     ./packages/base.nix

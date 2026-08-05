@@ -130,7 +130,14 @@ nix-instantiate --eval --strict -E '
   assert config.programs.hyprland.withUWSM;
   assert config.programs.steam.enable;
   assert config.programs.gamemode.enable;
-  assert !config.services.ollama.enable;
+  assert config.services.ollama.enable;
+  assert config.services.ollama.host == "127.0.0.1";
+  assert !config.services.ollama.openFirewall;
+  assert config.services.ollama.package == system.pkgs.ollama-cuda;
+  assert config.services.ollama.loadModels == [ ];
+  assert !config.services.ollama.syncModels;
+  assert builtins.hasAttr "ollama" config.systemd.services;
+  assert !(builtins.hasAttr "ollama-model-loader" config.systemd.services);
   assert config.hardware.ckb-next.enable;
   assert config.services.openssh.enable;
   assert config.services.openssh.openFirewall;
@@ -195,6 +202,9 @@ nix-instantiate --eval --strict -E '
   assert builtins.all
     (name: builtins.elem name packageNames)
     [ "spotify" "vlc" "haruna" "strawberry" "plex-desktop" "gridplayer" ];
+  assert builtins.all
+    (name: builtins.elem name packageNames)
+    [ "signal-desktop" "pidgin" "ollama" ];
   assert builtins.any (name: builtins.match "mpv.*" name != null) packageNames;
   assert !(builtins.elem "plexmediaserver" packageNames);
   assert builtins.hasAttr "ckb-next" config.systemd.services;
@@ -393,6 +403,24 @@ done
 gridplayer_wrapper=$(readlink -f "$system_closure/sw/bin/gridplayer")
 grep -Eq '/nix/store/[^/]+-vlc-[^/]+/lib' "$gridplayer_wrapper"
 
+printf 'Checking messaging applications and local inference in the built default system...\n'
+for application_executable in signal-desktop pidgin; do
+  [[ -x $system_closure/sw/bin/$application_executable ]]
+done
+for desktop_pattern in 'Signal' 'Pidgin'; do
+  grep -Rqs "^Name=.*$desktop_pattern" "$system_closure/sw/share/applications"
+done
+if find "$system_closure/etc/xdg/autostart" "$system_closure/sw/share/autostart" \
+  -type f \( -iname '*signal*' -o -iname '*pidgin*' \) -print -quit 2>/dev/null | grep -q .; then
+  printf 'Signal or Pidgin is configured to autostart.\n' >&2
+  exit 1
+fi
+[[ -x $system_closure/sw/bin/ollama ]]
+[[ -r $system_closure/etc/systemd/system/ollama.service ]]
+[[ ! -e $system_closure/etc/systemd/system/ollama-model-loader.service ]]
+grep -qF 'OLLAMA_HOST=127.0.0.1:11434' \
+  "$system_closure/etc/systemd/system/ollama.service"
+
 printf 'Checking 1Password modules, wrappers, and browser policies...\n'
 onepassword_gui=$(nix-build --no-out-link -E '
   let system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
@@ -430,6 +458,3 @@ if git diff -- . ':(exclude)scripts/check.sh' |
   printf 'A forbidden 1Password secret or sign-in pattern entered the diff.\n' >&2
   exit 1
 fi
-
-printf 'Dry-building local-LLM profile...\n'
-./scripts/check-profile.sh local-llm

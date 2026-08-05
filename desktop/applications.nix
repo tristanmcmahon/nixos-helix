@@ -13,5 +13,7 @@ in
     pkgs.chromium
     zen-browser
     pkgs.obsidian
+    pkgs.signal-desktop
+    pkgs.pidgin
   ];
 }

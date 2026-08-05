@@ -149,8 +149,8 @@ sudo nixos-rebuild dry-build \
 
 Run the development-shell check before activation. It checks formatting, shell scripts,
 Git whitespace, recovery commands, isolated Bash startup, the Hyprland config,
-both SDDM sessions, Corsair support, the default gaming-enabled system, and the
-dormant local-LLM profile. A build or dry build does not activate anything. `test` changes only
+both SDDM sessions, Corsair support, and the default gaming- and local-inference-enabled
+system. A build or dry build does not activate anything. `test` changes only
 the running system; `switch` also makes the result the default boot generation.
 
 ## Rollback
