@@ -33,6 +33,7 @@ in
     ./system/hosts.nix
     ./system/networking.nix
     ./system/nas.nix
+    ./system/storage.nix
     ./system/users.nix
     ./system/locale.nix
     ./services/maintenance.nix
