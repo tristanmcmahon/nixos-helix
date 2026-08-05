@@ -39,16 +39,12 @@ The normal default dry build validates this active profile. Disabling the single
 `./profiles/gaming.nix` import returns the evaluated configuration to the
 non-gaming workstation layer.
 
-## Dormant profiles
-
-Enable an optional profile by uncommenting its import in `configuration.nix`,
-then run `./scripts/check.sh` before `test`.
-
 ### Local LLM
 
-The local-LLM profile selects the CUDA-enabled Ollama package for both the
-service and user-facing CLI. The API binds to `127.0.0.1`, and its firewall port
-remains closed. Display-driver policy stays in `hardware/nvidia.nix`.
+The enabled local-LLM profile selects the CUDA-enabled Ollama package for both
+the service and user-facing CLI. Local inference is part of the normal default
+system. The API binds only to `127.0.0.1`, and its firewall port remains closed.
+Display-driver policy stays in `hardware/nvidia.nix`.
 
 Ollama's NixOS defaults store models under `/var/lib/ollama/models`. Downloads
 can consume substantial disk space; pulling and deleting models is runtime
@@ -59,12 +55,6 @@ ollama pull MODEL
 ollama rm MODEL
 ```
 
-Validate the disabled profile with:
-
-```bash
-./scripts/check-profile.sh local-llm
-```
-
-After enabling and starting it, run a model and use `nvidia-smi` in another
+After activation, run a model and use `nvidia-smi` in another
 terminal to verify actual GPU use. Successful evaluation alone does not prove
 that inference is GPU-accelerated.

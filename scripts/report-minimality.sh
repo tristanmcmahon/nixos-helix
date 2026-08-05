@@ -36,6 +36,6 @@ printf 'Built system closure: %s\n' "$system_closure"
 nix path-info -Sh "$system_closure" 2>/dev/null || nix-store -q --size "$system_closure"
 
 printf 'Intentional listeners/services:\n'
-printf '%s\n' 'sshd: TCP 22' 'NetworkManager' 'Ollama: disabled in normal system'
+printf '%s\n' 'sshd: TCP 22' 'NetworkManager' 'Ollama: loopback TCP 11434'
 printf 'Custom pins:\n'
 rg -n 'version =|rev =|Commit:' packages/zen-browser.nix packages/gridplayer.nix shell/modern-bash.nix
