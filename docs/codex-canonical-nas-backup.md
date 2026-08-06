@@ -21,6 +21,13 @@ downloads, and Steam game/workshop/download/shader payloads are excluded.
 Steam userdata, compatdata, app manifests and configuration remain included.
 The separate games NVMe is never a backup target and is not traversed.
 
+The matching restore interface is
+`./scripts/restore-after-reinstall.sh BACKUP_SET`, which defaults to a read-only
+plan. `--run` requires an interactive console, exact typed confirmation, safe
+archive paths and links, staging, and collision quarantine. It explicitly
+selects the CIFS layer beneath the systemd autofs trigger. Only home and secrets
+are restored; recorded hardware and system state remain reference material.
+
 Validation includes shell syntax, ShellCheck, reinstall safety assertions,
 obsolete-reference and tracked-archive checks, the complete repository check,
 and review of the final diff. The real backup is deliberately not run during
