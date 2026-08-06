@@ -81,8 +81,11 @@ done
 printf '\nBackup preservation\n'
 stat -- /mnt/infernalnexus/nas1 >/dev/null
 mountpoint -q /mnt/infernalnexus/nas1
-[[ $(findmnt -nro FSTYPE --target /mnt/infernalnexus/nas1) == cifs ]]
-backup_source=$(findmnt -nro SOURCE --target /mnt/infernalnexus/nas1)
+mapfile -t canonical_cifs_sources < <(
+  findmnt -rn --target /mnt/infernalnexus/nas1 --types cifs -o SOURCE
+)
+[[ ${#canonical_cifs_sources[@]} -eq 1 ]]
+backup_source=${canonical_cifs_sources[0]}
 [[ ${backup_source%/} == //192.168.1.8/nas1 ]]
 [[ -d $backup_root && -r $backup_root ]]
 mapfile -t completed_sets < <(

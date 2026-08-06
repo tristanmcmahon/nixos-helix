@@ -42,12 +42,17 @@ mountpoint -q "$nas_mount" || {
   printf 'FAIL: the canonical NAS path is not a mountpoint.\n' >&2
   exit 1
 }
-nas_type=$(findmnt -nro FSTYPE --target "$nas_mount")
-nas_source=$(findmnt -nro SOURCE --target "$nas_mount")
-[[ $nas_type == cifs ]] || {
-  printf 'FAIL: expected CIFS at %s; found %s.\n' "$nas_mount" "$nas_type" >&2
+# A systemd automount produces stacked autofs and CIFS records for this exact
+# path. Select the one real CIFS layer instead of comparing multi-line output.
+mapfile -t nas_records < <(
+  findmnt -rn --target "$nas_mount" --types cifs -o SOURCE,MAJ:MIN
+)
+[[ ${#nas_records[@]} -eq 1 ]] || {
+  printf 'FAIL: expected exactly one CIFS layer at %s; found %s.\n' \
+    "$nas_mount" "${#nas_records[@]}" >&2
   exit 1
 }
+read -r nas_source backup_device <<<"${nas_records[0]}"
 # findmnt normally reports the configured //host/share spelling. A trailing
 # slash is the only equivalent spelling accepted here.
 [[ ${nas_source%/} == "$expected_source" ]] || {
@@ -63,8 +68,7 @@ runuser -u "$backup_user" -- test -w "$backup_root" || {
   exit 1
 }
 
-root_device=$(findmnt -nro MAJ:MIN --target /)
-backup_device=$(findmnt -nro MAJ:MIN --target "$backup_root")
+root_device=$(findmnt -nro MAJ:MIN --mountpoint /)
 [[ -n $root_device && -n $backup_device && $root_device != "$backup_device" ]] || {
   printf 'FAIL: root and backup destination are not proven separate filesystems.\n' >&2
   exit 1
