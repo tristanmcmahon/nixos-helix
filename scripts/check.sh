@@ -51,7 +51,8 @@ printf 'Checking shell syntax...\n'
 bash -n scripts/*.sh
 
 if grep -Eq '\b(mkfs|parted|fdisk|sgdisk|wipefs)\b' \
-  scripts/reinstall-preflight.sh scripts/reinstall-postflight.sh; then
+  scripts/backup-for-reinstall.sh scripts/reinstall-preflight.sh \
+  scripts/reinstall-postflight.sh; then
   printf 'A destructive storage command entered a read-only reinstall helper.\n' >&2
   exit 1
 fi
@@ -71,6 +72,17 @@ python3 scripts/check-docs.py
 python3 scripts/check-modules.py
 if git ls-files | grep -Eq '(^|/)(id_(rsa|dsa|ecdsa|ed25519)|.*credentials.*|infernalnexus-smb)$'; then
   printf 'A credential or private-key-shaped file is tracked.\n' >&2
+  exit 1
+fi
+if git ls-files | grep -Ei \
+  '(^|/)(COMPLETE|SHA256SUMS|.*\.(tar|tar\.(gz|xz|zst)|tgz|zip|7z))$'; then
+  printf 'A backup marker, checksum manifest, or archive-shaped file is tracked.\n' >&2
+  exit 1
+fi
+obsolete_backup_pattern='HELIX_BACKUP_''PATH|VERIFIED-''BACKUP|backup-source-''lib|create-backup-''manifest'
+if git grep -nE "$obsolete_backup_pattern" \
+  -- . ':!docs/codex-canonical-nas-backup.md'; then
+  printf 'An obsolete reinstall backup mechanism remains.\n' >&2
   exit 1
 fi
 if git grep -Il '' -- ':!.git' | xargs grep -El \

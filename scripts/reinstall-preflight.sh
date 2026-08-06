@@ -105,4 +105,9 @@ printf '%s\n' \
   '/etc/nixos/secrets' "$repo_root/hardware-configuration.nix" \
   'repository commit and any uncommitted patch' \
   'browser data, Obsidian vaults, and all other non-reproducible local data'
-printf '\nRecord a physically separate backup destination and follow docs/reinstall.md.\n'
+printf '\nRequired backup command: scripts/backup-for-reinstall.sh\n'
+printf 'Fixed destination: /mnt/infernalnexus/nas1/backup\n'
+printf '%s\n' \
+  'A completed backup set must be manually inspected before wiping.' \
+  'This read-only preflight does not create or prove a backup merely by seeing its folder.' \
+  'Follow the single canonical procedure in docs/reinstall.md.'
