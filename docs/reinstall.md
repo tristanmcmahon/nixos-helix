@@ -10,36 +10,35 @@ There is no intermediate 25.11 installation or upgrade step.
 
 ## Verified backup gate
 
-Use a destination on a physically separate device from the intended target.
-Record its device path, filesystem UUID, mount point, date, and available space.
-Back up at least `/home/tristan`, `Projects`, `.ssh`, `/etc/nixos/secrets`, the
-current `hardware-configuration.nix`, the repository commit and uncommitted
-patch, browser data that is not independently synchronised, Obsidian vaults,
-and all other non-reproducible data. 1Password application state is not a
-substitute for separately retained account recovery information.
-
-One suitable file-preserving pattern, after replacing the explicit destination,
-is:
+The only supported reinstall backup command writes timestamped archive sets to
+the existing Infernalnexus CIFS share at `/mnt/infernalnexus/nas1/backup`:
 
 ```bash
-sudo rsync -aHAX --numeric-ids --info=progress2 /home/tristan/ /mnt/VERIFIED-BACKUP/home-tristan/
-sudo rsync -aHAX --numeric-ids /etc/nixos/secrets/ /mnt/VERIFIED-BACKUP/etc-nixos-secrets/
-git -C ~/Projects/nixos-helix rev-parse HEAD > /mnt/VERIFIED-BACKUP/nixos-helix-commit.txt
-git -C ~/Projects/nixos-helix diff --binary > /mnt/VERIFIED-BACKUP/nixos-helix-working-tree.patch
-findmnt -n -o SOURCE,FSTYPE,UUID -T /mnt/VERIFIED-BACKUP \
-  | sudo tee /mnt/VERIFIED-BACKUP/BACKUP-SOURCE.txt
-sudo ./scripts/create-backup-manifest.sh /mnt/VERIFIED-BACKUP
-sudo find /mnt/VERIFIED-BACKUP -maxdepth 3 -printf '%M %u:%g %s %p\n' | less
-(cd /mnt/VERIFIED-BACKUP && sudo sha256sum --check SHA256SUMS)
+cd /home/tristan/Projects/nixos-helix
+./scripts/backup-for-reinstall.sh
 ```
 
-Open representative documents, photographs, SSH public data, vault notes, and
-repository files directly from the backup. Confirm with `lsblk -f` and
-`findmnt` that the backup is not stored on the disk that may be erased. The
-manifest helper enumerates with NUL delimiters, builds outside the backup tree,
-explicitly excludes any old manifest, verifies every readable file, and then
-installs the replacement atomically. A separate partition on the target disk
-is not a physically separate backup.
+The script refuses an unmounted directory or any source other than
+`//192.168.1.8/nas1`, archives Unix metadata inside tar files, inventories the
+installation and repository, verifies checksums and archive readability, and
+promotes an `.INCOMPLETE` directory only after all checks pass. It never follows
+`/mnt/games_nvme`. Installed Steam games, workshop payloads, downloads and
+shader caches are excluded; Steam userdata, compatdata and configuration remain.
+
+After it finishes, manually inspect `BACKUP-README.txt` in the reported set,
+then run these commands from that completed directory:
+
+```bash
+sha256sum --check SHA256SUMS
+tar -tf home-tristan.tar >/dev/null
+sudo tar -tf etc-nixos-secrets.tar >/dev/null
+```
+
+Also inspect the repository patches and inventories, and extract representative
+non-secret documents, dotfiles, Projects content, browser data and vault notes
+into a temporary directory. Keep the backup until the fresh installation has
+passed postflight. Seeing the backup directory alone is not proof of a complete
+or manually reviewed backup.
 
 ## Official NixOS 26.05 media
 
@@ -88,7 +87,8 @@ git -C /tmp/nixos-helix-install rev-parse HEAD \
   /tmp/nixos-helix-install/hardware-configuration.nix \
   /mnt/etc/nixos/hardware-configuration.nix \
   /mnt/var/lib/helix-install/hardware-configuration.nix
-diff -u ~/BACKUP/hardware-configuration.nix /tmp/nixos-helix-install/hardware-configuration.nix || true
+diff -u /tmp/helix-backup-inspection/hardware-configuration-repository.nix \
+  /tmp/nixos-helix-install/hardware-configuration.nix || true
 ```
 
 Preserve the newly generated file for later review. Repartitioning can change
@@ -144,7 +144,7 @@ cp /var/lib/helix-install/hardware-configuration.nix hardware-configuration.nix
 ./scripts/verify-hardware-continuity.sh \
   /var/lib/helix-install/hardware-configuration.nix \
   /etc/nixos/hardware-configuration.nix hardware-configuration.nix
-HELIX_BACKUP_PATH=/mnt/VERIFIED-BACKUP ./scripts/reinstall-postflight.sh
+./scripts/reinstall-postflight.sh
 git switch -c hardware/helix-fresh-install
 git add hardware-configuration.nix
 git commit -m 'Record fresh Helix hardware configuration'

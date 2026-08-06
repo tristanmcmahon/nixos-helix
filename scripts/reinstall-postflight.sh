@@ -5,10 +5,9 @@ set -euo pipefail
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 expected_release=$(nix-instantiate --eval --raw -E "(import $repo_root/release.nix).nixosRelease")
 fresh_state_version=$(nix-instantiate --eval --raw -E "(import $repo_root/release.nix).freshStateVersion")
-backup_path=${HELIX_BACKUP_PATH:-}
 preserved_hardware=/var/lib/helix-install/hardware-configuration.nix
-# shellcheck source=/dev/null
-source "$repo_root/scripts/backup-source-lib.sh"
+canonical_backup_root=/mnt/infernalnexus/nas1/backup
+backup_root=$canonical_backup_root
 
 printf '%s\n' 'HELIX REINSTALL POSTFLIGHT — READ ONLY'
 printf 'Canonical checkout: %s\n' "$repo_root"
@@ -80,31 +79,31 @@ for command in vi vim git gh code codex ghostty steam mangohud op 1password \
 done
 
 printf '\nBackup preservation\n'
-[[ -n $backup_path ]] || {
-  printf 'Set HELIX_BACKUP_PATH to the mounted verified backup.\n' >&2
+stat -- /mnt/infernalnexus/nas1 >/dev/null
+mountpoint -q /mnt/infernalnexus/nas1
+[[ $(findmnt -nro FSTYPE --target /mnt/infernalnexus/nas1) == cifs ]]
+backup_source=$(findmnt -nro SOURCE --target /mnt/infernalnexus/nas1)
+[[ ${backup_source%/} == //192.168.1.8/nas1 ]]
+[[ -d $backup_root && -r $backup_root ]]
+mapfile -t completed_sets < <(
+  find "$backup_root" -mindepth 1 -maxdepth 1 -type d \
+    -name 'helix-reinstall-*' ! -name '*.INCOMPLETE' -printf '%f\n' | sort -r
+)
+newest_completed=
+for set_name in "${completed_sets[@]}"; do
+  candidate=$backup_root/$set_name
+  if [[ -f $candidate/COMPLETE && -f $candidate/SHA256SUMS && \
+        -f $candidate/BACKUP-README.txt && -f $candidate/home-tristan.tar && \
+        -f $candidate/etc-nixos-secrets.tar ]]; then
+    newest_completed=$candidate
+    break
+  fi
+done
+[[ -n $newest_completed ]] || {
+  printf 'No structurally complete canonical reinstall backup was found.\n' >&2
   exit 1
 }
-[[ -d $backup_path && -r $backup_path ]]
-backup_source=$(findmnt -n -o SOURCE -T "$backup_path")
-backup_type=$(findmnt -n -o FSTYPE -T "$backup_path")
-backup_options=$(findmnt -n -o OPTIONS -T "$backup_path")
-root_source=$(findmnt -n -o SOURCE -T /)
-root_type=$(findmnt -n -o FSTYPE -T /)
-[[ $backup_options != *bind* ]] || {
-  printf 'Backup is a bind mount and does not prove physical separation.\n' >&2
-  exit 1
-}
-physical_parent() {
-  lsblk -s -n -o NAME,TYPE "$1" 2>/dev/null | awk '$2 == "disk" { print $1; exit }'
-}
-root_parent=$(physical_parent "$root_source")
-backup_parent=$(physical_parent "$backup_source")
-classification=$(backup_source_classify \
-  "$root_type" "$root_parent" "$backup_type" "$backup_parent" "$backup_source") || {
-  printf 'Backup separation insufficient: %s\n' "$classification" >&2
-  exit 1
-}
-printf 'Verified backup source: %s (%s, %s)\n' \
-  "$backup_source" "$backup_type" "$classification"
+printf 'Newest completed canonical backup: %s\n' "$newest_completed"
+printf 'Preserved artifacts: COMPLETE, SHA256SUMS, README, home archive, secrets archive\n'
 
-printf '\nDo not remove installation media or verified backups until all hardware and data checks pass.\n'
+printf '\nDo not remove the canonical NAS backup until all hardware and data checks pass.\n'
