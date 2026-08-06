@@ -35,6 +35,8 @@ fi
 printf 'Checking Nix formatting...\n'
 temporary_directory=$(mktemp -d)
 trap 'rm -rf -- "$temporary_directory"' EXIT
+PYTHONPYCACHEPREFIX=$temporary_directory \
+  python3 -m py_compile scripts/*.py
 
 while IFS= read -r nix_file; do
   temporary_file="$temporary_directory/${nix_file//\//_}"
@@ -52,7 +54,7 @@ bash -n scripts/*.sh
 
 if grep -Eq '\b(mkfs|parted|fdisk|sgdisk|wipefs)\b' \
   scripts/backup-for-reinstall.sh scripts/reinstall-preflight.sh \
-  scripts/reinstall-postflight.sh; then
+  scripts/reinstall-postflight.sh scripts/restore-after-reinstall.sh; then
   printf 'A destructive storage command entered a read-only reinstall helper.\n' >&2
   exit 1
 fi
@@ -110,6 +112,7 @@ printf 'Testing release-migration planning...\n'
 ./scripts/test-migrate-release.sh
 ./scripts/test-release-safety.sh
 ./scripts/test-reinstall-safety.sh
+./scripts/test-reinstall-restore.sh
 
 printf 'Evaluating release, desktop, security, and native NAS invariants...\n'
 nix-instantiate --eval --strict -E '

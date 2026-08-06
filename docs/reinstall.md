@@ -131,10 +131,11 @@ restored without storing either in Git or the Nix store.
 
 ## First boot and postflight
 
-Restore runtime data with the intended ownership and mode, then clone the exact
-commit recorded in `/var/lib/helix-install/approved-commit`. Before any canonical
-rebuild, copy the preserved generated hardware file into the checkout and prove
-it still matches `/etc/nixos`:
+Clone the exact approved repository first. Preserve the newly generated hardware
+configuration as the active machine definition; the old hardware, UUID, boot,
+closure and generation inventories in the backup are reference evidence only.
+Before any canonical rebuild, prove the generated hardware file still matches
+the installer-preserved copy:
 
 ```bash
 git clone https://github.com/tristanmcmahon/nixos-helix.git ~/Projects/nixos-helix
@@ -144,21 +145,50 @@ cp /var/lib/helix-install/hardware-configuration.nix hardware-configuration.nix
 ./scripts/verify-hardware-continuity.sh \
   /var/lib/helix-install/hardware-configuration.nix \
   /etc/nixos/hardware-configuration.nix hardware-configuration.nix
-./scripts/reinstall-postflight.sh
 git switch -c hardware/helix-fresh-install
 git add hardware-configuration.nix
 git commit -m 'Record fresh Helix hardware configuration'
 git push -u origin hardware/helix-fresh-install
 ```
 
-The checkout is expected to be temporarily dirty after copying the generated
-hardware file. Push and review that dedicated hardware commit before treating
-the canonical repository as complete. Postflight fails on any mismatch and
-checks that every configured UUID exists; do not rebuild before it passes.
+Name the completed backup set explicitly and run the restore in its default,
+read-only planning mode:
 
-The automount must be active and waiting before access. Trigger the NAS only
-after the static checks, and keep the verified backup and installer media until
-the complete hardware checklist passes.
+```bash
+./scripts/restore-after-reinstall.sh helix-reinstall-YYYYMMDD-HHMMSS
+```
+
+Review the checksum, archive, collision, home-state and session results. Log out
+of Plasma and all other graphical sessions for Tristan, switch to a text console,
+then run the exact command printed by the plan:
+
+```bash
+./scripts/restore-after-reinstall.sh helix-reinstall-YYYYMMDD-HHMMSS --run
+```
+
+If the fresh home contains more than shell skeleton files and the canonical
+checkout, the script refuses by default. Review every collision summary and use
+`--merge-existing-home` only deliberately; it requires a second typed
+confirmation and quarantines the existing home and secrets before replacement.
+It never deletes files merely because they are absent from the backup.
+
+The restore stages and revalidates both archives, then restores only
+`/home/tristan` and `/etc/nixos/secrets`. It does not activate old hardware
+configuration, filesystem UUIDs, boot state, Nix stores, profiles, generations,
+channels or inventories. After restoration, run:
+
+```bash
+./scripts/reinstall-postflight.sh
+```
+
+The checkout may be temporarily dirty after restoring its archived copy. Review
+and retain the dedicated generated-hardware commit before treating the canonical
+repository as complete. Postflight fails on any mismatch and checks configured
+UUIDs; do not rebuild before it passes.
+
+The restore handles the stacked systemd `autofs` trigger and real CIFS mount by
+selecting exactly one CIFS layer for `//192.168.1.8/nas1`. Keep the NAS backup
+and installer media until the complete hardware checklist passes.
 
 ## Recovery
 
@@ -168,5 +198,6 @@ installed root and EFI filesystems beneath `/mnt`, inspect logs under
 `nixos-enter --root /mnt`. Re-run `nixos-install` against the existing mounted
 target or reinstall systemd-boot only after rechecking the EFI mount. Restore
 the preserved generated hardware configuration if UUIDs were recorded
-incorrectly. Restore user and secret data only from the independently verified
-backup; do not delete the backup or installation media during recovery.
+incorrectly. Use `restore-after-reinstall.sh` against the same canonical archive
+set for user and secret data; do not bypass its validation with direct extraction.
+Do not delete the backup or installation media during recovery.
