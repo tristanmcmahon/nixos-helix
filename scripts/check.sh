@@ -54,8 +54,23 @@ bash -n scripts/*.sh
 
 if grep -Eq '\b(mkfs|parted|fdisk|sgdisk|wipefs)\b' \
   scripts/backup-for-reinstall.sh scripts/reinstall-preflight.sh \
-  scripts/reinstall-postflight.sh scripts/restore-after-reinstall.sh; then
+  scripts/reinstall-postflight.sh scripts/restore-after-reinstall.sh \
+  scripts/storage-inventory.sh scripts/create-storage-target-manifest.sh \
+  scripts/mount-fresh-storage.sh; then
   printf 'A destructive storage command entered a read-only reinstall helper.\n' >&2
+  exit 1
+fi
+for destructive_script in scripts/prepare-os-drive.sh scripts/reclaim-linux-ssds.sh; do
+  grep -q -- '--run requires an interactive terminal' "$destructive_script"
+  grep -q 'storage_validate_target' "$destructive_script"
+  grep -q 'storage_validate_backup' "$destructive_script"
+  grep -q 'storage_require_installer_environment' "$destructive_script"
+done
+grep -q 'd07ac88e-34f6-4d56-9941-5ceaf52fd6bb' scripts/storage-rebuild-lib.sh
+grep -q '/dev/disk/by-label/HELIX_SSD_A' system/storage.nix
+grep -q '/dev/disk/by-label/HELIX_SSD_B' system/storage.nix
+if grep -R -Eq '/dev/(sd[a-z]|nvme[0-9]+n[0-9]+).*ERASE|ERASE.*/dev/(sd[a-z]|nvme[0-9]+n[0-9]+)' docs; then
+  printf 'Documentation uses a raw kernel name as an erase identity.\n' >&2
   exit 1
 fi
 
@@ -113,6 +128,7 @@ printf 'Testing release-migration planning...\n'
 ./scripts/test-release-safety.sh
 ./scripts/test-reinstall-safety.sh
 ./scripts/test-reinstall-restore.sh
+./scripts/test-storage-rebuild.sh
 
 printf 'Evaluating release, desktop, security, and native NAS invariants...\n'
 nix-instantiate --eval --strict -E '

@@ -8,6 +8,31 @@ installation first; it is read-only and never labels a disk safe to erase.
 A wiped installation using the NixOS 26.05 installer installs only 26.05.
 There is no intermediate 25.11 installation or upgrade step.
 
+## Fresh-storage sequence
+
+The detailed identity, layout, confirmation, and Windows-reserve rules are in
+[the guarded storage guide](storage-rebuild.md). Follow this order without
+skipping a gate:
+
+1. Run the canonical backup.
+2. Manually inspect and verify its completed set.
+3. Run `storage-inventory.sh` on the existing installation.
+4. Create and manually review the ignored local target manifest.
+5. Record the current full `origin/main` commit.
+6. Create and verify official NixOS 26.05 installation media.
+7. Boot that media explicitly in UEFI mode.
+8. Clone the canonical repository and check out the approved commit.
+9. Run `storage-inventory.sh` again.
+10. Compare model, serial, byte size, and by-id identity with saved evidence.
+11. Run `prepare-os-drive.sh --plan`.
+12. Only after review, run `prepare-os-drive.sh --run`.
+13. Run `reclaim-linux-ssds.sh --plan`.
+14. Only after independent review, run `reclaim-linux-ssds.sh --run`.
+15. Run the mount-only `mount-fresh-storage.sh`.
+16. Run `nixos-generate-config --root /mnt`.
+17. Continue the existing configuration, continuity, install, and postflight workflow below.
+18. Restore user data and secrets with the canonical restore script.
+
 ## Verified backup gate
 
 The only supported reinstall backup command writes timestamped archive sets to
@@ -49,21 +74,10 @@ the image. Do not use an image whose checksum or signing source is uncertain.
 
 ## Live-environment discovery and destructive gate
 
-Boot the verified installer, establish networking, then run `lsblk -f`,
-`findmnt`, `blkid`, and `bootctl status`. Record the exact full target device
-path and identify the EFI system partition and intended root filesystem. No
-other disk may be mounted below `/mnt`.
-
-Stop before partitioning or formatting. After inspecting the live machine,
-Tristan must manually type a phrase containing the resolved full device path:
-
-```text
-ERASE /dev/nvme0n1 AND INSTALL HELIX 26.05
-```
-
-The example is not a declaration that `/dev/nvme0n1` is the target. Generate
-machine-specific commands only in the live environment. Every destructive
-command must name one verified full device path; never use a wildcard.
+Boot the verified installer and follow the storage guide. Stable whole-disk
+by-id identity plus the recorded model, serial, size, role, backup, and commit
+are mandatory. A topology-dependent raw kernel name is never authoritative.
+No unrelated disk may be mounted below `/mnt`.
 
 ## Temporary installation checkout
 
