@@ -40,8 +40,8 @@ testing below does not imply hibernation support.
 
 - Inspect `wpctl status`; test speakers, headphones, each microphone, mute, and
   volume controls in Plasma System Settings → Sound.
-- Test live webcam video in Snapshot and inspect `v4l2-ctl --list-devices`,
-  including any privacy switch.
+- Test live webcam video in an installed video-conferencing or browser
+  application and inspect `v4l2-ctl --list-devices`, including any privacy switch.
 - Scan and connect Wi-Fi through NetworkManager. Confirm its driver with
   `lspci -nnk` and status with `nmcli device status`.
 - Pair a real Bluetooth peripheral in Plasma System Settings, inspect
@@ -148,7 +148,7 @@ ssh tristan@helix
   result with the physical build and `hardware-configuration.nix`.
 - Read health data with `sudo nvme smart-log DEVICE` and
   `sudo smartctl -x DEVICE` after reviewing each device path.
-- Mount and eject a known removable drive through Files, confirming it with
+- Mount and eject a known removable drive through Dolphin, confirming it with
   `findmnt` and `lsblk -f` before removal.
 
 ## Firmware and shutdown
@@ -157,9 +157,9 @@ ssh tristan@helix
   applying firmware as part of configuration activation.
 - Test a clean reboot and poweroff. On the next boot, inspect
   `journalctl -b -1 -p warning..alert` for hangs or device errors.
-- Run `sudo ss -lntup` and investigate wildcard listeners. The default
-  configuration intentionally exposes SSH on TCP port 22, but enables no
-  discovery, sharing, container, or local-inference listener.
+- Run `sudo ss -lntup` and investigate wildcard listeners. SSH is intentionally
+  exposed on TCP port 22. Ollama intentionally listens only on loopback at
+  `127.0.0.1:11434`; it must not appear on a wildcard or external address.
 
 Record observed failures before adding hardware-specific workarounds. Settings
 copied from another machine are not evidence about Helix.

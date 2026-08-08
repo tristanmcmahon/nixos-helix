@@ -63,7 +63,7 @@ in
     {
       assertion = config.system.nixos.release == release.nixosRelease;
       message = ''
-        Helix requires NixOS ${release.nixosRelease} from ${release.channelName}.
+        Helix requires NixOS ${release.nixosRelease}.
         The selected Nixpkgs reports NixOS ${config.system.nixos.release}.
       '';
     }

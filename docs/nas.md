@@ -14,9 +14,9 @@ Security:     NTLMSSP
 SMB is the initial transport. A later NFS migration can retain the same local
 path, but NFS support is intentionally deferred.
 
-The share uses native NixOS `systemd.mounts` and `systemd.automounts`, not an
-fstab-generated automount. Both unit files therefore exist statically in the
-system closure, while the CIFS mount itself remains strictly on demand. Before
+The share uses native NixOS `systemd.mounts` and `systemd.automounts`. Both unit
+files exist statically in the system closure, while the CIFS mount itself
+remains strictly on demand. Before
 first access, `active (waiting)` is the correct automount state. The credentials
 file is optional for evaluation, building, and activation, but required for
 access. Static configuration and dry activation validate unit construction
@@ -105,18 +105,6 @@ sudo systemctl stop mnt-infernalnexus-nas1.mount
 ```
 
 ## Troubleshooting
-
-An earlier fstab-generated implementation caused a real persistent activation
-to fail after `/etc` setup with:
-
-```text
-Failed to open unit file .../etc/systemd/system/mnt-infernalnexus-nas1.automount
-No such file or directory (os error 2)
-```
-
-The generator-created unit was absent from the new closure during live switch.
-Native static units repair that mismatch; rebooting is not a workaround for a
-failed `switch`.
 
 The normal configuration uses systemd automount. For troubleshooting only, the
 verified manual diagnostic mount command is:

@@ -1,37 +1,31 @@
-# Fresh reinstall qualification
+# Fresh reinstall
 
 A fresh reinstall is a separate destructive project, not part of an ordinary
-Helix rebuild or release migration. This guide deliberately provides no
-unattended erase command. Run `./scripts/reinstall-preflight.sh` on the current
-installation first; it is read-only and never labels a disk safe to erase.
+Helix rebuild. This repository contains no partitioning or formatting command.
+Run `./scripts/reinstall-preflight.sh` on the current installation first; it is
+read-only and never labels a disk safe to erase.
 
 A wiped installation using the NixOS 26.05 installer installs only 26.05.
 There is no intermediate 25.11 installation or upgrade step.
 
-## Fresh-storage sequence
+## Sequence
 
-The detailed identity, layout, confirmation, and Windows-reserve rules are in
-[the guarded storage guide](storage-rebuild.md). Follow this order without
-skipping a gate:
+Follow this order without skipping a gate:
 
 1. Run the canonical backup.
 2. Manually inspect and verify its completed set.
-3. Run `storage-inventory.sh` on the existing installation.
-4. Create and manually review the ignored local target manifest.
-5. Record the current full `origin/main` commit.
-6. Create and verify official NixOS 26.05 installation media.
-7. Boot that media explicitly in UEFI mode.
-8. Clone the canonical repository and check out the approved commit.
-9. Run `storage-inventory.sh` again.
-10. Compare model, serial, byte size, and by-id identity with saved evidence.
-11. Run `prepare-os-drive.sh --plan`.
-12. Only after review, run `prepare-os-drive.sh --run`.
-13. Run `reclaim-linux-ssds.sh --plan`.
-14. Only after independent review, run `reclaim-linux-ssds.sh --run`.
-15. Run the mount-only `mount-fresh-storage.sh`.
-16. Run `nixos-generate-config --root /mnt`.
-17. Continue the existing configuration, continuity, install, and postflight workflow below.
-18. Restore user data and secrets with the canonical restore script.
+3. Save and manually review `hardware-inventory.sh` output.
+4. Record the current full `origin/main` commit.
+5. Create and verify official NixOS 26.05 installation media.
+6. Boot that media explicitly in UEFI mode.
+7. In GParted, visually identify each device by model, serial, and capacity.
+8. Manually create the layout below, checking the target before each change.
+9. Clone the canonical repository and check out the approved commit.
+10. Run the read-only `check-install-storage.sh` and inspect its evidence.
+11. Mount only HELIX_ROOT at `/mnt` and HELIX_EFI at `/mnt/boot`.
+12. Run `nixos-generate-config --root /mnt`.
+13. Continue the configuration, continuity, install, and postflight workflow below.
+14. Restore user data and secrets with the canonical restore script.
 
 ## Verified backup gate
 
@@ -72,12 +66,37 @@ the official NixOS download infrastructure. Compare the locally calculated
 `sha256sum` with the separately downloaded official checksum before writing
 the image. Do not use an image whose checksum or signing source is uncertain.
 
-## Live-environment discovery and destructive gate
+## Manual GParted layout
 
-Boot the verified installer and follow the storage guide. Stable whole-disk
-by-id identity plus the recorded model, serial, size, role, backup, and commit
-are mandatory. A topology-dependent raw kernel name is never authoritative.
-No unrelated disk may be mounted below `/mnt`.
+Boot the verified installer in UEFI mode. In GParted, identify each physical
+device visually by its model, serial, and capacity before every destructive
+action. Kernel device names can change between boots and are not identities.
+
+Create this layout manually:
+
+- OS disk: GPT; a 10 GiB FAT32 EFI system partition labelled `HELIX_EFI`; an
+  ext4 root labelled `HELIX_ROOT`; and exactly 240 GiB left unallocated at the
+  end for a future Windows installation.
+- Two separately identified Linux SSDs: one full-disk ext4 filesystem each,
+  labelled `HELIX_SSD_A` and `HELIX_SSD_B`.
+- Do not modify the existing ext4 GAMES_NVME filesystem with UUID
+  `d07ac88e-34f6-4d56-9941-5ceaf52fd6bb`.
+
+Close GParted, then run the repository's short read-only check:
+
+```bash
+./scripts/check-install-storage.sh
+```
+
+It verifies labels, types, the protected UUID, approximate ESP size, common OS
+disk ancestry, and prints free-space evidence. It does not decide that a disk
+is safe to erase and cannot prove the intended 240 GiB merely from a label;
+Tristan must inspect the printed table and GParted layout.
+
+Mount only HELIX_ROOT at `/mnt` and HELIX_EFI at `/mnt/boot` before generating
+hardware configuration. Do not mount HELIX_SSD_A, HELIX_SSD_B, or GAMES_NVME
+beneath `/mnt`; otherwise `nixos-generate-config` may introduce separately
+managed data filesystems into `hardware-configuration.nix`.
 
 ## Temporary installation checkout
 
@@ -203,6 +222,21 @@ UUIDs; do not rebuild before it passes.
 The restore handles the stacked systemd `autofs` trigger and real CIFS mount by
 selecting exactly one CIFS layer for `//192.168.1.8/nas1`. Keep the NAS backup
 and installer media until the complete hardware checklist passes.
+
+## Finalise the temporary compatibility bridge
+
+Only after the fresh installation has booted, restored data has been checked,
+and postflight passes, prepare a separate reviewed cleanup change that:
+
+1. replaces the tracked `hardware-configuration.nix` with the freshly generated file;
+2. sets the canonical `stateVersion` to `26.05`;
+3. removes `freshStateVersion` from `release.nix`;
+4. removes `fresh-install.nix` and `fresh-install-configuration.nix`;
+5. removes the fresh-install marker and dual-entry validation from `check.sh`.
+
+Until that finalisation is merged, the 25.11 current-install state version and
+26.05 fresh-install entry are one intentional temporary bridge. Do not perform
+these removals before the new installation passes postflight.
 
 ## Recovery
 

@@ -1,23 +1,13 @@
 let
-  pkgs = import <nixpkgs> {
-    # VS Code is unfree; keep this exception local to the bootstrap shell.
-    config.allowUnfree = true;
-  };
+  pkgs = import <nixpkgs> { };
 in
 pkgs.mkShell {
   packages = with pkgs; [
-    vscode
     git
-    gh
-    git-lfs
-    nodejs
-    nil
+    python3
     nixfmt
     shellcheck
     deadnix
     statix
-    ripgrep
-    jq
-    codex
   ];
 }

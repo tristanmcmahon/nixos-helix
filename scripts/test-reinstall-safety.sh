@@ -50,8 +50,7 @@ if grep -qF '/mnt/games_nvme' "$backup_script"; then
 fi
 
 obsolete_pattern='HELIX_BACKUP_''PATH|VERIFIED-''BACKUP|backup-source-''lib|create-backup-''manifest'
-if git -C "$repo_root" grep -nE "$obsolete_pattern" \
-  -- . ':!docs/codex-canonical-nas-backup.md'; then
+if git -C "$repo_root" grep -nE "$obsolete_pattern" -- .; then
   printf 'An obsolete backup mechanism remains.\n' >&2
   exit 1
 fi

@@ -52,7 +52,7 @@ for capacity_path in / /nix/store; do
   printf '%s available bytes: %s\n' "$capacity_path" "$available_bytes"
   df -h "$capacity_path" | tail -n 1
   if ((available_bytes < 8 * 1024 * 1024 * 1024)); then
-    printf 'FAIL: fewer than 8 GiB are available at %s; do not attempt qualification builds.\n' \
+    printf 'FAIL: fewer than 8 GiB are available at %s; do not attempt installation builds.\n' \
       "$capacity_path" >&2
     exit 1
   elif ((available_bytes < 25 * 1024 * 1024 * 1024)); then
@@ -61,8 +61,9 @@ for capacity_path in / /nix/store; do
   fi
 done
 
-printf '\nQualification and generations\n'
-"$repo_root/scripts/qualification-status.sh"
+printf '\nGenerations\n'
+sudo -n nix-env --profile /nix/var/nix/profiles/system --list-generations 2>/dev/null || \
+  printf 'System generations: root access required to inspect\n'
 printf 'Rollback: keep older system generations and use the systemd-boot menu if required.\n'
 
 printf '\nStorage and UEFI boot inventory\n'

@@ -6,15 +6,14 @@ package at a time, build it against the maintained NixOS release, run
 
 ## Current audit
 
-- Zen Browser `1.21.10b` matches the current stable upstream release. Its
-  official x86_64 AppImage remains necessary because NixOS 26.05 has no
-  maintained `zen-browser` package providing this browser.
+- Zen Browser `1.21.10b` uses the official x86_64 AppImage because the selected
+  NixOS package set does not provide the required browser package.
 - GridPlayer is pinned to tested `0.5.4`; upstream stable is `0.5.5`. The newer
   release changes its Python build backend and dependency constraints, so it is
   intentionally retained until that candidate is packaged and fully built.
-- modern-bash commit `55b1c4de6bc47e14285d55f6a1dfdf9fb494e806`
-  matches upstream `main`. Its immutable runtime and lifecycle-command blocking
-  remain intentional.
+- modern-bash is pinned to commit
+  `55b1c4de6bc47e14285d55f6a1dfdf9fb494e806`; its immutable runtime and
+  lifecycle-command blocking remain intentional.
 
 ## Manual update procedure
 
