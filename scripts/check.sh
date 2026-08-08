@@ -52,25 +52,11 @@ done < <(find . -name '*.nix' -type f ! -name hardware-configuration.nix -print 
 printf 'Checking shell syntax...\n'
 bash -n scripts/*.sh
 
-if grep -Eq '\b(mkfs|parted|fdisk|sgdisk|wipefs)\b' \
+if grep -Eq '\b(mkfs|parted|fdisk|sgdisk|wipefs|mount|umount|swapon|swapoff|mkswap|e2label|fatlabel)\b' \
   scripts/backup-for-reinstall.sh scripts/reinstall-preflight.sh \
   scripts/reinstall-postflight.sh scripts/restore-after-reinstall.sh \
-  scripts/storage-inventory.sh scripts/create-storage-target-manifest.sh \
-  scripts/mount-fresh-storage.sh; then
+  scripts/check-install-storage.sh; then
   printf 'A destructive storage command entered a read-only reinstall helper.\n' >&2
-  exit 1
-fi
-for destructive_script in scripts/prepare-os-drive.sh scripts/reclaim-linux-ssds.sh; do
-  grep -q -- '--run requires an interactive terminal' "$destructive_script"
-  grep -q 'storage_validate_target' "$destructive_script"
-  grep -q 'storage_validate_backup' "$destructive_script"
-  grep -q 'storage_require_installer_environment' "$destructive_script"
-done
-grep -q 'd07ac88e-34f6-4d56-9941-5ceaf52fd6bb' scripts/storage-rebuild-lib.sh
-grep -q '/dev/disk/by-label/HELIX_SSD_A' system/storage.nix
-grep -q '/dev/disk/by-label/HELIX_SSD_B' system/storage.nix
-if grep -R -Eq '/dev/(sd[a-z]|nvme[0-9]+n[0-9]+).*ERASE|ERASE.*/dev/(sd[a-z]|nvme[0-9]+n[0-9]+)' docs; then
-  printf 'Documentation uses a raw kernel name as an erase identity.\n' >&2
   exit 1
 fi
 
@@ -96,12 +82,6 @@ if git ls-files | grep -Ei \
   printf 'A backup marker, checksum manifest, or archive-shaped file is tracked.\n' >&2
   exit 1
 fi
-obsolete_backup_pattern='HELIX_BACKUP_''PATH|VERIFIED-''BACKUP|backup-source-''lib|create-backup-''manifest'
-if git grep -nE "$obsolete_backup_pattern" \
-  -- . ':!docs/codex-canonical-nas-backup.md'; then
-  printf 'An obsolete reinstall backup mechanism remains.\n' >&2
-  exit 1
-fi
 if git grep -Il '' -- ':!.git' | xargs grep -El \
   -- '-----BEGIN (OPENSSH|RSA|EC|DSA) PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{20,}' >/dev/null; then
   printf 'A private key or token-shaped value is present in tracked content.\n' >&2
@@ -111,24 +91,8 @@ fi
 printf 'Validating Helix Abyss assets and merge fixtures...\n'
 python3 scripts/test-theme-settings.py
 
-printf 'Testing generation-cleanup planning...\n'
-cleanup_program=$(nix-build --no-out-link -E '
-  let
-    system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
-    matches = builtins.filter
-      (package: (package.name or "") == "helix-nix-cleanup")
-      system.config.environment.systemPackages;
-  in
-  builtins.head matches
-')
-./scripts/test-cleanup-plan.sh "$cleanup_program/bin/helix-nix-cleanup"
-
-printf 'Testing release-migration planning...\n'
-./scripts/test-migrate-release.sh
-./scripts/test-release-safety.sh
 ./scripts/test-reinstall-safety.sh
 ./scripts/test-reinstall-restore.sh
-./scripts/test-storage-rebuild.sh
 
 printf 'Evaluating release, desktop, security, and native NAS invariants...\n'
 nix-instantiate --eval --strict -E '
@@ -150,10 +114,27 @@ nix-instantiate --eval --strict -E '
   in
   assert config.system.nixos.release == release.nixosRelease;
   assert config.system.stateVersion == release.stateVersion;
-  assert config.systemd.timers.helix-nix-cleanup.unitConfig.ConditionPathExists
-    == "!/var/lib/helix/release-qualification";
-  assert config.systemd.services.helix-nix-cleanup.unitConfig.ConditionPathExists
-    == "!/var/lib/helix/release-qualification";
+  assert config.nix.gc.automatic;
+  assert config.nix.gc.options == "--delete-older-than 30d";
+  assert config.nix.optimise.automatic;
+  assert config.fileSystems."/mnt/games_nvme".device
+    == "/dev/disk/by-uuid/d07ac88e-34f6-4d56-9941-5ceaf52fd6bb";
+  assert config.fileSystems."/mnt/games_nvme".fsType == "ext4";
+  assert config.fileSystems."/mnt/games_nvme".options == [
+    "noatime" "nofail" "x-systemd.device-timeout=5s"
+  ];
+  assert config.fileSystems."/mnt/helix_ssd_a".device == "/dev/disk/by-label/HELIX_SSD_A";
+  assert config.fileSystems."/mnt/helix_ssd_a".fsType == "ext4";
+  assert config.fileSystems."/mnt/helix_ssd_a".options == [
+    "noatime" "nofail" "x-systemd.device-timeout=5s"
+  ];
+  assert config.fileSystems."/mnt/helix_ssd_b".device == "/dev/disk/by-label/HELIX_SSD_B";
+  assert config.fileSystems."/mnt/helix_ssd_b".fsType == "ext4";
+  assert config.fileSystems."/mnt/helix_ssd_b".options == [
+    "noatime" "nofail" "x-systemd.device-timeout=5s"
+  ];
+  assert config.services.fstrim.enable;
+  assert builtins.hasAttr "helix-storage-directories" config.systemd.services;
   assert !(builtins.hasAttr "helix/fresh-install-state-version" config.environment.etc);
   assert config.services.desktopManager.plasma6.enable;
   assert config.services.displayManager.sddm.enable;
@@ -259,24 +240,6 @@ nix-instantiate --eval --strict -E '
     == release.freshStateVersion + "\n";
   true
 '
-
-corsair_imports=$(grep -cF './hardware/corsair-k70.nix' configuration.nix)
-[[ $corsair_imports -eq 1 ]] || {
-  printf 'Expected exactly one Corsair module import, found %s.\n' "$corsair_imports" >&2
-  exit 1
-}
-
-hosts_imports=$(grep -cF './system/hosts.nix' configuration.nix)
-[[ $hosts_imports -eq 1 ]] || {
-  printf 'Expected exactly one static-hosts module import, found %s.\n' "$hosts_imports" >&2
-  exit 1
-}
-
-openssh_imports=$(grep -cF './services/openssh.nix' configuration.nix)
-[[ $openssh_imports -eq 1 ]] || {
-  printf 'Expected exactly one OpenSSH module import, found %s.\n' "$openssh_imports" >&2
-  exit 1
-}
 
 printf 'Building the complete default system closure...\n'
 system_closure=$(nix-build --no-out-link '<nixpkgs/nixos>' -A system \

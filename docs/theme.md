@@ -85,16 +85,3 @@ deployment and service. The service updates only selected keys in `kdeglobals`,
 settings. Appearance cannot safely be universal for every website or application,
 so Zen, Obsidian vaults, and any application-specific preference remain documented
 user choices.
-# Helix Abyss appearance
-
-The real-hardware palette uses near-black desktop (`#030405`), window
-(`#050608`), and view (`#07090C`) surfaces with `#7396F5` accents. Breeze is
-applied first and `HelixAbyss` colours last so the selected scheme is deterministic.
-
-Normal application is revision-idempotent. Troubleshoot or deliberately
-reapply after changing a live session with:
-
-```bash
-helix-apply-theme --force
-helix-apply-theme --help
-```

@@ -4,7 +4,6 @@
 
 # Inventory reports contain host-specific identifiers and do not belong in Git.
 /helix-hardware*.txt
-/storage/reinstall-targets.local.conf
 
 # Keep ad-hoc local backups out of commits if one is placed here accidentally.
 *.backup

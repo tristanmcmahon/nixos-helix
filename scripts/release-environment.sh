@@ -31,8 +31,8 @@ if [[ $HELIX_SELECTED_RELEASE != "$HELIX_EXPECTED_RELEASE" ]]; then
   printf 'Expected release: %s\n' "$HELIX_EXPECTED_RELEASE" >&2
   printf 'Selected release: %s\n' "$HELIX_SELECTED_RELEASE" >&2
   printf 'Nixpkgs source:   %s\n\n' "$HELIX_SELECTED_NIXPKGS" >&2
-  printf 'ERROR: Helix has not yet selected NixOS %s.\n' "$HELIX_EXPECTED_RELEASE" >&2
-  printf 'Run the explicit migration command before checking or building.\n' >&2
+  printf 'ERROR: Helix requires a NixOS %s Nixpkgs tree.\n' "$HELIX_EXPECTED_RELEASE" >&2
+  printf 'Select the expected root channel or provide HELIX_NIXPKGS_PATH.\n' >&2
   # shellcheck disable=SC2317 # exit is the direct-execution fallback.
   return 1 2>/dev/null || exit 1
 fi

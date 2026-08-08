@@ -7,16 +7,16 @@ repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 source "$repo_root/scripts/release-environment.sh"
 
 if [[ $# -ne 1 ]]; then
-  printf 'Usage: %s {dry-build|build|dry-activate|test|boot|switch}\n' "${0##*/}" >&2
+  printf 'Usage: %s {dry-build|build|dry-activate|test|switch}\n' "${0##*/}" >&2
   exit 2
 fi
 
 case $1 in
-dry-build | build | dry-activate | test | boot | switch)
+dry-build | build | dry-activate | test | switch)
   action=$1
   ;;
 *)
-  printf 'Usage: %s {dry-build|build|dry-activate|test|boot|switch}\n' "${0##*/}" >&2
+  printf 'Usage: %s {dry-build|build|dry-activate|test|switch}\n' "${0##*/}" >&2
   exit 2
   ;;
 esac
