@@ -119,6 +119,15 @@ def validate_archive(archive: Path, expected_root: str) -> tuple[int, int]:
     return len(members), total_bytes
 
 
+def archive_root_owner(archive: Path, expected_root: str) -> tuple[int, int]:
+    validate_archive(archive, expected_root)
+    with tarfile.open(archive, mode="r:") as handle:
+        for member in handle.getmembers():
+            if member.name.rstrip("/") == expected_root:
+                return member.uid, member.gid
+    fail(f"archive lacks directory root {expected_root}")
+
+
 def validate_machine_identity(archive: Path, expected_uid: int = 0, expected_gid: int = 0) -> tuple[int, int, int]:
     """Accept only the one NM profile and complete OpenSSH host-key pairs."""
     try:
@@ -278,6 +287,9 @@ def main() -> None:
     elif mode == "archive" and len(sys.argv) == 4:
         entries, size = validate_archive(Path(sys.argv[2]), sys.argv[3])
         print(entries, size)
+    elif mode == "root-owner" and len(sys.argv) == 4:
+        uid, gid = archive_root_owner(Path(sys.argv[2]), sys.argv[3])
+        print(uid, gid)
     elif mode == "machine-identity" and len(sys.argv) in (3, 5):
         uid = int(sys.argv[3]) if len(sys.argv) == 5 else 0
         gid = int(sys.argv[4]) if len(sys.argv) == 5 else 0

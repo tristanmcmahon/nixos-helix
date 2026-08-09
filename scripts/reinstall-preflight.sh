@@ -104,6 +104,9 @@ printf '\nRequired independent backup scope\n'
 printf '%s\n' \
   '/home/tristan' '/home/tristan/Projects' '/home/tristan/.ssh' \
   '/etc/nixos/secrets' "$repo_root/hardware-configuration.nix" \
+  '/etc/NetworkManager/system-connections/towerofdoom.nmconnection' \
+  '/etc/ssh/ssh_host_*' \
+  'the preceding two paths are the only additional /etc identities preserved' \
   'repository commit and any uncommitted patch' \
   'browser data, Obsidian vaults, and all other non-reproducible local data'
 printf '\nRequired backup command: scripts/backup-for-reinstall.sh\n'

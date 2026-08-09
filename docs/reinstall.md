@@ -88,6 +88,18 @@ Boot the verified installer in UEFI mode. In GParted, identify each physical
 device visually by its model, serial, and capacity before every destructive
 action. Kernel device names can change between boots and are not identities.
 
+| Physical identity | Required initial-reinstall treatment |
+| --- | --- |
+| Samsung SSD 970 PRO 512GB — `S463NF0M914938Z` | Wipe completely; create HELIX_EFI and HELIX_ROOT; leave the final approximately 240 GiB unallocated |
+| Samsung SSD 850 EVO 1TB — `S2PWNX0HA06906Y` | Wipe; create HELIX_SSD_A |
+| Samsung SSD 850 EVO 500GB — `S21HNXBG406937R` | Wipe; create HELIX_SSD_B |
+| Samsung SSD 840 EVO 500GB — `S1DHNSADB22089E` | Leave untouched during the initial reinstall |
+| Samsung SSD 970 EVO Plus 1TB — `S4EWNX0NA44184L` | Protected GAMES_NVME; **NEVER FORMAT** |
+| DataTraveler 3.0 — `E0D55EA574CCF3A0395F1214` | Ventoy installer; **NEVER TARGET** |
+
+Kernel device names may change and are not identities. Before every destructive
+action, Tristan must visually recheck model, serial, and capacity in GParted.
+
 Create this layout manually:
 
 - OS disk: GPT; a 10 GiB FAT32 EFI system partition labelled `HELIX_EFI`; an
@@ -276,11 +288,31 @@ relying on NetworkManager's restored profile or accepting SSH connections; it
 checks restrictive profile metadata and compares restored public-key
 fingerprints with the checksummed preinstall record. It does not activate old hardware
 configuration, filesystem UUIDs, boot state, Nix stores, profiles, generations,
-channels or inventories. After restoration, run:
+channels or inventories.
+
+The archived Projects tree may change the canonical checkout. Before reboot or
+postflight, verify that it still has the approved commit:
 
 ```bash
+cd ~/Projects/nixos-helix
+test "$(git rev-parse HEAD)" = "$(cat /var/lib/helix-install/approved-commit)"
+```
+
+If this differs, stop and inspect it. Do not silently checkout or reset because
+that could destroy restored Git state.
+
+Reboot after the canonical restore, then run postflight:
+
+```bash
+sudo reboot
+# After logging in locally following the reboot:
+cd ~/Projects/nixos-helix
 ./scripts/reinstall-postflight.sh
 ```
+
+The reboot makes the restored SSH host keys and NetworkManager connection state
+authoritative. Do not rely on remote SSH between replacement of the host keys
+and this reboot. The restore never reboots or orchestrates daemons itself.
 
 The checkout may be temporarily dirty after restoring its archived copy. Review
 and retain the dedicated generated-hardware commit before treating the canonical

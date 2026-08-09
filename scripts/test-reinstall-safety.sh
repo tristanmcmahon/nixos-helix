@@ -17,6 +17,7 @@ if "$repo_root/scripts/verify-hardware-continuity.sh" \
 fi
 
 backup_script=$repo_root/scripts/backup-for-reinstall.sh
+storage_script=$repo_root/scripts/check-install-storage.sh
 grep -qxF 'backup_root=/mnt/infernalnexus/nas1/backup' "$backup_script"
 grep -qxF 'expected_source=//192.168.1.8/nas1' "$backup_script"
 grep -qF "findmnt -rn --target \"\$nas_mount\" --types cifs" "$backup_script"
@@ -40,6 +41,18 @@ for required_file in machine-identity.tar ssh-host-key-fingerprints.txt; do
 done
 grep -qF '/mnt/infernalnexus/nas1/backup' "$repo_root/scripts/reinstall-preflight.sh"
 grep -qF './scripts/backup-for-reinstall.sh' "$repo_root/docs/reinstall.md"
+
+grep -qF 'exec sudo --' "$storage_script"
+grep -qF 'installer was not booted in UEFI mode' "$storage_script"
+for serial in S463NF0M914938Z S2PWNX0HA06906Y S21HNXBG406937R S4EWNX0NA44184L; do
+  grep -qF "$serial" "$storage_script"
+done
+grep -qF 'Estimated unallocated:' "$storage_script"
+if grep -Eq '\b(mkfs|parted|fdisk|sgdisk|wipefs|mount|umount|mkswap)\b' \
+  "$storage_script"; then
+  printf 'A destructive storage command entered the read-only storage checker.\n' >&2
+  exit 1
+fi
 
 if grep -Eq '\b(mkfs|parted|fdisk|sgdisk|wipefs)\b' \
   "$repo_root/scripts/backup-for-reinstall.sh" \
