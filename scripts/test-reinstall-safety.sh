@@ -26,6 +26,8 @@ grep -qF "tar --create --file=\"\$incomplete_path/home-tristan.tar\"" "$backup_s
 grep -qF 'home-tristan.tar" home/tristan' "$backup_script"
 grep -qF 'etc-nixos-secrets.tar" etc/nixos/secrets' "$backup_script"
 grep -qF -- "--exclude='home/tristan/.local/share/Steam/steamapps/common'" "$backup_script"
+grep -qF -- "--exclude='home/tristan/.steam/steam.pipe'" "$backup_script"
+grep -qF -- "--exclude='home/tristan/.codex/ipc/ipc.sock'" "$backup_script"
 grep -qF "mv --no-clobber -- \"\$incomplete_path\" \"\$final_path\"" "$backup_script"
 if "$backup_script" unexpected-argument >/dev/null 2>&1; then
   printf 'Backup command accepted a destination argument.\n' >&2
