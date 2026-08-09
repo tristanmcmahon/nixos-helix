@@ -16,25 +16,47 @@ for required_tool in "${required_tools[@]}"; do
   fi
 done
 
+temporary_directory=$(mktemp -d)
+trap 'rm -rf -- "$temporary_directory"' EXIT
+
 printf 'Checking deterministic release selection...\n'
 expected_release=$(nix-instantiate --eval --raw -E '(import ./release.nix).nixosRelease')
-selected_nixpkgs=$(readlink -f /nix/var/nix/profiles/per-user/root/channels/nixos)
+[[ $expected_release == 26.05 ]]
+selected_nixpkgs=$HELIX_SELECTED_NIXPKGS
 release_selection=$(
   NIX_PATH=/deliberately/invalid \
-    HELIX_NIXPKGS_PATH=/nix/var/nix/profiles/per-user/root/channels/nixos \
+    HELIX_NIXPKGS_PATH="$selected_nixpkgs" \
     bash -c 'source "$1" >/dev/null; printf "%s|%s|%s\n" "$HELIX_SELECTED_RELEASE" "$HELIX_SELECTED_NIXPKGS" "$NIX_PATH"' \
     _ "$repo_root/scripts/release-environment.sh"
 )
 [[ $release_selection == "$expected_release|$selected_nixpkgs|nixpkgs=$selected_nixpkgs:nixos-config=$repo_root/configuration.nix:$selected_nixpkgs" ]]
+
+# Model the graphical installer: an explicit readable tree must work even when
+# no root channel is involved. The symlink also proves canonicalisation.
+ln -s -- "$selected_nixpkgs" "$temporary_directory/explicit-nixpkgs"
+explicit_selection=$(
+  NIX_PATH=/deliberately/invalid \
+    HELIX_NIXPKGS_PATH="$temporary_directory/explicit-nixpkgs" \
+    bash -c 'source "$1" >/dev/null; printf "%s|%s\n" "$HELIX_SELECTED_RELEASE" "$HELIX_SELECTED_NIXPKGS"' \
+    _ "$repo_root/scripts/release-environment.sh"
+)
+[[ $explicit_selection == "$expected_release|$selected_nixpkgs" ]]
 if HELIX_NIXPKGS_PATH=/deliberately/missing \
   bash -c 'source "$1"' _ "$repo_root/scripts/release-environment.sh" >/dev/null 2>&1; then
   printf 'release-environment accepted an unreadable explicit Nixpkgs source.\n' >&2
   exit 1
 fi
+root_channel=/nix/var/nix/profiles/per-user/root/channels/nixos
+if [[ -r $root_channel/default.nix ]]; then
+  root_selection=$(
+    NIX_PATH=/deliberately/invalid bash -c \
+      'unset HELIX_NIXPKGS_PATH; source "$1" >/dev/null; printf "%s|%s\n" "$HELIX_SELECTED_RELEASE" "$HELIX_SELECTED_NIXPKGS"' \
+      _ "$repo_root/scripts/release-environment.sh"
+  )
+  [[ $root_selection == "$expected_release|$(readlink -f "$root_channel")" ]]
+fi
 
 printf 'Checking Nix formatting...\n'
-temporary_directory=$(mktemp -d)
-trap 'rm -rf -- "$temporary_directory"' EXIT
 PYTHONPYCACHEPREFIX=$temporary_directory \
   python3 -m py_compile scripts/*.py
 

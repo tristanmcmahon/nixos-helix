@@ -1,27 +1,28 @@
 # Local development workflow
 
-The non-flake `shell.nix` bootstraps the repository tools before the permanent
-development profile is installed:
+The non-flake `shell.nix` is the minimal bootstrap and repository-check
+environment, including installer use. It contains only Git, Python, nixfmt,
+ShellCheck, Deadnix, and Statix:
 
 ```bash
 cd ~/Projects/nixos-helix
 ./scripts/dev-shell.sh
-code .
 ```
 
-The helper selects the root NixOS channel deterministically and refuses a
-release other than the `26.05` contract. This prevents user `NIX_PATH` state
-from making checks evaluate a different package set from root rebuilds. Run a
-single command in the same environment with:
+The helper selects an explicit `HELIX_NIXPKGS_PATH` when provided, otherwise
+the installed root NixOS channel, and refuses a release other than the `26.05`
+contract. This prevents ambient user `NIX_PATH` state from changing evaluation.
+Run a single command in the same environment with:
 
 ```bash
 ./scripts/dev-shell.sh --run './scripts/check.sh'
 ```
 
-It supplies VS Code, Git, GitHub CLI, Git LFS, Node.js/npm, `nil`, `nixfmt`,
-ShellCheck, ripgrep, jq, and the OpenAI Codex CLI. VS Code is unfree, so
-`shell.nix` permits unfree packages only for its own Nixpkgs import. It also
-includes deadnix and statix for the repository's Nix maintenance checks.
+The installed workstation development environment is separately owned by
+`profiles/development.nix` and `packages/development.nix`. That maintained
+system profile contains VS Code, GitHub CLI, Git LFS, Codex, Node.js, `nil`,
+compilers, runtimes, and the other daily development tools. Do not expand the
+bootstrap shell to duplicate that workstation profile.
 
 ## VS Code and Nix
 
@@ -30,8 +31,9 @@ extension identifier, `openai.chatgpt`. Recommendations do not install or
 authenticate extensions automatically.
 
 The shared settings use `nil` as the single Nix language server and `nixfmt` as
-the formatter, with format-on-save for Nix files. Start VS Code from `./scripts/dev-shell.sh`
-so those binaries are on its inherited `PATH`.
+the formatter, with format-on-save for Nix files. On the installed workstation,
+launch `code .` from the ordinary user environment supplied by the maintained
+development profile; VS Code is intentionally absent from `shell.nix`.
 
 Confirm extensions without changing them:
 
@@ -42,7 +44,7 @@ code --list-extensions --show-versions
 ## Codex
 
 NixOS 26.05 packages the official OpenAI Codex CLI as `pkgs.codex`; the
-development profile and bootstrap shell install it independently of VS Code.
+installed development profile provides it independently of VS Code.
 The Codex IDE extension also bundles its own CLI, so installing VS Code alone
 must not be treated as installing a user-facing terminal command.
 

@@ -104,10 +104,20 @@ printf '\nRequired independent backup scope\n'
 printf '%s\n' \
   '/home/tristan' '/home/tristan/Projects' '/home/tristan/.ssh' \
   '/etc/nixos/secrets' "$repo_root/hardware-configuration.nix" \
+  '/etc/NetworkManager/system-connections/towerofdoom.nmconnection' \
+  '/etc/ssh/ssh_host_*' \
+  'the preceding two paths are the only additional /etc identities preserved' \
   'repository commit and any uncommitted patch' \
   'browser data, Obsidian vaults, and all other non-reproducible local data'
 printf '\nRequired backup command: scripts/backup-for-reinstall.sh\n'
 printf 'Fixed destination: /mnt/infernalnexus/nas1/backup\n'
+printf '\nPRE-WIPE BOOTSTRAP GATE\n'
+printf '%s\n' \
+  'Independently confirm first-boot wired access or retrievable Wi-Fi credentials.' \
+  'Independently confirm the Infernalnexus SMB username/password is retrievable.' \
+  'The SMB credential inside the NAS backup cannot bootstrap access to that same NAS.' \
+  'If either dependency is unavailable: DO NOT WIPE YET.' \
+  'Do not copy credentials to the Ventoy stick or create another secret archive.'
 printf '%s\n' \
   'A completed backup set must be manually inspected before wiping.' \
   'This read-only preflight does not create or prove a backup merely by seeing its folder.' \

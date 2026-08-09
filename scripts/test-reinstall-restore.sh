@@ -45,6 +45,7 @@ make_set() {
     "$source/etc/NetworkManager/system-connections" "$source/etc/ssh" "$backup_set"
   printf 'shell profile\n' >"$source/home/tristan/.profile"
   printf 'project data\n' >"$source/home/tristan/Projects/notes.txt"
+  ln -s /home/tristan/Projects "$source/home/tristan/projects-absolute"
   printf 'synthetic credential\n' >"$source/etc/nixos/secrets/infernalnexus-smb"
   chmod 0600 "$source/etc/nixos/secrets/infernalnexus-smb"
   printf 'synthetic NetworkManager fixture\n' \
@@ -106,6 +107,8 @@ plan_output=$(run_restore "$valid_name")
 grep -qF 'HELIX CANONICAL RESTORE — VALIDATED PLAN' <<<"$plan_output"
 grep -qF 'Manifest: verified' <<<"$plan_output"
 grep -qF 'Machine identity archive: verified' <<<"$plan_output"
+grep -qF "Home ownership: archived $(id -u):$(id -g); target $(id -u):$(id -g)" \
+  <<<"$plan_output"
 grep -qF 'No changes made.' <<<"$plan_output"
 [[ $(tree_checksum "$target_home") == "$home_before" ]]
 [[ $(tree_checksum "$backup_root/$valid_name") == "$backup_before" ]]
@@ -168,6 +171,11 @@ with tarfile.open(archive, "w") as handle:
         member.type = tarfile.SYMTYPE
         member.linkname = "../../../escape"
         handle.addfile(member)
+    elif kind == "absolute-symlink":
+        member = tarfile.TarInfo("home/tristan/escape-absolute-link")
+        member.type = tarfile.SYMTYPE
+        member.linkname = "/etc"
+        handle.addfile(member)
     elif kind == "hardlink":
         member = tarfile.TarInfo("home/tristan/escape-hardlink")
         member.type = tarfile.LNKTYPE
@@ -177,7 +185,7 @@ PY
 }
 
 index=4
-for malicious_kind in absolute traversal symlink hardlink; do
+for malicious_kind in absolute traversal symlink absolute-symlink hardlink; do
   printf -v malicious_name 'helix-reinstall-20260806-1549%02d' "$index"
   cp -a "$backup_root/$valid_name" "$backup_root/$malicious_name"
   make_malicious_home_archive "$backup_root/$malicious_name/home-tristan.tar" "$malicious_kind"
@@ -210,6 +218,19 @@ if run_restore "$broadened_etc" >/dev/null 2>&1; then
   exit 1
 fi
 
+mismatched_owner=helix-reinstall-20260806-154912
+cp -a "$backup_root/$valid_name" "$backup_root/$mismatched_owner"
+tar --create --file="$backup_root/$mismatched_owner/home-tristan.tar" \
+  --owner="$(( $(id -u) + 1 ))" --group="$(id -g)" \
+  --directory="$test_base/source-$valid_name" home/tristan
+rehash_set "$backup_root/$mismatched_owner"
+home_before_mismatch=$(tree_checksum "$target_home")
+if run_restore "$mismatched_owner" >/dev/null 2>&1; then
+  printf 'Restore accepted a mismatched archived home UID.\n' >&2
+  exit 1
+fi
+[[ $(tree_checksum "$target_home") == "$home_before_mismatch" ]]
+
 printf 'existing data\n' >"$target_home/personal-document.txt"
 reports_before=$(find "$report_root" -type f | wc -l)
 if HELIX_RESTORE_TEST_CONFIRMATION="RESTORE $valid_name" \
@@ -226,6 +247,10 @@ grep -qF 'Home collisions: 1' <<<"$collision_plan"
 grep -qF 'Exact minimal-home collision roots:' <<<"$collision_plan"
 grep -qF '  .profile' <<<"$collision_plan"
 
+mkdir -p "$target_ssh_dir"
+printf 'unrelated SSH configuration fixture\n' >"$target_ssh_dir/sshd_config"
+ssh-keygen -q -t rsa -N '' -f "$target_ssh_dir/ssh_host_rsa_key"
+
 backup_before_restore=$(tree_checksum "$backup_root/$valid_name")
 HELIX_RESTORE_TEST_CONFIRMATION="RESTORE $valid_name" \
   run_restore "$valid_name" --run >/dev/null
@@ -234,10 +259,14 @@ HELIX_RESTORE_TEST_CONFIRMATION="RESTORE $valid_name" \
 [[ $(stat -c '%u:%g:%a' "$target_nm_profile") == "$(id -u):$(id -g):600" ]]
 [[ -f $target_ssh_dir/ssh_host_ed25519_key ]]
 [[ -f $target_ssh_dir/ssh_host_ed25519_key.pub ]]
+[[ ! -e $target_ssh_dir/ssh_host_rsa_key ]]
+[[ ! -e $target_ssh_dir/ssh_host_rsa_key.pub ]]
+grep -qxF 'unrelated SSH configuration fixture' "$target_ssh_dir/sshd_config"
 expected_fingerprint=$(cut -f2 "$backup_root/$valid_name/ssh-host-key-fingerprints.txt")
 actual_fingerprint=$(ssh-keygen -lf "$target_ssh_dir/ssh_host_ed25519_key.pub" -E sha256 | awk '{ print $2 }')
 [[ $actual_fingerprint == "$expected_fingerprint" ]]
 [[ -f $target_home/Projects/notes.txt ]]
+[[ $(readlink "$target_home/projects-absolute") == /home/tristan/Projects ]]
 [[ $(find "$report_root" -name 'restore-*.txt' -type f | wc -l) == 1 ]]
 [[ $(tree_checksum "$backup_root/$valid_name") == "$backup_before_restore" ]]
 

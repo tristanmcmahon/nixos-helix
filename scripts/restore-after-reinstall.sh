@@ -168,6 +168,22 @@ read -r home_entries home_bytes < <(
 read -r secrets_entries secrets_bytes < <(
   python3 "$validator" archive "$backup_set/etc-nixos-secrets.tar" etc/nixos/secrets
 )
+read -r archived_home_uid archived_home_gid < <(
+  python3 "$validator" root-owner "$backup_set/home-tristan.tar" home/tristan
+)
+if [[ $test_mode == 1 ]]; then
+  target_home_uid=$(id -u)
+  target_home_gid=$(id -g)
+else
+  target_home_uid=$(id -u tristan)
+  target_home_gid=$(id -g tristan)
+fi
+[[ $archived_home_uid == "$target_home_uid" && \
+   $archived_home_gid == "$target_home_gid" ]] || {
+  printf 'FAIL: archived home owner %s:%s does not match Tristan target %s:%s.\n' \
+    "$archived_home_uid" "$archived_home_gid" "$target_home_uid" "$target_home_gid" >&2
+  exit 1
+}
 expected_identity_uid=0
 expected_identity_gid=0
 if [[ $test_mode == 1 ]]; then
@@ -250,6 +266,7 @@ grep -E '^(Created \(UTC\)|Hostname|Source machine|Destination share|Repository 
 printf '%s\n' \
   "Manifest: verified ($manifest_entries artifacts, SHA256 $manifest_checksum)" \
   "Home archive: verified ($home_entries paths, approximately $home_bytes data bytes)" \
+  "Home ownership: archived $archived_home_uid:$archived_home_gid; target $target_home_uid:$target_home_gid" \
   "Secrets archive: verified ($secrets_entries paths, approximately $secrets_bytes data bytes)" \
   "Machine identity archive: verified ($identity_entries files, approximately $identity_bytes data bytes, $ssh_pair_count SSH pairs)" \
   "Recorded SSH fingerprints: verified ($fingerprint_count public keys)" \
@@ -339,6 +356,13 @@ tar --extract --file="$backup_set/machine-identity.tar" --directory="$staging" \
   --numeric-owner --same-owner --same-permissions --acls --xattrs \
   --xattrs-include='*' --selinux --sparse --delay-directory-restore
 staged_entries=$(python3 "$validator" staged "$staging")
+staged_home_uid=$(stat -c '%u' "$staging/home/tristan")
+staged_home_gid=$(stat -c '%g' "$staging/home/tristan")
+[[ $staged_home_uid == "$target_home_uid" && $staged_home_gid == "$target_home_gid" ]] || {
+  printf 'FAIL: staged home owner %s:%s does not match Tristan target %s:%s.\n' \
+    "$staged_home_uid" "$staged_home_gid" "$target_home_uid" "$target_home_gid" >&2
+  exit 1
+}
 
 staged_nm=$staging/etc/NetworkManager/system-connections/towerofdoom.nmconnection
 [[ -f $staged_nm && ! -L $staged_nm ]] || {
@@ -350,9 +374,11 @@ staged_nm=$staging/etc/NetworkManager/system-connections/towerofdoom.nmconnectio
   printf 'FAIL: staged NetworkManager profile ownership or mode is unsafe.\n' >&2
   exit 1
 }
+expected_ssh_files=()
 while IFS=$'\t' read -r key_name expected_fingerprint; do
   staged_public=$staging/etc/ssh/$key_name
   staged_private=${staged_public%.pub}
+  expected_ssh_files+=("${key_name%.pub}" "$key_name")
   [[ -f $staged_public && ! -L $staged_public && -f $staged_private && ! -L $staged_private ]] || {
     printf 'FAIL: staged SSH host-key pair is incomplete.\n' >&2
     exit 1
@@ -406,6 +432,15 @@ if (( home_collisions > 0 || secret_collisions > 0 )) || \
   fi
 fi
 
+# Quarantine is complete. Remove only host-key-shaped entries so a fresh key
+# algorithm cannot survive alongside the validated restored identity.
+shopt -s nullglob
+existing_host_keys=("$target_ssh_dir"/ssh_host_*)
+if (( ${#existing_host_keys[@]} > 0 )); then
+  rm -f -- "${existing_host_keys[@]}"
+fi
+shopt -u nullglob
+
 install -d "$target_home" "$target_secrets"
 cp -a --reflink=auto "$staging/home/tristan/." "$target_home/"
 cp -a --reflink=auto "$staging/etc/nixos/secrets/." "$target_secrets/"
@@ -449,6 +484,21 @@ while IFS=$'\t' read -r key_name expected_fingerprint; do
   }
 done <"$backup_set/ssh-host-key-fingerprints.txt"
 
+mapfile -t expected_ssh_files_sorted < <(printf '%s\n' "${expected_ssh_files[@]}" | sort)
+mapfile -t restored_ssh_files < <(
+  find "$target_ssh_dir" -maxdepth 1 -mindepth 1 -name 'ssh_host_*' -printf '%f\n' | sort
+)
+[[ ${#restored_ssh_files[@]} -eq ${#expected_ssh_files_sorted[@]} ]] || {
+  printf 'FAIL: restored SSH host-key filename set is not exact.\n' >&2
+  exit 1
+}
+for index in "${!expected_ssh_files_sorted[@]}"; do
+  [[ ${restored_ssh_files[index]} == "${expected_ssh_files_sorted[index]}" ]] || {
+    printf 'FAIL: restored SSH host-key filename set is not exact.\n' >&2
+    exit 1
+  }
+done
+
 credential=$target_secrets/infernalnexus-smb
 credential_result=absent
 if [[ -e $credential ]]; then
@@ -477,6 +527,7 @@ manifest_sha256=$manifest_checksum
 restore_date_utc=$(date --utc --iso-8601=seconds)
 restored_scopes=/home/tristan,/etc/nixos/secrets,/etc/NetworkManager/system-connections/towerofdoom.nmconnection,/etc/ssh/ssh_host_*
 home_source_paths=$home_entries
+home_owner=$archived_home_uid:$archived_home_gid
 secrets_source_paths=$secrets_entries
 machine_identity_source_files=$identity_entries
 ssh_host_key_pairs=$ssh_pair_count
@@ -500,4 +551,6 @@ printf '%s\n' \
   "Quarantine: $quarantine" \
   "Report: $report" \
   'Deliberately not restored: hardware configuration, UUIDs, bootloader, Nix store, profiles, generations and inventories.' \
-  'Next: run ./scripts/reinstall-postflight.sh and retain the NAS backup until postflight passes.'
+  'Do not rely on remote SSH until after the required reboot.' \
+  'Next: reboot so restored SSH and NetworkManager identity is authoritative, then run ./scripts/reinstall-postflight.sh.' \
+  'Retain the NAS backup until postflight passes.'

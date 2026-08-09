@@ -63,9 +63,14 @@ def safe_member_name(name: str, expected_root: str) -> str:
 
 def safe_link_target(member: tarfile.TarInfo, expected_root: str) -> str:
     target = member.linkname
-    if not target or target.startswith("/") or any(char in target for char in "\r\n\0"):
+    if not target or any(char in target for char in "\r\n\0"):
         fail(f"archive link has an unsafe target: {member.name}")
-    if member.issym():
+    if member.issym() and target.startswith("/"):
+        absolute_root = "/" + expected_root
+        if target != absolute_root and not target.startswith(absolute_root + "/"):
+            fail(f"archive link has an unsafe absolute target: {member.name}")
+        resolved = target.removeprefix("/")
+    elif member.issym():
         resolved = posixpath.normpath(posixpath.join(posixpath.dirname(member.name), target))
     else:
         resolved = posixpath.normpath(target)
@@ -112,6 +117,15 @@ def validate_archive(archive: Path, expected_root: str) -> tuple[int, int]:
             if target_member is None or not (target_member.isfile() or target_member.islnk()):
                 fail(f"hardlink target is absent or not a regular file: {member.name}")
     return len(members), total_bytes
+
+
+def archive_root_owner(archive: Path, expected_root: str) -> tuple[int, int]:
+    validate_archive(archive, expected_root)
+    with tarfile.open(archive, mode="r:") as handle:
+        for member in handle.getmembers():
+            if member.name.rstrip("/") == expected_root:
+                return member.uid, member.gid
+    fail(f"archive lacks directory root {expected_root}")
 
 
 def validate_machine_identity(archive: Path, expected_uid: int = 0, expected_gid: int = 0) -> tuple[int, int, int]:
@@ -247,10 +261,16 @@ def validate_staged(staging: Path) -> int:
                 if stat.S_ISLNK(mode):
                     target = os.readlink(path)
                     if target.startswith("/"):
-                        fail(f"staged symlink has an absolute target: {relative}")
-                    resolved = PurePosixPath(posixpath.normpath(
-                        posixpath.join(str(relative.parent), target)
-                    ))
+                        if lexical_root != PurePosixPath("home/tristan") or (
+                            target != "/home/tristan"
+                            and not target.startswith("/home/tristan/")
+                        ):
+                            fail(f"staged symlink has an unsafe absolute target: {relative}")
+                        resolved = PurePosixPath(target.removeprefix("/"))
+                    else:
+                        resolved = PurePosixPath(posixpath.normpath(
+                            posixpath.join(str(relative.parent), target)
+                        ))
                     if resolved != lexical_root and lexical_root not in resolved.parents:
                         fail(f"staged symlink escapes its restore root: {relative}")
                 elif not (stat.S_ISREG(mode) or stat.S_ISDIR(mode)):
@@ -267,6 +287,9 @@ def main() -> None:
     elif mode == "archive" and len(sys.argv) == 4:
         entries, size = validate_archive(Path(sys.argv[2]), sys.argv[3])
         print(entries, size)
+    elif mode == "root-owner" and len(sys.argv) == 4:
+        uid, gid = archive_root_owner(Path(sys.argv[2]), sys.argv[3])
+        print(uid, gid)
     elif mode == "machine-identity" and len(sys.argv) in (3, 5):
         uid = int(sys.argv[3]) if len(sys.argv) == 5 else 0
         gid = int(sys.argv[4]) if len(sys.argv) == 5 else 0
