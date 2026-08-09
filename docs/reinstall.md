@@ -12,20 +12,35 @@ There is no intermediate 25.11 installation or upgrade step.
 
 Follow this order without skipping a gate:
 
-1. Run the canonical backup.
-2. Manually inspect and verify its completed set.
-3. Save and manually review `hardware-inventory.sh` output.
-4. Record the current full `origin/main` commit.
-5. Create and verify official NixOS 26.05 installation media.
-6. Boot that media explicitly in UEFI mode.
-7. In GParted, visually identify each device by model, serial, and capacity.
-8. Manually create the layout below, checking the target before each change.
-9. Clone the canonical repository and check out the approved commit.
-10. Run the read-only `check-install-storage.sh` and inspect its evidence.
-11. Mount only HELIX_ROOT at `/mnt` and HELIX_EFI at `/mnt/boot`.
-12. Run `nixos-generate-config --root /mnt`.
-13. Continue the configuration, continuity, install, and postflight workflow below.
-14. Restore user data and secrets with the canonical restore script.
+1. Pass the pre-wipe bootstrap gate below.
+2. Run the canonical backup.
+3. Manually inspect and verify its completed set.
+4. Save and manually review `hardware-inventory.sh` output.
+5. Record the current full `origin/main` commit.
+6. Create and verify official NixOS 26.05 graphical installation media.
+7. Boot that media explicitly in UEFI mode.
+8. In GParted, visually identify each device by model, serial, and capacity.
+9. Manually create the layout below, checking the target before each change.
+10. Clone the canonical repository and check out the approved commit.
+11. Run the read-only `check-install-storage.sh` and inspect its evidence.
+12. Mount only HELIX_ROOT at `/mnt` and HELIX_EFI at `/mnt/boot`.
+13. Run `nixos-generate-config --root /mnt`.
+14. Continue the configuration, continuity, install, and postflight workflow below.
+15. Restore user data and secrets with the canonical restore script.
+
+## Pre-wipe bootstrap gate
+
+The canonical backup is on a CIFS share whose credential is itself restored
+from that backup. Before erasing the OS disk, independently confirm that both
+of these will be available after installation:
+
+- first-boot network access through wired Ethernet, or a Wi-Fi credential that
+  is independently retrievable;
+- the Infernalnexus SMB username and password from an existing password manager,
+  another device, or another known source independent of the NAS backup.
+
+If either is unavailable, **DO NOT WIPE YET**. Do not copy the credential to the
+Ventoy stick or create another secret archive.
 
 ## Verified backup gate
 
@@ -62,9 +77,9 @@ or manually reviewed backup.
 
 ## Official NixOS 26.05 media
 
-Download the official NixOS 26.05 installer and its published checksum from
-the official NixOS download infrastructure. Compare the locally calculated
-`sha256sum` with the separately downloaded official checksum before writing
+Download the official NixOS 26.05 graphical installer and its published
+checksum from the official NixOS download infrastructure. Compare the locally
+calculated `sha256sum` with the separately downloaded official checksum before writing
 the image. Do not use an image whose checksum or signing source is uncertain.
 
 ## Manual GParted layout
@@ -86,6 +101,9 @@ Create this layout manually:
 Close GParted, then run the repository's short read-only check:
 
 ```bash
+git clone https://github.com/tristanmcmahon/nixos-helix.git /tmp/nixos-helix-install
+git -C /tmp/nixos-helix-install checkout APPROVED_COMMIT
+cd /tmp/nixos-helix-install
 ./scripts/check-install-storage.sh
 ```
 
@@ -99,15 +117,28 @@ hardware configuration. Do not mount HELIX_SSD_A, HELIX_SSD_B, or GAMES_NVME
 beneath `/mnt`; otherwise `nixos-generate-config` may introduce separately
 managed data filesystems into `hardware-configuration.nix`.
 
-## Temporary installation checkout
-
-After manually preparing and mounting the target root at `/mnt` and its EFI
-partition at the intended location, clone the exact approved commit into a
-temporary checkout outside the target's canonical future checkout:
+Mount the two installation filesystems and immediately verify the topology:
 
 ```bash
-git clone https://github.com/tristanmcmahon/nixos-helix.git /tmp/nixos-helix-install
-git -C /tmp/nixos-helix-install checkout APPROVED_COMMIT
+sudo mount /dev/disk/by-label/HELIX_ROOT /mnt
+sudo mkdir -p /mnt/boot
+sudo mount /dev/disk/by-label/HELIX_EFI /mnt/boot
+findmnt /mnt
+findmnt /mnt/boot
+lsblk -o NAME,PATH,SIZE,TYPE,FSTYPE,LABEL,UUID,MOUNTPOINTS,MODEL
+```
+
+Do not mount HELIX_SSD_A, HELIX_SSD_B, or GAMES_NVME beneath `/mnt` before
+`nixos-generate-config`.
+
+## Temporary installation checkout
+
+With the exact approved commit already checked out in the temporary installer
+checkout outside the target's canonical future checkout, generate and preserve
+the target hardware configuration:
+
+```bash
+cd /tmp/nixos-helix-install
 sudo nixos-generate-config --root /mnt
 cp /mnt/etc/nixos/hardware-configuration.nix /tmp/nixos-helix-install/hardware-configuration.nix
 sudo install -d -m 0755 /mnt/var/lib/helix-install
@@ -121,8 +152,6 @@ git -C /tmp/nixos-helix-install rev-parse HEAD \
   /tmp/nixos-helix-install/hardware-configuration.nix \
   /mnt/etc/nixos/hardware-configuration.nix \
   /mnt/var/lib/helix-install/hardware-configuration.nix
-diff -u /tmp/helix-backup-inspection/hardware-configuration-repository.nix \
-  /tmp/nixos-helix-install/hardware-configuration.nix || true
 ```
 
 Preserve the newly generated file for later review. Repartitioning can change
@@ -139,6 +168,7 @@ point; it composes the maintained configuration with `fresh-install.nix` and is
 not used by upgrades. From the temporary checkout using the 26.05 source, run:
 
 ```bash
+cd /tmp/nixos-helix-install
 export HELIX_NIXPKGS_PATH="$(nix-instantiate --find-file nixpkgs)"
 ./scripts/dev-shell.sh --run './scripts/check.sh'
 nixos-rebuild dry-build \
@@ -160,6 +190,20 @@ The final command installs to the already reviewed and mounted `/mnt`; it does
 not partition or format a disk. Recheck the mount topology immediately before
 running it.
 
+Unless `--no-root-passwd` is explicitly supplied (it is not above),
+`nixos-install` ends by interactively setting the installed root account's
+password. That does not set Tristan's password. Before rebooting, use the NixOS
+26.05 documented installed-target command:
+
+```bash
+sudo nixos-enter --root /mnt -c 'passwd tristan'
+```
+
+Enter the password only at the interactive prompts. It must not appear in a
+command, shell history, Git, the Nix store, or this document. The `-c` command
+returns directly to the installer shell when `passwd` finishes; from an
+interactive target shell, run `exit` to return to the installer.
+
 Also record how the authorized key and root-owned NAS credential will be
 restored without storing either in Git or the Nix store.
 
@@ -172,6 +216,7 @@ Before any canonical rebuild, prove the generated hardware file still matches
 the installer-preserved copy:
 
 ```bash
+mkdir -p ~/Projects
 git clone https://github.com/tristanmcmahon/nixos-helix.git ~/Projects/nixos-helix
 cd ~/Projects/nixos-helix
 git checkout "$(cat /var/lib/helix-install/approved-commit)"
@@ -187,6 +232,23 @@ git push -u origin hardware/helix-fresh-install
 
 Name the completed backup set explicitly and run the restore in its default,
 read-only planning mode:
+
+First recreate only the bootstrap credential from the independently available
+password, without printing it, then verify its metadata:
+
+```bash
+sudo install -d -m 0700 /etc/nixos/secrets
+sudo install -m 0600 /dev/null /etc/nixos/secrets/infernalnexus-smb
+sudoedit /etc/nixos/secrets/infernalnexus-smb
+sudo stat -c '%U:%G %a' /etc/nixos/secrets/infernalnexus-smb
+stat -- /mnt/infernalnexus/nas1
+findmnt --target /mnt/infernalnexus/nas1 --types cifs
+```
+
+The result must be `root:root 600`. Only then access
+`/mnt/infernalnexus/nas1` to trigger the normal automount and run the canonical
+restore. The restore replaces this bootstrap file with the backed-up exact
+credential.
 
 ```bash
 ./scripts/restore-after-reinstall.sh helix-reinstall-YYYYMMDD-HHMMSS

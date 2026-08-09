@@ -22,6 +22,8 @@ grep -qxF 'expected_source=//192.168.1.8/nas1' "$backup_script"
 grep -qF "findmnt -rn --target \"\$nas_mount\" --types cifs" "$backup_script"
 grep -qF "[[ \${#nas_records[@]} -eq 1 ]]" "$backup_script"
 grep -qF "tar --create --file=\"\$incomplete_path/home-tristan.tar\"" "$backup_script"
+grep -qF 'home-tristan.tar" home/tristan' "$backup_script"
+grep -qF 'etc-nixos-secrets.tar" etc/nixos/secrets' "$backup_script"
 grep -qF -- "--exclude='home/tristan/.local/share/Steam/steamapps/common'" "$backup_script"
 grep -qF "mv --no-clobber -- \"\$incomplete_path\" \"\$final_path\"" "$backup_script"
 if "$backup_script" unexpected-argument >/dev/null 2>&1; then

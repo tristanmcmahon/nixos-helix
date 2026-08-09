@@ -210,6 +210,16 @@ tar --create --file="$incomplete_path/home-tristan.tar" \
   --exclude='home/tristan/.local/share/Steam/steamapps/downloading' \
   --exclude='home/tristan/.local/share/Steam/steamapps/shadercache' \
   --exclude='home/tristan/.local/share/Steam/steamapps/workshop' \
+  --exclude='home/tristan/.local/share/Steam/steamapps/compatdata/*/pfx/dosdevices' \
+  --exclude='home/tristan/.local/share/Steam/steamrt64' \
+  --exclude='home/tristan/.local/share/Steam/ubuntu12_32/steam-runtime' \
+  --exclude='home/tristan/.local/share/Steam/ubuntu12_32/steam-runtime.old' \
+  --exclude='home/tristan/.local/share/Steam/config/htmlcache' \
+  --exclude='home/tristan/.codex/tmp' \
+  --exclude='home/tristan/.config/Signal/Singleton*' \
+  --exclude='home/tristan/.nix-profile' \
+  --exclude='home/tristan/.nix-defexpr/channels_root' \
+  --exclude='home/tristan/Projects/nixos-helix/result' \
   --directory=/ home/tristan
 tar --create --file="$incomplete_path/etc-nixos-secrets.tar" \
   --one-file-system --numeric-owner --preserve-permissions --acls \
@@ -259,6 +269,12 @@ Home exclusions:
   Steam steamapps/downloading           incomplete game downloads
   Steam steamapps/shadercache           reproducible shader caches
   Steam steamapps/workshop              downloadable workshop payloads
+  Steam compatdata/*/pfx/dosdevices     host-specific Wine device links only
+  Steam runtime and htmlcache trees     disposable downloaded/runtime material
+  Codex temporary wrappers              disposable process-local links
+  Signal Singleton* links               disposable process-local IPC state
+  Nix profile/channel convenience links reproduced by Nix
+  canonical repository result link      disposable Nix build output
   mounted filesystems                  tar --one-file-system safety boundary
 
 Steam userdata, compatdata, configuration, screenshots and app manifests are
@@ -293,6 +309,10 @@ for expected_path in home/tristan/.config/ home/tristan/.ssh/ home/tristan/Proje
   }
 done
 tar -tf "$incomplete_path/etc-nixos-secrets.tar" >/dev/null
+python3 "$repo_root/scripts/validate-reinstall-restore.py" archive \
+  "$incomplete_path/home-tristan.tar" home/tristan >/dev/null
+python3 "$repo_root/scripts/validate-reinstall-restore.py" archive \
+  "$incomplete_path/etc-nixos-secrets.tar" etc/nixos/secrets >/dev/null
 python3 "$repo_root/scripts/validate-reinstall-restore.py" machine-identity \
   "$incomplete_path/machine-identity.tar" >/dev/null
 python3 "$repo_root/scripts/validate-reinstall-restore.py" fingerprints \

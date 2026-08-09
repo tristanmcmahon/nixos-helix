@@ -45,6 +45,7 @@ make_set() {
     "$source/etc/NetworkManager/system-connections" "$source/etc/ssh" "$backup_set"
   printf 'shell profile\n' >"$source/home/tristan/.profile"
   printf 'project data\n' >"$source/home/tristan/Projects/notes.txt"
+  ln -s /home/tristan/Projects "$source/home/tristan/projects-absolute"
   printf 'synthetic credential\n' >"$source/etc/nixos/secrets/infernalnexus-smb"
   chmod 0600 "$source/etc/nixos/secrets/infernalnexus-smb"
   printf 'synthetic NetworkManager fixture\n' \
@@ -168,6 +169,11 @@ with tarfile.open(archive, "w") as handle:
         member.type = tarfile.SYMTYPE
         member.linkname = "../../../escape"
         handle.addfile(member)
+    elif kind == "absolute-symlink":
+        member = tarfile.TarInfo("home/tristan/escape-absolute-link")
+        member.type = tarfile.SYMTYPE
+        member.linkname = "/etc"
+        handle.addfile(member)
     elif kind == "hardlink":
         member = tarfile.TarInfo("home/tristan/escape-hardlink")
         member.type = tarfile.LNKTYPE
@@ -177,7 +183,7 @@ PY
 }
 
 index=4
-for malicious_kind in absolute traversal symlink hardlink; do
+for malicious_kind in absolute traversal symlink absolute-symlink hardlink; do
   printf -v malicious_name 'helix-reinstall-20260806-1549%02d' "$index"
   cp -a "$backup_root/$valid_name" "$backup_root/$malicious_name"
   make_malicious_home_archive "$backup_root/$malicious_name/home-tristan.tar" "$malicious_kind"
@@ -238,6 +244,7 @@ expected_fingerprint=$(cut -f2 "$backup_root/$valid_name/ssh-host-key-fingerprin
 actual_fingerprint=$(ssh-keygen -lf "$target_ssh_dir/ssh_host_ed25519_key.pub" -E sha256 | awk '{ print $2 }')
 [[ $actual_fingerprint == "$expected_fingerprint" ]]
 [[ -f $target_home/Projects/notes.txt ]]
+[[ $(readlink "$target_home/projects-absolute") == /home/tristan/Projects ]]
 [[ $(find "$report_root" -name 'restore-*.txt' -type f | wc -l) == 1 ]]
 [[ $(tree_checksum "$backup_root/$valid_name") == "$backup_before_restore" ]]
 

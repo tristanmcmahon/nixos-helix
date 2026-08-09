@@ -63,9 +63,14 @@ def safe_member_name(name: str, expected_root: str) -> str:
 
 def safe_link_target(member: tarfile.TarInfo, expected_root: str) -> str:
     target = member.linkname
-    if not target or target.startswith("/") or any(char in target for char in "\r\n\0"):
+    if not target or any(char in target for char in "\r\n\0"):
         fail(f"archive link has an unsafe target: {member.name}")
-    if member.issym():
+    if member.issym() and target.startswith("/"):
+        absolute_root = "/" + expected_root
+        if target != absolute_root and not target.startswith(absolute_root + "/"):
+            fail(f"archive link has an unsafe absolute target: {member.name}")
+        resolved = target.removeprefix("/")
+    elif member.issym():
         resolved = posixpath.normpath(posixpath.join(posixpath.dirname(member.name), target))
     else:
         resolved = posixpath.normpath(target)
@@ -247,10 +252,16 @@ def validate_staged(staging: Path) -> int:
                 if stat.S_ISLNK(mode):
                     target = os.readlink(path)
                     if target.startswith("/"):
-                        fail(f"staged symlink has an absolute target: {relative}")
-                    resolved = PurePosixPath(posixpath.normpath(
-                        posixpath.join(str(relative.parent), target)
-                    ))
+                        if lexical_root != PurePosixPath("home/tristan") or (
+                            target != "/home/tristan"
+                            and not target.startswith("/home/tristan/")
+                        ):
+                            fail(f"staged symlink has an unsafe absolute target: {relative}")
+                        resolved = PurePosixPath(target.removeprefix("/"))
+                    else:
+                        resolved = PurePosixPath(posixpath.normpath(
+                            posixpath.join(str(relative.parent), target)
+                        ))
                     if resolved != lexical_root and lexical_root not in resolved.parents:
                         fail(f"staged symlink escapes its restore root: {relative}")
                 elif not (stat.S_ISREG(mode) or stat.S_ISDIR(mode)):
