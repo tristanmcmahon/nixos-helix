@@ -33,6 +33,9 @@ for required_file in COMPLETE SHA256SUMS BACKUP-README.txt \
   home-tristan.tar etc-nixos-secrets.tar; do
   grep -qF "$required_file" "$repo_root/scripts/reinstall-postflight.sh"
 done
+for required_file in machine-identity.tar ssh-host-key-fingerprints.txt; do
+  grep -qF "$required_file" "$repo_root/scripts/reinstall-postflight.sh"
+done
 grep -qF '/mnt/infernalnexus/nas1/backup' "$repo_root/scripts/reinstall-preflight.sh"
 grep -qF './scripts/backup-for-reinstall.sh' "$repo_root/docs/reinstall.md"
 

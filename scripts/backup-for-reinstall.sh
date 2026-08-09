@@ -28,9 +28,49 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 for command in blkid bootctl df findmnt git lsblk nix-env nixos-version \
-  nix-store runuser sha256sum tar; do
+  nix-store python3 runuser sha256sum ssh-keygen tar; do
   command -v "$command" >/dev/null || {
     printf 'FAIL: required command is unavailable: %s\n' "$command" >&2
+    exit 1
+  }
+done
+
+# These are the only machine-local /etc identities included. Refuse missing,
+# linked, loosely protected, or unpaired inputs without displaying contents.
+nm_profile=/etc/NetworkManager/system-connections/towerofdoom.nmconnection
+[[ -f $nm_profile && ! -L $nm_profile ]] || {
+  printf 'FAIL: required NetworkManager profile is absent or not a regular file.\n' >&2
+  exit 1
+}
+[[ $(stat -c '%u:%g:%a' "$nm_profile") == 0:0:600 ]] || {
+  printf 'FAIL: NetworkManager profile must be root:root mode 0600.\n' >&2
+  exit 1
+}
+shopt -s nullglob
+ssh_private_keys=(/etc/ssh/ssh_host_*_key)
+ssh_public_keys=(/etc/ssh/ssh_host_*_key.pub)
+shopt -u nullglob
+(( ${#ssh_private_keys[@]} > 0 && ${#ssh_private_keys[@]} == ${#ssh_public_keys[@]} )) || {
+  printf 'FAIL: SSH host keys are absent or not complete private/public pairs.\n' >&2
+  exit 1
+}
+machine_identity_paths=(etc/NetworkManager/system-connections/towerofdoom.nmconnection)
+for private_key in "${ssh_private_keys[@]}"; do
+  public_key=$private_key.pub
+  [[ -f $private_key && ! -L $private_key && -f $public_key && ! -L $public_key ]] || {
+    printf 'FAIL: SSH host-key pair is incomplete or linked: %s\n' "${private_key##*/}" >&2
+    exit 1
+  }
+  [[ $(stat -c '%u:%g:%a' "$private_key") == 0:0:600 && \
+     $(stat -c '%u:%g:%a' "$public_key") == 0:0:644 ]] || {
+    printf 'FAIL: SSH host-key metadata is unsafe: %s\n' "${private_key##*/}" >&2
+    exit 1
+  }
+  machine_identity_paths+=("${private_key#/}" "${public_key#/}")
+done
+for public_key in "${ssh_public_keys[@]}"; do
+  [[ -f ${public_key%.pub} ]] || {
+    printf 'FAIL: SSH public host key has no private-key mate: %s\n' "${public_key##*/}" >&2
     exit 1
   }
 done
@@ -175,6 +215,19 @@ tar --create --file="$incomplete_path/etc-nixos-secrets.tar" \
   --one-file-system --numeric-owner --preserve-permissions --acls \
   --xattrs --xattrs-include='*' --selinux --sparse \
   --directory=/ etc/nixos/secrets
+tar --create --file="$incomplete_path/machine-identity.tar" \
+  --one-file-system --numeric-owner --preserve-permissions --acls \
+  --xattrs --xattrs-include='*' --selinux --sparse \
+  --directory=/ "${machine_identity_paths[@]}"
+for public_key in "${ssh_public_keys[@]}"; do
+  fingerprint=$(ssh-keygen -lf "$public_key" -E sha256 | awk '{ print $2 }')
+  [[ $fingerprint == SHA256:* ]] || {
+    printf 'FAIL: could not fingerprint SSH public host key: %s\n' "${public_key##*/}" >&2
+    exit 1
+  }
+  printf '%s\t%s\n' "${public_key##*/}" "$fingerprint"
+done >"$incomplete_path/ssh-host-key-fingerprints.txt"
+chmod 0444 "$incomplete_path/ssh-host-key-fingerprints.txt"
 
 cat >"$incomplete_path/BACKUP-README.txt" <<EOF
 HELIX REINSTALL BACKUP
@@ -191,6 +244,12 @@ Origin/main: $origin_main
 Archives:
   home-tristan.tar          /home/tristan, including dotfiles and Projects
   etc-nixos-secrets.tar     /etc/nixos/secrets (root access required)
+  machine-identity.tar      exact NetworkManager profile and SSH host-key pairs
+
+Machine identity scope (no other /etc content is included):
+  /etc/NetworkManager/system-connections/towerofdoom.nmconnection
+  /etc/ssh/ssh_host_*       complete public/private host-key pairs
+  ssh-host-key-fingerprints.txt records public-key fingerprints for restore checks
 
 Home exclusions:
   /home/tristan/.cache                 reproducible application caches
@@ -214,6 +273,7 @@ Verification:
   sha256sum --check SHA256SUMS
   tar -tf home-tristan.tar >/dev/null
   sudo tar -tf etc-nixos-secrets.tar >/dev/null
+  sudo tar -tf machine-identity.tar >/dev/null
 
 Manually inspect this README, the inventories and repository patches. Extract
 representative non-secret files into a temporary directory and open them.
@@ -233,6 +293,11 @@ for expected_path in home/tristan/.config/ home/tristan/.ssh/ home/tristan/Proje
   }
 done
 tar -tf "$incomplete_path/etc-nixos-secrets.tar" >/dev/null
+python3 "$repo_root/scripts/validate-reinstall-restore.py" machine-identity \
+  "$incomplete_path/machine-identity.tar" >/dev/null
+python3 "$repo_root/scripts/validate-reinstall-restore.py" fingerprints \
+  "$incomplete_path/ssh-host-key-fingerprints.txt" \
+  "$incomplete_path/machine-identity.tar" >/dev/null
 
 (
   cd "$incomplete_path"
@@ -251,4 +316,4 @@ trap - EXIT
 rm -f -- "$home_listing" "$checksum_manifest"
 
 printf 'Completed backup: %s\n' "$final_path"
-printf 'Verified: all checksums, both archives, dotfiles, SSH, and Projects.\n'
+printf 'Verified: all checksums, three archives, dotfiles, SSH, and Projects.\n'

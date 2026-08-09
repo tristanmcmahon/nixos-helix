@@ -51,6 +51,7 @@ then run these commands from that completed directory:
 sha256sum --check SHA256SUMS
 tar -tf home-tristan.tar >/dev/null
 sudo tar -tf etc-nixos-secrets.tar >/dev/null
+sudo tar -tf machine-identity.tar >/dev/null
 ```
 
 Also inspect the repository patches and inventories, and extract representative
@@ -205,8 +206,13 @@ checkout, the script refuses by default. Review every collision summary and use
 confirmation and quarantines the existing home and secrets before replacement.
 It never deletes files merely because they are absent from the backup.
 
-The restore stages and revalidates both archives, then restores only
-`/home/tristan` and `/etc/nixos/secrets`. It does not activate old hardware
+The restore stages and revalidates all three logically separate archives, then
+restores `/home/tristan`, `/etc/nixos/secrets`, the single
+`towerofdoom.nmconnection` profile, and complete `/etc/ssh/ssh_host_*` key
+pairs. No other `/etc` content is accepted. Run the restore locally before
+relying on NetworkManager's restored profile or accepting SSH connections; it
+checks restrictive profile metadata and compares restored public-key
+fingerprints with the checksummed preinstall record. It does not activate old hardware
 configuration, filesystem UUIDs, boot state, Nix stores, profiles, generations,
 channels or inventories. After restoration, run:
 
