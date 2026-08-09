@@ -216,7 +216,9 @@ tar --create --file="$incomplete_path/home-tristan.tar" \
   --exclude='home/tristan/.local/share/Steam/ubuntu12_32/steam-runtime.old' \
   --exclude='home/tristan/.local/share/Steam/config/htmlcache' \
   --exclude='home/tristan/.codex/tmp' \
+  --exclude='home/tristan/.codex/ipc/ipc.sock' \
   --exclude='home/tristan/.config/Signal/Singleton*' \
+  --exclude='home/tristan/.steam/steam.pipe' \
   --exclude='home/tristan/.nix-profile' \
   --exclude='home/tristan/.nix-defexpr/channels_root' \
   --exclude='home/tristan/Projects/nixos-helix/result' \
@@ -272,7 +274,9 @@ Home exclusions:
   Steam compatdata/*/pfx/dosdevices     host-specific Wine device links only
   Steam runtime and htmlcache trees     disposable downloaded/runtime material
   Codex temporary wrappers              disposable process-local links
+  Codex ipc/ipc.sock                    disposable runtime IPC socket
   Signal Singleton* links               disposable process-local IPC state
+  Steam .steam/steam.pipe               disposable runtime IPC FIFO
   Nix profile/channel convenience links reproduced by Nix
   canonical repository result link      disposable Nix build output
   mounted filesystems                  tar --one-file-system safety boundary
