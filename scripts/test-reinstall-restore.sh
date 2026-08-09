@@ -9,6 +9,8 @@ trap 'rm -rf -- "$test_base"' EXIT
 backup_root=$test_base/backup
 target_home=$test_base/target-home
 target_secrets=$test_base/target-secrets
+target_nm_profile=$test_base/etc/NetworkManager/system-connections/towerofdoom.nmconnection
+target_ssh_dir=$test_base/etc/ssh
 report_root=$test_base/reports
 staging_base=$test_base/staging
 quarantine_root=$test_base/quarantine
@@ -39,13 +41,26 @@ make_set() {
   backup_set=$backup_root/$name
   source=$test_base/source-$name
   mkdir -p "$source/home/tristan/.config" "$source/home/tristan/.ssh" \
-    "$source/home/tristan/Projects" "$source/etc/nixos/secrets" "$backup_set"
+    "$source/home/tristan/Projects" "$source/etc/nixos/secrets" \
+    "$source/etc/NetworkManager/system-connections" "$source/etc/ssh" "$backup_set"
   printf 'shell profile\n' >"$source/home/tristan/.profile"
   printf 'project data\n' >"$source/home/tristan/Projects/notes.txt"
   printf 'synthetic credential\n' >"$source/etc/nixos/secrets/infernalnexus-smb"
   chmod 0600 "$source/etc/nixos/secrets/infernalnexus-smb"
+  printf 'synthetic NetworkManager fixture\n' \
+    >"$source/etc/NetworkManager/system-connections/towerofdoom.nmconnection"
+  chmod 0600 "$source/etc/NetworkManager/system-connections/towerofdoom.nmconnection"
+  ssh-keygen -q -t ed25519 -N '' -f "$source/etc/ssh/ssh_host_ed25519_key"
+  chmod 0600 "$source/etc/ssh/ssh_host_ed25519_key"
+  chmod 0644 "$source/etc/ssh/ssh_host_ed25519_key.pub"
   tar -cf "$backup_set/home-tristan.tar" -C "$source" home/tristan
   tar -cf "$backup_set/etc-nixos-secrets.tar" -C "$source" etc/nixos/secrets
+  tar -cf "$backup_set/machine-identity.tar" -C "$source" \
+    etc/NetworkManager/system-connections/towerofdoom.nmconnection \
+    etc/ssh/ssh_host_ed25519_key etc/ssh/ssh_host_ed25519_key.pub
+  printf 'ssh_host_ed25519_key.pub\t%s\n' \
+    "$(ssh-keygen -lf "$source/etc/ssh/ssh_host_ed25519_key.pub" -E sha256 | awk '{ print $2 }')" \
+    >"$backup_set/ssh-host-key-fingerprints.txt"
   printf '%s\n' \
     'HELIX REINSTALL BACKUP' \
     'Created (UTC): 2026-08-06T00:00:00+00:00' \
@@ -67,6 +82,8 @@ run_restore() {
     HELIX_RESTORE_TEST_BACKUP_ROOT="$backup_root" \
     HELIX_RESTORE_TEST_HOME="$target_home" \
     HELIX_RESTORE_TEST_SECRETS="$target_secrets" \
+    HELIX_RESTORE_TEST_NM_PROFILE="$target_nm_profile" \
+    HELIX_RESTORE_TEST_SSH_DIR="$target_ssh_dir" \
     HELIX_RESTORE_TEST_REPORT_ROOT="$report_root" \
     HELIX_RESTORE_TEST_STAGING_BASE="$staging_base" \
     HELIX_RESTORE_TEST_QUARANTINE_ROOT="$quarantine_root" \
@@ -88,6 +105,7 @@ home_before=$(tree_checksum "$target_home")
 plan_output=$(run_restore "$valid_name")
 grep -qF 'HELIX CANONICAL RESTORE — VALIDATED PLAN' <<<"$plan_output"
 grep -qF 'Manifest: verified' <<<"$plan_output"
+grep -qF 'Machine identity archive: verified' <<<"$plan_output"
 grep -qF 'No changes made.' <<<"$plan_output"
 [[ $(tree_checksum "$target_home") == "$home_before" ]]
 [[ $(tree_checksum "$backup_root/$valid_name") == "$backup_before" ]]
@@ -171,6 +189,27 @@ for malicious_kind in absolute traversal symlink hardlink; do
   ((index += 1))
 done
 
+missing_pair=helix-reinstall-20260806-154910
+cp -a "$backup_root/$valid_name" "$backup_root/$missing_pair"
+tar --delete --file="$backup_root/$missing_pair/machine-identity.tar" \
+  etc/ssh/ssh_host_ed25519_key.pub
+rehash_set "$backup_root/$missing_pair"
+if run_restore "$missing_pair" >/dev/null 2>&1; then
+  printf 'Restore accepted an incomplete SSH host-key pair.\n' >&2
+  exit 1
+fi
+
+broadened_etc=helix-reinstall-20260806-154911
+cp -a "$backup_root/$valid_name" "$backup_root/$broadened_etc"
+printf 'unexpected fixture\n' >"$test_base/source-$valid_name/etc/unrelated.conf"
+tar --append --file="$backup_root/$broadened_etc/machine-identity.tar" \
+  -C "$test_base/source-$valid_name" etc/unrelated.conf
+rehash_set "$backup_root/$broadened_etc"
+if run_restore "$broadened_etc" >/dev/null 2>&1; then
+  printf 'Restore accepted unrelated /etc content in machine identity.\n' >&2
+  exit 1
+fi
+
 printf 'existing data\n' >"$target_home/personal-document.txt"
 reports_before=$(find "$report_root" -type f | wc -l)
 if HELIX_RESTORE_TEST_CONFIRMATION="RESTORE $valid_name" \
@@ -192,6 +231,12 @@ HELIX_RESTORE_TEST_CONFIRMATION="RESTORE $valid_name" \
   run_restore "$valid_name" --run >/dev/null
 [[ $(stat -c '%a' "$target_secrets/infernalnexus-smb") == 600 ]]
 [[ $(stat -c '%u:%g' "$target_secrets/infernalnexus-smb") == "$(id -u):$(id -g)" ]]
+[[ $(stat -c '%u:%g:%a' "$target_nm_profile") == "$(id -u):$(id -g):600" ]]
+[[ -f $target_ssh_dir/ssh_host_ed25519_key ]]
+[[ -f $target_ssh_dir/ssh_host_ed25519_key.pub ]]
+expected_fingerprint=$(cut -f2 "$backup_root/$valid_name/ssh-host-key-fingerprints.txt")
+actual_fingerprint=$(ssh-keygen -lf "$target_ssh_dir/ssh_host_ed25519_key.pub" -E sha256 | awk '{ print $2 }')
+[[ $actual_fingerprint == "$expected_fingerprint" ]]
 [[ -f $target_home/Projects/notes.txt ]]
 [[ $(find "$report_root" -name 'restore-*.txt' -type f | wc -l) == 1 ]]
 [[ $(tree_checksum "$backup_root/$valid_name") == "$backup_before_restore" ]]

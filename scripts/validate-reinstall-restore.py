@@ -17,6 +17,8 @@ REQUIRED_ARTIFACTS = {
     "BACKUP-README.txt",
     "home-tristan.tar",
     "etc-nixos-secrets.tar",
+    "machine-identity.tar",
+    "ssh-host-key-fingerprints.txt",
     "repository-head.txt",
     "origin-main.txt",
     "repository-branch.txt",
@@ -38,6 +40,9 @@ REQUIRED_ARTIFACTS = {
     "home-size-audit.txt",
     "ssh-metadata.txt",
 }
+
+NM_PROFILE = "etc/NetworkManager/system-connections/towerofdoom.nmconnection"
+SSH_KEY = re.compile(r"^etc/ssh/(ssh_host_[A-Za-z0-9_-]+_key)(\.pub)?$")
 
 
 def fail(message: str) -> None:
@@ -107,6 +112,79 @@ def validate_archive(archive: Path, expected_root: str) -> tuple[int, int]:
             if target_member is None or not (target_member.isfile() or target_member.islnk()):
                 fail(f"hardlink target is absent or not a regular file: {member.name}")
     return len(members), total_bytes
+
+
+def validate_machine_identity(archive: Path, expected_uid: int = 0, expected_gid: int = 0) -> tuple[int, int, int]:
+    """Accept only the one NM profile and complete OpenSSH host-key pairs."""
+    try:
+        with tarfile.open(archive, mode="r:") as handle:
+            members = handle.getmembers()
+    except (tarfile.TarError, OSError) as error:
+        fail(f"machine identity archive is unreadable: {error}")
+    if not members:
+        fail("machine identity archive is empty")
+
+    names: set[str] = set()
+    private_keys: set[str] = set()
+    public_keys: set[str] = set()
+    total_bytes = 0
+    for member in members:
+        name = member.name.rstrip("/")
+        if not name or name.startswith("/") or ".." in PurePosixPath(name).parts:
+            fail(f"machine identity archive contains an unsafe path: {member.name}")
+        if name in names:
+            fail(f"machine identity archive contains a duplicate path: {member.name}")
+        names.add(name)
+        match = SSH_KEY.fullmatch(name)
+        if name != NM_PROFILE and match is None:
+            fail(f"machine identity archive contains an unexpected path: {member.name}")
+        if not member.isfile():
+            fail(f"machine identity member is not a regular file: {member.name}")
+        if member.uid != expected_uid or member.gid != expected_gid:
+            fail(f"machine identity member is not owned by root: {member.name}")
+        mode = stat.S_IMODE(member.mode)
+        if name == NM_PROFILE and mode != 0o600:
+            fail("NetworkManager profile mode is not 0600")
+        if match:
+            key_name = match.group(1)
+            if match.group(2):
+                public_keys.add(key_name)
+                if mode != 0o644:
+                    fail(f"SSH public host key mode is not 0644: {member.name}")
+            else:
+                private_keys.add(key_name)
+                if mode != 0o600:
+                    fail(f"SSH private host key mode is not 0600: {member.name}")
+        total_bytes += member.size
+    if NM_PROFILE not in names:
+        fail("machine identity archive lacks the NetworkManager profile")
+    if not private_keys or private_keys != public_keys:
+        fail("machine identity archive lacks complete SSH host-key pairs")
+    return len(members), total_bytes, len(private_keys)
+
+
+def validate_fingerprints(path: Path, archive: Path, uid: int = 0, gid: int = 0) -> int:
+    _, _, pair_count = validate_machine_identity(archive, uid, gid)
+    with tarfile.open(archive, mode="r:") as handle:
+        expected = {
+            PurePosixPath(member.name).name
+            for member in handle.getmembers()
+            if member.name.endswith("_key.pub")
+        }
+    pattern = re.compile(r"^(ssh_host_[A-Za-z0-9_-]+_key\.pub)\t(SHA256:[A-Za-z0-9+/]+={0,2})$")
+    try:
+        lines = path.read_text(encoding="ascii").splitlines()
+    except (OSError, UnicodeError) as error:
+        fail(f"host-key fingerprint record is unreadable: {error}")
+    recorded: set[str] = set()
+    for line in lines:
+        match = pattern.fullmatch(line)
+        if match is None or match.group(1) in recorded:
+            fail("host-key fingerprint record is malformed or duplicated")
+        recorded.add(match.group(1))
+    if recorded != expected or len(recorded) != pair_count:
+        fail("host-key fingerprint record does not match the archive")
+    return len(recorded)
 
 
 def validate_manifest(backup_set: Path) -> int:
@@ -189,6 +267,15 @@ def main() -> None:
     elif mode == "archive" and len(sys.argv) == 4:
         entries, size = validate_archive(Path(sys.argv[2]), sys.argv[3])
         print(entries, size)
+    elif mode == "machine-identity" and len(sys.argv) in (3, 5):
+        uid = int(sys.argv[3]) if len(sys.argv) == 5 else 0
+        gid = int(sys.argv[4]) if len(sys.argv) == 5 else 0
+        entries, size, pairs = validate_machine_identity(Path(sys.argv[2]), uid, gid)
+        print(entries, size, pairs)
+    elif mode == "fingerprints" and len(sys.argv) in (4, 6):
+        uid = int(sys.argv[4]) if len(sys.argv) == 6 else 0
+        gid = int(sys.argv[5]) if len(sys.argv) == 6 else 0
+        print(validate_fingerprints(Path(sys.argv[2]), Path(sys.argv[3]), uid, gid))
     elif mode == "collisions" and len(sys.argv) == 5:
         names = collision_names(Path(sys.argv[2]), sys.argv[3], Path(sys.argv[4]))
         print(len(names))

@@ -97,7 +97,9 @@ for set_name in "${completed_sets[@]}"; do
   candidate=$backup_root/$set_name
   if [[ -f $candidate/COMPLETE && -f $candidate/SHA256SUMS && \
         -f $candidate/BACKUP-README.txt && -f $candidate/home-tristan.tar && \
-        -f $candidate/etc-nixos-secrets.tar ]]; then
+        -f $candidate/etc-nixos-secrets.tar && \
+        -f $candidate/machine-identity.tar && \
+        -f $candidate/ssh-host-key-fingerprints.txt ]]; then
     newest_completed=$candidate
     break
   fi
@@ -107,6 +109,6 @@ done
   exit 1
 }
 printf 'Newest completed canonical backup: %s\n' "$newest_completed"
-printf 'Preserved artifacts: COMPLETE, SHA256SUMS, README, home archive, secrets archive\n'
+printf 'Preserved artifacts: COMPLETE, SHA256SUMS, README, home, secrets, and machine identity archives\n'
 
 printf '\nDo not remove the canonical NAS backup until all hardware and data checks pass.\n'
