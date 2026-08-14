@@ -69,7 +69,7 @@ for disaster recovery and any deliberately planned future reinstall; see
 - [Infernalnexus NAS](docs/nas.md)
 - [Profiles and package boundaries](docs/profiles.md)
 - [Local development](docs/local-development.md)
-- [Helix Abyss appearance](docs/theme.md)
+- [Graphite + Fern appearance](docs/theme.md)
 - [Media applications](docs/media.md)
 - [Custom package pins](docs/custom-packages.md)
 - [1Password integration](docs/onepassword.md)

@@ -58,8 +58,8 @@ let
       gaps_in = 4
       gaps_out = 8
       border_size = 2
-      col.active_border = rgb(7396F5)
-      col.inactive_border = rgb(1B222C)
+      col.active_border = rgb(67B87A)
+      col.inactive_border = rgb(39423C)
     }
 
     decoration {

@@ -6,11 +6,15 @@
 
 let
   themeDirectory = ../config/theme;
-  wallpaper = "${themePackage}/share/wallpapers/HelixAbyss/contents/images/wallpaper.svg";
+  palette = import ../config/theme/palette.nix;
+  wallpaper = "${themePackage}/share/wallpapers/HelixGraphiteFern/contents/images/wallpaper.svg";
   themeRevision = builtins.hashString "sha256" (
     builtins.concatStringsSep "" (
       map builtins.readFile [
-        ../config/theme/HelixAbyss.colors
+        ../config/theme/palette.nix
+        ../config/theme/HelixGraphiteFern.colors
+        ../config/theme/HelixGraphiteFern.colorscheme
+        ../config/theme/HelixGraphiteFern.profile
         ../config/theme/wallpaper.svg
         ../config/theme/gtk-3.0-settings.ini
         ../config/theme/gtk-4.0-settings.ini
@@ -23,24 +27,28 @@ let
     )
   );
 
-  themePackage = pkgs.runCommand "helix-abyss-theme" { } ''
-    install -Dm444 ${themeDirectory}/HelixAbyss.colors \
-      $out/share/color-schemes/HelixAbyss.colors
+  themePackage = pkgs.runCommand "helix-graphite-fern-theme" { } ''
+    install -Dm444 ${themeDirectory}/HelixGraphiteFern.colors \
+      $out/share/color-schemes/HelixGraphiteFern.colors
     install -Dm444 ${themeDirectory}/wallpaper.svg \
-      $out/share/wallpapers/HelixAbyss/contents/images/wallpaper.svg
+      $out/share/wallpapers/HelixGraphiteFern/contents/images/wallpaper.svg
+    install -Dm444 ${themeDirectory}/HelixGraphiteFern.colorscheme \
+      $out/share/konsole/HelixGraphiteFern.colorscheme
+    install -Dm444 ${themeDirectory}/HelixGraphiteFern.profile \
+      $out/share/konsole/HelixGraphiteFern.profile
   '';
 
-  sddmTheme = pkgs.runCommand "sddm-theme-helix-abyss" { } ''
-    mkdir -p $out/share/sddm/themes/helix-abyss
+  sddmTheme = pkgs.runCommand "sddm-theme-helix-graphite-fern" { } ''
+    mkdir -p $out/share/sddm/themes/helix-graphite-fern
     cp -r ${pkgs.kdePackages.plasma-desktop}/share/sddm/themes/breeze/. \
-      $out/share/sddm/themes/helix-abyss/
-    chmod -R u+w $out/share/sddm/themes/helix-abyss
-    cat > $out/share/sddm/themes/helix-abyss/theme.conf <<EOF
+      $out/share/sddm/themes/helix-graphite-fern/
+    chmod -R u+w $out/share/sddm/themes/helix-graphite-fern
+    cat > $out/share/sddm/themes/helix-graphite-fern/theme.conf <<EOF
     [General]
     showlogo=hidden
     showClock=true
     type=image
-    color=#030405
+    color=${palette.background}
     fontSize=10
     background=${wallpaper}
     needsFullUserModel=false
@@ -78,11 +86,11 @@ let
       esac
 
       if [[ $force == 0 && -r $marker ]] && [[ $(<"$marker") == "$revision" ]]; then
-        printf 'Helix Abyss is already current.\n'
+        printf 'Helix Graphite + Fern is already current.\n'
         exit 0
       fi
       if [[ -z ''${DBUS_SESSION_BUS_ADDRESS:-} || -z ''${XDG_CURRENT_DESKTOP:-} ]]; then
-        printf 'Helix Abyss requires an active graphical session and session D-Bus.\n' >&2
+        printf 'Helix Graphite + Fern requires an active graphical session and session D-Bus.\n' >&2
         exit 1
       fi
 
@@ -104,17 +112,21 @@ let
         kwriteconfig6 --file kdeglobals --group Icons --key Theme breeze-dark
         kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key library org.kde.breeze
         kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key theme Breeze
+        kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key BorderSize Tiny
+        kwriteconfig6 --file breezerc --group Common --key OutlineIntensity 35
+        kwriteconfig6 --file breezerc --group Common --key ShadowStrength 180
         kwriteconfig6 --file plasmarc --group Theme --key name breeze-dark
         plasma-apply-cursortheme breeze_cursors
-        plasma-apply-colorscheme HelixAbyss
+        plasma-apply-colorscheme HelixGraphiteFern
         plasma-apply-wallpaperimage ${lib.escapeShellArg wallpaper}
+        kwriteconfig6 --file konsolerc --group "Desktop Entry" --key DefaultProfile HelixGraphiteFern.profile
         kwriteconfig6 --file kscreenlockerrc --group Greeter --group Wallpaper \
           --group org.kde.image --group General --key Image "file://${wallpaper}"
       fi
 
       install -Dm644 /dev/null "$marker"
       printf '%s\n' "$revision" > "$marker"
-      printf 'Applied Helix Abyss revision %s. Restart applications if needed.\n' "$revision"
+      printf 'Applied Helix Graphite + Fern revision %s. Restart applications if needed.\n' "$revision"
     '';
   };
 in
@@ -122,7 +134,7 @@ in
   programs.dconf.enable = true;
 
   services.displayManager.sddm = {
-    theme = "helix-abyss";
+    theme = "helix-graphite-fern";
   };
 
   environment.systemPackages = [
@@ -144,8 +156,8 @@ in
     "helix/theme/apply-theme-settings.py".source = ../scripts/apply-theme-settings.py;
   };
 
-  systemd.user.services.helix-abyss-theme = {
-    description = "Apply the Helix Abyss appearance policy for Tristan";
+  systemd.user.services.helix-graphite-fern-theme = {
+    description = "Apply the Helix Graphite + Fern appearance policy for Tristan";
     wantedBy = [ "graphical-session.target" ];
     after = [ "graphical-session-pre.target" ];
     unitConfig.ConditionUser = "tristan";

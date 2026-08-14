@@ -1,6 +1,7 @@
 _:
 
 let
+  palette = import ../config/theme/palette.nix;
   chrome1PasswordId = "aeblfdkhhhdcdjpifhhbdiojplfjncoa";
   chromeDarkReaderId = "eimadpbcbfnmbkopoojfekhnkhdbieeh";
   firefox1PasswordId = "{d634138d-c276-4fc8-924b-40a0ea21d284}";
@@ -16,7 +17,7 @@ in
       chromeDarkReaderId
     ];
     extraOpts = {
-      BrowserThemeColor = "#030405";
+      BrowserThemeColor = palette.background;
       PasswordManagerEnabled = false;
     };
   };

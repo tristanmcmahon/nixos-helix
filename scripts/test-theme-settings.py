@@ -14,7 +14,7 @@ SPEC = importlib.util.spec_from_file_location("theme_settings", ROOT / "scripts/
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 
-colors_path = ROOT / "config/theme/HelixAbyss.colors"
+colors_path = ROOT / "config/theme/HelixGraphiteFern.colors"
 colors = configparser.ConfigParser()
 colors.optionxform = str
 colors.read(colors_path)
@@ -39,8 +39,8 @@ for section in colors.sections():
         ):
             channels = value.split(",")
             assert len(channels) == 3 and all(0 <= int(channel) <= 255 for channel in channels)
-assert colors["Colors:Window"]["BackgroundNormal"] == "5,6,8"
-assert colors["Colors:Selection"]["BackgroundNormal"] == "41,70,126"
+assert colors["Colors:Window"]["BackgroundNormal"] == "41,46,43"
+assert colors["Colors:Selection"]["BackgroundNormal"] == "57,110,74"
 
 wallpaper = ROOT / "config/theme/wallpaper.svg"
 element_tree.parse(wallpaper)
@@ -55,7 +55,7 @@ for gtk_version in ("3.0", "4.0"):
     assert gtk_settings["Settings"]["gtk-application-prefer-dark-theme"] == "true"
 
 waybar = (ROOT / "config/theme/waybar.css").read_text(encoding="utf-8")
-assert waybar.count("{") == waybar.count("}") and "#030405" in waybar
+assert waybar.count("{") == waybar.count("}") and "#202422" in waybar
 
 mako = (ROOT / "config/theme/mako.conf").read_text(encoding="utf-8")
 for key in ("background-color", "text-color", "border-color", "default-timeout"):
@@ -115,7 +115,7 @@ with tempfile.TemporaryDirectory() as temporary_directory:
     assert vscode.read_text(encoding="utf-8") == first_vscode_result
     settings = json.loads(vscode.read_text(encoding="utf-8"))
     assert settings["editor.fontSize"] == 17
-    assert settings["workbench.colorTheme"] == "Abyss"
-    assert settings["workbench.colorCustomizations"]["sideBar.background"] == "#030405"
+    assert settings["workbench.colorTheme"] == "Default Dark Modern"
+    assert settings["workbench.colorCustomizations"]["sideBar.background"] == "#292E2B"
 
 print("Theme settings merge fixtures passed.")
