@@ -4,10 +4,10 @@ Opacity=1
 Wallpaper=
 
 [Background]
-Color=32,36,34
+Color=11,13,12
 
 [BackgroundIntense]
-Color=41,46,43
+Color=24,28,25
 
 [Foreground]
 Color=228,232,229
@@ -16,7 +16,7 @@ Color=228,232,229
 Color=241,244,242
 
 [Color0]
-Color=32,36,34
+Color=11,13,12
 [Color0Intense]
 Color=126,137,129
 [Color1]

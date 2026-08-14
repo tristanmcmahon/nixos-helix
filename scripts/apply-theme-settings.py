@@ -111,23 +111,23 @@ def merge_vscode(destination: pathlib.Path) -> None:
         colors = {}
     colors.update(
         {
-            "activityBar.background": "#202422",
+            "activityBar.background": "#181C19",
             "activityBar.foreground": "#E4E8E5",
-            "activityBarBadge.background": "#396E4A",
+            "activityBarBadge.background": "#315E3E",
             "activityBarBadge.foreground": "#E4E8E5",
-            "editor.background": "#202422",
+            "editor.background": "#0B0D0C",
             "editor.foreground": "#E4E8E5",
-            "editorGroupHeader.tabsBackground": "#292E2B",
+            "editorGroupHeader.tabsBackground": "#181C19",
             "focusBorder": "#67B87A",
-            "list.activeSelectionBackground": "#396E4A",
+            "list.activeSelectionBackground": "#315E3E",
             "list.activeSelectionForeground": "#E4E8E5",
-            "panel.background": "#292E2B",
-            "sideBar.background": "#292E2B",
-            "statusBar.background": "#313733",
+            "panel.background": "#232824",
+            "sideBar.background": "#232824",
+            "statusBar.background": "#303832",
             "statusBar.foreground": "#E4E8E5",
-            "titleBar.activeBackground": "#292E2B",
+            "titleBar.activeBackground": "#181C19",
             "titleBar.activeForeground": "#E4E8E5",
-            "titleBar.inactiveBackground": "#202422",
+            "titleBar.inactiveBackground": "#0B0D0C",
             "titleBar.inactiveForeground": "#AEB8B1",
         }
     )

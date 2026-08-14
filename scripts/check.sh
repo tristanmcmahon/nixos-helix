@@ -210,7 +210,7 @@ grep -qF 'mako --config /etc/helix/theme/mako.conf' "$hyprland_config"
 grep -qF 'fuzzel --config /etc/helix/theme/fuzzel.ini' "$hyprland_config"
 "$system_closure/sw/bin/ghostty" +validate-config \
   --config-file=config/ghostty/config.ghostty
-grep -qF 'background = #202422' config/ghostty/config.ghostty
+grep -qF 'background = #0B0D0C' config/ghostty/config.ghostty
 grep -qF 'palette = 2=#67B87A' config/ghostty/config.ghostty
 
 printf 'Checking ckb-next in the built default system...\n'

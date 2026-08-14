@@ -3,14 +3,14 @@
 # Clean, restrained terminal configuration for the Helix workstation
 # ============================================================================
 
-background = #202422
+background = #0B0D0C
 foreground = #E4E8E5
 cursor-color = #81C995
-cursor-text = #202422
-selection-background = #396E4A
+cursor-text = #0B0D0C
+selection-background = #315E3E
 selection-foreground = #E4E8E5
 
-palette = 0=#202422
+palette = 0=#0B0D0C
 palette = 1=#D77A78
 palette = 2=#67B87A
 palette = 3=#D6AD63

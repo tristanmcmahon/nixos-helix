@@ -39,8 +39,9 @@ for section in colors.sections():
         ):
             channels = value.split(",")
             assert len(channels) == 3 and all(0 <= int(channel) <= 255 for channel in channels)
-assert colors["Colors:Window"]["BackgroundNormal"] == "41,46,43"
-assert colors["Colors:Selection"]["BackgroundNormal"] == "57,110,74"
+assert colors["Colors:Window"]["BackgroundNormal"] == "24,28,25"
+assert colors["Colors:View"]["BackgroundNormal"] == "11,13,12"
+assert colors["Colors:Selection"]["BackgroundNormal"] == "49,94,62"
 
 wallpaper = ROOT / "config/theme/wallpaper.svg"
 element_tree.parse(wallpaper)
@@ -55,7 +56,7 @@ for gtk_version in ("3.0", "4.0"):
     assert gtk_settings["Settings"]["gtk-application-prefer-dark-theme"] == "true"
 
 waybar = (ROOT / "config/theme/waybar.css").read_text(encoding="utf-8")
-assert waybar.count("{") == waybar.count("}") and "#202422" in waybar
+assert waybar.count("{") == waybar.count("}") and "#232824" in waybar
 
 mako = (ROOT / "config/theme/mako.conf").read_text(encoding="utf-8")
 for key in ("background-color", "text-color", "border-color", "default-timeout"):
@@ -116,6 +117,7 @@ with tempfile.TemporaryDirectory() as temporary_directory:
     settings = json.loads(vscode.read_text(encoding="utf-8"))
     assert settings["editor.fontSize"] == 17
     assert settings["workbench.colorTheme"] == "Default Dark Modern"
-    assert settings["workbench.colorCustomizations"]["sideBar.background"] == "#292E2B"
+    assert settings["workbench.colorCustomizations"]["editor.background"] == "#0B0D0C"
+    assert settings["workbench.colorCustomizations"]["sideBar.background"] == "#232824"
 
 print("Theme settings merge fixtures passed.")

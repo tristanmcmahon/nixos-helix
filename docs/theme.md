@@ -6,11 +6,12 @@ text, and distinct amber/red warning states. It uses maintained Breeze
 components rather than a theme-store stack, excessive transparency, or a new
 theme engine.
 
-The canonical palette is `config/theme/palette.nix`: `#202422` background,
-`#292E2B` raised surface, `#313733` secondary surface, `#39423C` hover surface,
+The canonical palette is `config/theme/palette.nix`: `#0B0D0C` deep canvas,
+`#181C19` primary surface, `#232824` raised surface, `#303832` hover surface,
+`#3A443C` border,
 `#E4E8E5` primary text, `#AEB8B1` secondary text, `#7E8981` muted text,
 `#67B87A` primary green, `#81C995` active green, `#3E7650` deep green,
-`#396E4A` accessible selection green, `#D6AD63` warning, and `#D77A78` error.
+`#315E3E` accessible selection green, `#D6AD63` warning, and `#D77A78` error.
 
 ## Desktop integration
 
