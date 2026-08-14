@@ -34,15 +34,26 @@
         "x-systemd.device-timeout=5s"
       ];
     };
+
+    "/mnt/helix_ssd_c" = {
+      device = "/dev/disk/by-label/HELIX_SSD_C";
+      fsType = "ext4";
+      options = [
+        "noatime"
+        "nofail"
+        "x-systemd.device-timeout=5s"
+      ];
+    };
   };
 
-  # Create only the owned data roots after systemd has made both mounts available.
+  # Create only the owned data roots after systemd has made all mounts available.
   systemd.services.helix-storage-directories = {
     description = "Create Helix SSD data directories";
     wantedBy = [ "multi-user.target" ];
     unitConfig.RequiresMountsFor = [
       "/mnt/helix_ssd_a"
       "/mnt/helix_ssd_b"
+      "/mnt/helix_ssd_c"
     ];
     serviceConfig = {
       Type = "oneshot";
@@ -51,8 +62,10 @@
     script = ''
       ${pkgs.util-linux}/bin/mountpoint -q /mnt/helix_ssd_a
       ${pkgs.util-linux}/bin/mountpoint -q /mnt/helix_ssd_b
+      ${pkgs.util-linux}/bin/mountpoint -q /mnt/helix_ssd_c
       ${pkgs.coreutils}/bin/install -d -o tristan -g users -m 0775 /mnt/helix_ssd_a/data
       ${pkgs.coreutils}/bin/install -d -o tristan -g users -m 0775 /mnt/helix_ssd_b/data
+      ${pkgs.coreutils}/bin/install -d -o tristan -g users -m 0775 /mnt/helix_ssd_c/data
     '';
   };
 
