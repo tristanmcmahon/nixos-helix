@@ -55,8 +55,8 @@ in
   # This does not install CUDA or any other compute/development stack.
   nixpkgs.config.allowUnfree = true;
 
-  # This is the compatibility floor from Helix's original installation, not
-  # the currently selected channel. Keep it unchanged across upgrades.
+  # This is the compatibility floor from Helix's 26.05 fresh installation,
+  # not the currently selected channel. Keep it unchanged across upgrades.
   system.stateVersion = release.stateVersion;
 
   assertions = [

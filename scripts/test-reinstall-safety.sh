@@ -46,8 +46,12 @@ grep -qF './scripts/backup-for-reinstall.sh' "$repo_root/docs/reinstall.md"
 
 grep -qF 'exec sudo --' "$storage_script"
 grep -qF 'installer was not booted in UEFI mode' "$storage_script"
-for serial in S463NF0M914938Z S2PWNX0HA06906Y S21HNXBG406937R S4EWNX0NA44184L; do
+for serial in S463NF0M914938Z S4EWNX0NA44184L; do
   grep -qF "$serial" "$storage_script"
+done
+grep -qF 'system/local-ssds.nix' "$storage_script"
+for serial in S2PWNX0HA06906Y S21HNXBG406937R S1DHNSADB22089E; do
+  grep -qF "$serial" "$repo_root/system/local-ssds.nix"
 done
 grep -qF 'Estimated unallocated:' "$storage_script"
 if grep -Eq '\b(mkfs|parted|fdisk|sgdisk|wipefs|mount|umount|mkswap)\b' \

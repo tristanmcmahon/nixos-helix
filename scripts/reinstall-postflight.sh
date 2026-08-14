@@ -4,7 +4,7 @@ set -euo pipefail
 
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 expected_release=$(nix-instantiate --eval --raw -E "(import $repo_root/release.nix).nixosRelease")
-fresh_state_version=$(nix-instantiate --eval --raw -E "(import $repo_root/release.nix).freshStateVersion")
+expected_state_version=$(nix-instantiate --eval --raw -E "(import $repo_root/release.nix).stateVersion")
 preserved_hardware=/var/lib/helix-install/hardware-configuration.nix
 canonical_backup_root=/mnt/infernalnexus/nas1/backup
 backup_root=$canonical_backup_root
@@ -22,10 +22,12 @@ printf '/etc/nixos is an installer fallback, not the canonical checkout.\n'
 selected_release=$(nixos-version | sed -E 's/^([0-9]+\.[0-9]+).*/\1/')
 printf 'NixOS release: %s\n' "$selected_release"
 [[ $selected_release == "$expected_release" ]]
-fresh_state_marker=/etc/helix/fresh-install-state-version
-printf 'Fresh-install state marker: '
-cat "$fresh_state_marker"
-grep -qxF "$fresh_state_version" "$fresh_state_marker"
+configured_state_version=$(nix-instantiate --eval --raw -E "
+  let system = import <nixpkgs/nixos> { configuration = $repo_root/configuration.nix; };
+  in system.config.system.stateVersion
+")
+printf 'Configured state version: %s\n' "$configured_state_version"
+[[ $configured_state_version == "$expected_state_version" ]]
 printf 'Running:    '; readlink -f /run/current-system
 printf 'Persistent: '; readlink -f /nix/var/nix/profiles/system
 uname -a

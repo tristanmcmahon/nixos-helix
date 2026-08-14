@@ -2,6 +2,7 @@
 set -euo pipefail
 
 # Read-only installer check. It never decides whether a disk is safe to erase.
+repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 games_uuid=d07ac88e-34f6-4d56-9941-5ceaf52fd6bb
 [[ $# -eq 0 ]] || { printf 'Usage: %s\n' "${0##*/}" >&2; exit 2; }
 if [[ $EUID -ne 0 ]]; then
@@ -13,8 +14,6 @@ fi
 }
 
 os_serial=S463NF0M914938Z
-ssd_a_serial=S2PWNX0HA06906Y
-ssd_b_serial=S21HNXBG406937R
 games_serial=S4EWNX0NA44184L
 
 one_by_label() {
@@ -52,8 +51,20 @@ lsblk -e7 -o NAME,PATH,SIZE,TYPE,FSTYPE,LABEL,UUID,PARTUUID,MOUNTPOINTS,MODEL,SE
 
 root=$(one_by_label HELIX_ROOT ext4)
 efi=$(one_by_label HELIX_EFI vfat)
-ssd_a=$(one_by_label HELIX_SSD_A ext4)
-ssd_b=$(one_by_label HELIX_SSD_B ext4)
+mapfile -t local_ssd_records < <(
+  nix-instantiate --eval --strict --json "$repo_root/system/local-ssds.nix" |
+    python3 -c '
+import json
+import sys
+
+for disk in json.load(sys.stdin):
+    print("{}\t{}".format(disk["label"], disk["serial"]))
+'
+)
+[[ ${#local_ssd_records[@]} -gt 0 ]] || {
+  printf 'FAIL: no local SSDs are configured.\n' >&2
+  exit 1
+}
 mapfile -t games_matches < <(blkid -t "UUID=$games_uuid" -o device)
 [[ ${#games_matches[@]} -eq 1 ]] || {
   printf 'FAIL: expected protected GAMES_NVME UUID exactly once; found %s.\n' \
@@ -69,24 +80,27 @@ games=${games_matches[0]}
 
 root_disk=$(physical_disk "$root"); efi_disk=$(physical_disk "$efi")
 [[ $root_disk == "$efi_disk" ]] || { printf 'FAIL: HELIX_ROOT and HELIX_EFI are on different disks.\n' >&2; exit 1; }
-ssd_a_disk=$(physical_disk "$ssd_a")
-ssd_b_disk=$(physical_disk "$ssd_b")
 games_disk=$(physical_disk "$games")
 verify_serial "$root_disk" "$os_serial" HELIX_ROOT
 verify_serial "$efi_disk" "$os_serial" HELIX_EFI
-verify_serial "$ssd_a_disk" "$ssd_a_serial" HELIX_SSD_A
-verify_serial "$ssd_b_disk" "$ssd_b_serial" HELIX_SSD_B
 verify_serial "$games_disk" "$games_serial" GAMES_NVME
+local_ssd_summary=()
+for record in "${local_ssd_records[@]}"; do
+  IFS=$'\t' read -r label serial <<<"$record"
+  filesystem=$(one_by_label "$label" ext4)
+  verify_serial "$(physical_disk "$filesystem")" "$serial" "$label"
+  local_ssd_summary+=("$label: $filesystem")
+done
 efi_bytes=$(lsblk -bdno SIZE "$efi" | xargs)
 ((efi_bytes >= 9 * 1024 * 1024 * 1024 && efi_bytes <= 11 * 1024 * 1024 * 1024)) || {
   printf 'FAIL: HELIX_EFI size is not approximately 10 GiB: %s bytes.\n' "$efi_bytes" >&2; exit 1;
 }
 
 printf '\nVerified filesystems:\n'
-printf 'HELIX_ROOT: %s\nHELIX_EFI: %s (%s bytes)\nHELIX_SSD_A: %s\nHELIX_SSD_B: %s\n' \
-  "$root" "$efi" "$efi_bytes" "$ssd_a" "$ssd_b"
+printf 'HELIX_ROOT: %s\nHELIX_EFI: %s (%s bytes)\n' "$root" "$efi" "$efi_bytes"
+printf '%s\n' "${local_ssd_summary[@]}"
 printf 'GAMES_NVME protected UUID: %s (%s)\n' "$games_uuid" "$games"
-printf '\nOS disk and free-space evidence (manually confirm about 240 GiB unallocated):\n'
+printf '\nOS disk and free-space evidence (manually confirm the reviewed unallocated space):\n'
 lsblk -b -o NAME,PATH,START,SIZE,TYPE,FSTYPE,LABEL,PARTUUID "$root_disk"
 disk_bytes=$(lsblk -bdno SIZE "$root_disk" | xargs)
 partition_bytes=$(lsblk -bnro SIZE,TYPE "$root_disk" | awk '$2 == "part" {total += $1} END {print total + 0}')

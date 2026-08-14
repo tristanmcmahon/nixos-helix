@@ -46,9 +46,11 @@ the service and user-facing CLI. Local inference is part of the normal default
 system. The API binds only to `127.0.0.1`, and its firewall port remains closed.
 Display-driver policy stays in `hardware/nvidia.nix`.
 
-Ollama's NixOS defaults store models under `/var/lib/ollama/models`. Downloads
-can consume substantial disk space; pulling and deleting models is runtime
-state and is not declared during activation:
+Models are stored at `/mnt/games_nvme/ollama/models`, outside the Steam library.
+The service will not start unless GAMES_NVME is mounted and its narrowly scoped
+initializer has created the model directory for the `ollama` service account.
+Pulling and deleting models remains runtime state and is not declared during
+activation:
 
 ```bash
 ollama pull MODEL

@@ -21,7 +21,6 @@ trap 'rm -rf -- "$temporary_directory"' EXIT
 
 printf 'Checking deterministic release selection...\n'
 expected_release=$(nix-instantiate --eval --raw -E '(import ./release.nix).nixosRelease')
-[[ $expected_release == 26.05 ]]
 selected_nixpkgs=$HELIX_SELECTED_NIXPKGS
 release_selection=$(
   NIX_PATH=/deliberately/invalid \
@@ -116,162 +115,12 @@ python3 scripts/test-theme-settings.py
 ./scripts/test-reinstall-safety.sh
 ./scripts/test-reinstall-restore.sh
 
-printf 'Evaluating release, desktop, security, and native NAS invariants...\n'
-nix-instantiate --eval --strict -E '
-  let
-    system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
-    config = system.config;
-    release = import ./release.nix;
-    packageNames = map
-      (package: package.pname or package.name or "")
-      config.environment.systemPackages;
-    infernalnexusMounts = builtins.filter
-      (mount: mount.where == "/mnt/infernalnexus/nas1") config.systemd.mounts;
-    infernalnexusAutomounts = builtins.filter
-      (automount: automount.where == "/mnt/infernalnexus/nas1") config.systemd.automounts;
-    infernalnexusMount = builtins.head infernalnexusMounts;
-    infernalnexusAutomount = builtins.head infernalnexusAutomounts;
-    infernalnexusOptions = builtins.filter builtins.isString
-      (builtins.split "," infernalnexusMount.options);
-  in
-  assert config.system.nixos.release == release.nixosRelease;
-  assert config.system.stateVersion == release.stateVersion;
-  assert config.nix.gc.automatic;
-  assert config.nix.gc.options == "--delete-older-than 30d";
-  assert config.nix.optimise.automatic;
-  assert config.fileSystems."/mnt/games_nvme".device
-    == "/dev/disk/by-uuid/d07ac88e-34f6-4d56-9941-5ceaf52fd6bb";
-  assert config.fileSystems."/mnt/games_nvme".fsType == "ext4";
-  assert config.fileSystems."/mnt/games_nvme".options == [
-    "noatime" "nofail" "x-systemd.device-timeout=5s"
-  ];
-  assert config.fileSystems."/mnt/helix_ssd_a".device == "/dev/disk/by-label/HELIX_SSD_A";
-  assert config.fileSystems."/mnt/helix_ssd_a".fsType == "ext4";
-  assert config.fileSystems."/mnt/helix_ssd_a".options == [
-    "noatime" "nofail" "x-systemd.device-timeout=5s"
-  ];
-  assert config.fileSystems."/mnt/helix_ssd_b".device == "/dev/disk/by-label/HELIX_SSD_B";
-  assert config.fileSystems."/mnt/helix_ssd_b".fsType == "ext4";
-  assert config.fileSystems."/mnt/helix_ssd_b".options == [
-    "noatime" "nofail" "x-systemd.device-timeout=5s"
-  ];
-  assert config.services.fstrim.enable;
-  assert builtins.hasAttr "helix-storage-directories" config.systemd.services;
-  assert !(builtins.hasAttr "helix/fresh-install-state-version" config.environment.etc);
-  assert config.services.desktopManager.plasma6.enable;
-  assert config.services.displayManager.sddm.enable;
-  assert config.programs.hyprland.enable;
-  assert config.programs.hyprland.withUWSM;
-  assert config.programs.steam.enable;
-  assert config.programs.gamemode.enable;
-  assert config.services.ollama.enable;
-  assert config.services.ollama.host == "127.0.0.1";
-  assert !config.services.ollama.openFirewall;
-  assert config.services.ollama.package == system.pkgs.ollama-cuda;
-  assert config.services.ollama.loadModels == [ ];
-  assert !config.services.ollama.syncModels;
-  assert builtins.hasAttr "ollama" config.systemd.services;
-  assert !(builtins.hasAttr "ollama-model-loader" config.systemd.services);
-  assert config.hardware.ckb-next.enable;
-  assert config.services.openssh.enable;
-  assert config.services.openssh.openFirewall;
-  assert config.services.openssh.ports == [ 22 ];
-  assert config.services.openssh.settings.PermitRootLogin == "no";
-  assert config.services.openssh.settings.PubkeyAuthentication;
-  assert !config.services.openssh.settings.PasswordAuthentication;
-  assert !config.services.openssh.settings.KbdInteractiveAuthentication;
-  assert config.networking.hosts."192.168.1.2" == [ "mister" ];
-  assert config.networking.hosts."192.168.1.8" == [ "infernalnexus" ];
-  assert !(builtins.hasAttr "/mnt/infernalnexus/nas1" config.fileSystems);
-  assert builtins.length infernalnexusMounts == 1;
-  assert infernalnexusMount.what == "//192.168.1.8/nas1";
-  assert infernalnexusMount.type == "cifs";
-  assert builtins.all (option: builtins.elem option infernalnexusOptions) [
-    "credentials=/etc/nixos/secrets/infernalnexus-smb"
-    "uid=tristan"
-    "gid=users"
-    "dir_mode=0775"
-    "file_mode=0664"
-  ];
-  assert builtins.elem "vers=2.0" infernalnexusOptions;
-  assert builtins.elem "sec=ntlmssp" infernalnexusOptions;
-  assert !(builtins.elem "vers=1.0" infernalnexusOptions);
-  assert !(builtins.elem "x-systemd.automount" infernalnexusOptions);
-  assert builtins.all
-    (option: builtins.match "x-systemd\\.(mount-timeout|idle-timeout).*" option == null)
-    infernalnexusOptions;
-  assert builtins.elem "network-online.target" infernalnexusMount.wants;
-  assert builtins.elem "network-online.target" infernalnexusMount.after;
-  assert infernalnexusMount.mountConfig.TimeoutSec == "15s";
-  assert builtins.length infernalnexusAutomounts == 1;
-  assert builtins.elem "multi-user.target" infernalnexusAutomount.wantedBy;
-  assert infernalnexusAutomount.automountConfig.TimeoutIdleSec == "10min";
-  assert builtins.elem 22 config.networking.firewall.allowedTCPPorts;
-  assert builtins.hasAttr "sshd" config.systemd.services;
-  assert config.programs._1password.enable;
-  assert config.programs._1password-gui.enable;
-  assert config.programs._1password-gui.polkitPolicyOwners == [ "tristan" ];
-  assert config.programs.chromium.enable;
-  assert config.programs.chromium.extensions == [
-    "aeblfdkhhhdcdjpifhhbdiojplfjncoa"
-    "eimadpbcbfnmbkopoojfekhnkhdbieeh"
-  ];
-  assert config.programs.chromium.extraOpts.BrowserThemeColor == "#030405";
-  assert !config.programs.chromium.extraOpts.PasswordManagerEnabled;
-  assert config.programs.firefox.enable;
-  assert !config.programs.firefox.policies.OfferToSaveLogins;
-  assert builtins.hasAttr "addon@darkreader.org" config.programs.firefox.policies.ExtensionSettings;
-  assert config.programs.firefox.preferences."ui.systemUsesDarkTheme" == 1;
-  assert config.services.displayManager.sddm.theme == "helix-abyss";
-  assert config.programs.dconf.enable;
-  assert config.systemd.user.services.helix-abyss-theme.unitConfig.ConditionUser == "tristan";
-  assert config.systemd.user.services.helix-ghostty-config.unitConfig.ConditionUser == "tristan";
-  assert builtins.elem "HOME=/home/tristan"
-    config.systemd.user.services.helix-ghostty-config.serviceConfig.Environment;
-  assert builtins.elem "XDG_CONFIG_HOME=/home/tristan/.config"
-    config.systemd.user.services.helix-ghostty-config.serviceConfig.Environment;
-  assert !(builtins.hasAttr "GTK_THEME" config.environment.variables);
-  assert !(builtins.hasAttr "QT_STYLE_OVERRIDE" config.environment.variables);
-  assert !(builtins.hasAttr "QT_QPA_PLATFORMTHEME" config.environment.variables);
-  assert builtins.all
-    (name: builtins.elem name packageNames)
-    [ "spotify" "vlc" "haruna" "strawberry" "plex-desktop" "gridplayer" ];
-  assert builtins.all
-    (name: builtins.elem name packageNames)
-    [ "signal-desktop" "pidgin" "ollama" ];
-  assert builtins.any (name: builtins.match "mpv.*" name != null) packageNames;
-  assert !(builtins.elem "plexmediaserver" packageNames);
-  assert builtins.hasAttr "ckb-next" config.systemd.services;
-  assert config.environment.variables.EDITOR == "vim";
-  assert config.environment.variables.VISUAL == "vim";
-  assert builtins.any (name: builtins.match "vim.*" name != null) packageNames;
-  true
-'
-
-printf 'Evaluating the separate fresh-install compatibility contract...\n'
-nix-instantiate --eval --strict -E '
-  let
-    system = import <nixpkgs/nixos> {
-      configuration = ./fresh-install-configuration.nix;
-    };
-    release = import ./release.nix;
-  in
-  assert system.config.system.nixos.release == release.nixosRelease;
-  assert system.config.system.stateVersion == release.freshStateVersion;
-  assert system.config.environment.etc."helix/fresh-install-state-version".text
-    == release.freshStateVersion + "\n";
-  true
-'
+printf 'Evaluating release, storage, desktop, and security invariants...\n'
+nix-instantiate --eval --strict tests/system-invariants.nix
 
 printf 'Building the complete default system closure...\n'
 system_closure=$(nix-build --no-out-link '<nixpkgs/nixos>' -A system \
   -I "nixos-config=$repo_root/configuration.nix")
-
-printf 'Building the complete fresh-install system closure...\n'
-fresh_system_closure=$(nix-build --no-out-link '<nixpkgs/nixos>' -A system \
-  -I "nixos-config=$repo_root/fresh-install-configuration.nix")
-[[ -r $fresh_system_closure/etc/helix/fresh-install-state-version ]]
-grep -qxF "$expected_release" "$fresh_system_closure/etc/helix/fresh-install-state-version"
 
 printf 'Checking Vim and modern-bash in the built default system...\n'
 ./scripts/test-modern-bash.sh "$system_closure"

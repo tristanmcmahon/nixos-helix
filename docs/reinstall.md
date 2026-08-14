@@ -1,12 +1,15 @@
-# Fresh reinstall
+# Reinstall and recovery
 
-A fresh reinstall is a separate destructive project, not part of an ordinary
+Helix has completed its fresh installation on NixOS 26.05. Its canonical
+configuration and permanent compatibility floor are both 26.05; there is no
+separate installer configuration or pre/post-install state-version bridge.
+
+A future reinstall is a separate destructive project, not part of an ordinary
 Helix rebuild. This repository contains no partitioning or formatting command.
 Run `./scripts/reinstall-preflight.sh` on the current installation first; it is
 read-only and never labels a disk safe to erase.
 
 A wiped installation using the NixOS 26.05 installer installs only 26.05.
-There is no intermediate 25.11 installation or upgrade step.
 
 ## Sequence
 
@@ -88,26 +91,26 @@ Boot the verified installer in UEFI mode. In GParted, identify each physical
 device visually by its model, serial, and capacity before every destructive
 action. Kernel device names can change between boots and are not identities.
 
-| Physical identity | Required initial-reinstall treatment |
+| Physical identity | Required future-reinstall treatment |
 | --- | --- |
-| Samsung SSD 970 PRO 512GB — `S463NF0M914938Z` | Wipe completely; create HELIX_EFI and HELIX_ROOT; leave the final approximately 240 GiB unallocated |
-| Samsung SSD 850 EVO 1TB — `S2PWNX0HA06906Y` | Wipe; create HELIX_SSD_A |
-| Samsung SSD 850 EVO 500GB — `S21HNXBG406937R` | Wipe; create HELIX_SSD_B |
-| Samsung SSD 840 EVO 500GB — `S1DHNSADB22089E` | Leave untouched during the initial reinstall |
+| Samsung SSD 970 PRO 512GB — `S463NF0M914938Z` | The only OS reinstall target; recreate EFI/root only after separately approving the reviewed layout and preserving the intentional Windows space |
+| Samsung SSD 850 EVO 1TB — `S2PWNX0HA06906Y` | Protected `HELIX_SSD_A`; do not format |
+| Samsung SSD 850 EVO 500GB — `S21HNXBG406937R` | Protected `HELIX_SSD_B`; do not format |
+| Samsung SSD 840 EVO 500GB — `S1DHNSADB22089E` | Protected `HELIX_SSD_C`; do not format |
 | Samsung SSD 970 EVO Plus 1TB — `S4EWNX0NA44184L` | Protected GAMES_NVME; **NEVER FORMAT** |
 | DataTraveler 3.0 — `E0D55EA574CCF3A0395F1214` | Ventoy installer; **NEVER TARGET** |
 
 Kernel device names may change and are not identities. Before every destructive
 action, Tristan must visually recheck model, serial, and capacity in GParted.
 
-Create this layout manually:
+If an explicitly approved future reinstall requires recreating the OS disk,
+create only this layout manually:
 
 - OS disk: GPT; a 10 GiB FAT32 EFI system partition labelled `HELIX_EFI`; an
-  ext4 root labelled `HELIX_ROOT`; and exactly 240 GiB left unallocated at the
-  end for a future Windows installation.
-- Two separately identified Linux SSDs: one full-disk ext4 filesystem each,
-  labelled `HELIX_SSD_A` and `HELIX_SSD_B`.
-- Do not modify the existing ext4 GAMES_NVME filesystem with UUID
+  ext4 root labelled `HELIX_ROOT`; and the reviewed trailing space left
+  unallocated for Windows.
+- Do not modify `HELIX_SSD_A`, `HELIX_SSD_B`, `HELIX_SSD_C`, or the existing
+  ext4 GAMES_NVME filesystem with UUID
   `d07ac88e-34f6-4d56-9941-5ceaf52fd6bb`.
 
 Close GParted, then run the repository's short read-only check:
@@ -121,13 +124,13 @@ cd /tmp/nixos-helix-install
 
 It verifies labels, types, the protected UUID, approximate ESP size, common OS
 disk ancestry, and prints free-space evidence. It does not decide that a disk
-is safe to erase and cannot prove the intended 240 GiB merely from a label;
-Tristan must inspect the printed table and GParted layout.
+is safe to erase or that the intended Windows space is correct merely from a
+label; Tristan must inspect the printed table and GParted layout.
 
 Mount only HELIX_ROOT at `/mnt` and HELIX_EFI at `/mnt/boot` before generating
-hardware configuration. Do not mount HELIX_SSD_A, HELIX_SSD_B, or GAMES_NVME
-beneath `/mnt`; otherwise `nixos-generate-config` may introduce separately
-managed data filesystems into `hardware-configuration.nix`.
+hardware configuration. Do not mount HELIX_SSD_A, HELIX_SSD_B, HELIX_SSD_C, or
+GAMES_NVME beneath `/mnt`; otherwise `nixos-generate-config` may introduce
+separately managed data filesystems into `hardware-configuration.nix`.
 
 Mount the two installation filesystems and immediately verify the topology:
 
@@ -140,8 +143,8 @@ findmnt /mnt/boot
 lsblk -o NAME,PATH,SIZE,TYPE,FSTYPE,LABEL,UUID,MOUNTPOINTS,MODEL
 ```
 
-Do not mount HELIX_SSD_A, HELIX_SSD_B, or GAMES_NVME beneath `/mnt` before
-`nixos-generate-config`.
+Do not mount HELIX_SSD_A, HELIX_SSD_B, HELIX_SSD_C, or GAMES_NVME beneath
+`/mnt` before `nixos-generate-config`.
 
 ## Temporary installation checkout
 
@@ -168,16 +171,13 @@ git -C /tmp/nixos-helix-install rev-parse HEAD \
 
 Preserve the newly generated file for later review. Repartitioning can change
 filesystem UUIDs, so never blindly reuse the tracked hardware file and never
-overwrite the canonical checkout merely to install. The normal configuration's
-`system.stateVersion = "25.11"` remains the upgrade compatibility contract.
-A wiped installation first created on NixOS 26.05 must additionally import
-`fresh-install.nix`, which explicitly selects `system.stateVersion = "26.05"`.
+overwrite the canonical checkout merely to install. The canonical
+`system.stateVersion = "26.05"` remains the compatibility contract.
 
 Before `nixos-install`, verify `/mnt`, its EFI mount, all generated UUIDs, the
-explicit target disk, and that no unrelated disk is below `/mnt`. The
-repository-owned `fresh-install-configuration.nix` is the installer entry
-point; it composes the maintained configuration with `fresh-install.nix` and is
-not used by upgrades. From the temporary checkout using the 26.05 source, run:
+explicit target disk, and that no unrelated disk is below `/mnt`. The ordinary
+`configuration.nix` is also the installer entry point. From the temporary
+checkout using the 26.05 source, run:
 
 ```bash
 cd /tmp/nixos-helix-install
@@ -185,12 +185,12 @@ export HELIX_NIXPKGS_PATH="$(nix-instantiate --find-file nixpkgs)"
 ./scripts/dev-shell.sh --run './scripts/check.sh'
 nixos-rebuild dry-build \
   -I "nixpkgs=$HELIX_NIXPKGS_PATH" \
-  -I "nixos-config=$PWD/fresh-install-configuration.nix"
+  -I "nixos-config=$PWD/configuration.nix"
 sudo env HELIX_NIXPKGS_PATH="$HELIX_NIXPKGS_PATH" \
   NIX_PATH="nixpkgs=$HELIX_NIXPKGS_PATH" \
   nixos-install --root /mnt \
   -I "nixpkgs=$HELIX_NIXPKGS_PATH" \
-  -I "nixos-config=$PWD/fresh-install-configuration.nix"
+  -I "nixos-config=$PWD/configuration.nix"
 ```
 
 `release-environment.sh` validates and prints this explicit source, ignores an
@@ -236,10 +236,10 @@ cp /var/lib/helix-install/hardware-configuration.nix hardware-configuration.nix
 ./scripts/verify-hardware-continuity.sh \
   /var/lib/helix-install/hardware-configuration.nix \
   /etc/nixos/hardware-configuration.nix hardware-configuration.nix
-git switch -c hardware/helix-fresh-install
+git switch -c hardware/helix-reinstall
 git add hardware-configuration.nix
-git commit -m 'Record fresh Helix hardware configuration'
-git push -u origin hardware/helix-fresh-install
+git commit -m 'Record reinstalled Helix hardware configuration'
+git push -u origin hardware/helix-reinstall
 ```
 
 Name the completed backup set explicitly and run the restore in its default,
@@ -322,21 +322,6 @@ UUIDs; do not rebuild before it passes.
 The restore handles the stacked systemd `autofs` trigger and real CIFS mount by
 selecting exactly one CIFS layer for `//192.168.1.8/nas1`. Keep the NAS backup
 and installer media until the complete hardware checklist passes.
-
-## Finalise the temporary compatibility bridge
-
-Only after the fresh installation has booted, restored data has been checked,
-and postflight passes, prepare a separate reviewed cleanup change that:
-
-1. replaces the tracked `hardware-configuration.nix` with the freshly generated file;
-2. sets the canonical `stateVersion` to `26.05`;
-3. removes `freshStateVersion` from `release.nix`;
-4. removes `fresh-install.nix` and `fresh-install-configuration.nix`;
-5. removes the fresh-install marker and dual-entry validation from `check.sh`.
-
-Until that finalisation is merged, the 25.11 current-install state version and
-26.05 fresh-install entry are one intentional temporary bridge. Do not perform
-these removals before the new installation passes postflight.
 
 ## Recovery
 

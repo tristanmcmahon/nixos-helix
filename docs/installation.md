@@ -25,10 +25,9 @@ From the canonical checkout:
 the running system until reboot. `switch` makes it the selected boot generation.
 The `dry-activate` action is available when an activation diff is useful.
 
-The current installation retains `system.stateVersion = "25.11"` because that
-is when its persistent state was created. Do not raise it for an ordinary
-channel update. The temporary 26.05 fresh-install entry is documented in the
-reinstall guide.
+The current installation was created on NixOS 26.05, so
+`system.stateVersion = "26.05"` is its permanent compatibility floor. Do not
+raise it for an ordinary channel update.
 
 ## Recovery
 

@@ -53,18 +53,18 @@ or use `sudo nixos-rebuild switch --rollback` from a working generation.
 Native weekly garbage collection deletes generations older than 30 days, and
 weekly store optimisation hard-links identical store files.
 
-## Imminent fresh reinstall
+## Installed-system compatibility
 
-The current installation originated on NixOS 25.11, so its compatibility
-`stateVersion` remains 25.11. The temporary fresh-install entry uses 26.05 for
-the imminent wiped installation. This dual entry is the sole intentional
-legacy bridge and will be removed after the fresh system passes postflight.
-See [docs/reinstall.md](docs/reinstall.md).
+Helix was freshly installed on NixOS 26.05, and its permanent compatibility
+floor is `system.stateVersion = "26.05"`. Future channel upgrades must not raise
+that value. The backup, restore, and hardware-continuity tools remain available
+for disaster recovery and any deliberately planned future reinstall; see
+[docs/reinstall.md](docs/reinstall.md).
 
 ## Focused guides
 
 - [Normal installation and recovery](docs/installation.md)
-- [Fresh reinstall](docs/reinstall.md)
+- [Reinstall and recovery](docs/reinstall.md)
 - [Hardware validation](docs/hardware-validation.md)
 - [Infernalnexus NAS](docs/nas.md)
 - [Profiles and package boundaries](docs/profiles.md)
