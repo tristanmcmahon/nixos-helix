@@ -285,10 +285,16 @@ if find "$system_closure/etc/xdg/autostart" "$system_closure/sw/share/autostart"
   exit 1
 fi
 [[ -x $system_closure/sw/bin/ollama ]]
+[[ -x $system_closure/sw/bin/helix-ollama-update-models ]]
 [[ -r $system_closure/etc/systemd/system/ollama.service ]]
-[[ ! -e $system_closure/etc/systemd/system/ollama-model-loader.service ]]
+[[ -r $system_closure/etc/systemd/system/ollama-model-loader.service ]]
 grep -qF 'OLLAMA_HOST=127.0.0.1:11434' \
   "$system_closure/etc/systemd/system/ollama.service"
+grep -qF 'BindsTo=ollama.service' \
+  "$system_closure/etc/systemd/system/ollama-model-loader.service"
+for model in gemma4:12b gpt-oss:20b qwen3.6:27b qwen3-embedding:4b; do
+  grep -qF "$model" "$system_closure/sw/bin/helix-ollama-update-models"
+done
 
 printf 'Checking 1Password modules, wrappers, and browser policies...\n'
 onepassword_gui=$(nix-build --no-out-link -E '
