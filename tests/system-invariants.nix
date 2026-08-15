@@ -79,10 +79,21 @@ assert config.services.ollama.package == system.pkgs.ollama-cuda;
 assert config.services.ollama.user == "ollama";
 assert config.services.ollama.group == "ollama";
 assert config.services.ollama.models == "/mnt/games_nvme/ollama/models";
-assert config.services.ollama.loadModels == [ ];
+assert
+  config.services.ollama.loadModels == [
+    "gemma4:12b"
+    "gpt-oss:20b"
+    "qwen3.6:27b"
+    "qwen3-embedding:4b"
+  ];
 assert !config.services.ollama.syncModels;
 assert builtins.hasAttr "ollama" config.systemd.services;
-assert !(builtins.hasAttr "ollama-model-loader" config.systemd.services);
+assert builtins.hasAttr "ollama-model-loader" config.systemd.services;
+assert builtins.elem "ollama.service" config.systemd.services.ollama-model-loader.after;
+assert builtins.elem "ollama.service" config.systemd.services.ollama-model-loader.bindsTo;
+assert builtins.all (
+  model: lib.hasInfix model config.systemd.services.ollama-model-loader.script
+) config.services.ollama.loadModels;
 assert builtins.elem "helix-ollama-model-storage.service" config.systemd.services.ollama.requires;
 assert builtins.elem "helix-ollama-model-storage.service" config.systemd.services.ollama.after;
 assert
@@ -163,6 +174,7 @@ assert builtins.all (name: builtins.elem name packageNames) [
   "signal-desktop"
   "pidgin"
   "ollama"
+  "helix-ollama-update-models"
 ];
 assert builtins.any (name: builtins.match "mpv.*" name != null) packageNames;
 assert !(builtins.elem "plexmediaserver" packageNames);
