@@ -81,6 +81,12 @@ assert config.services.ollama.package == system.pkgs.ollama-cuda;
 assert config.services.ollama.user == "ollama";
 assert config.services.ollama.group == "ollama";
 assert config.services.ollama.models == "/mnt/games_nvme/ollama/models";
+assert config.services.ollama.environmentVariables.OLLAMA_MAX_LOADED_MODELS == "1";
+assert config.services.ollama.environmentVariables.OLLAMA_NUM_PARALLEL == "1";
+assert !(builtins.hasAttr "OLLAMA_CONTEXT_LENGTH" config.services.ollama.environmentVariables);
+assert !(builtins.hasAttr "OLLAMA_KEEP_ALIVE" config.services.ollama.environmentVariables);
+assert !(builtins.hasAttr "OLLAMA_FLASH_ATTENTION" config.services.ollama.environmentVariables);
+assert !(builtins.hasAttr "OLLAMA_KV_CACHE_TYPE" config.services.ollama.environmentVariables);
 assert
   config.services.ollama.loadModels == [
     "gemma4:12b"
@@ -96,6 +102,29 @@ assert builtins.elem "ollama.service" config.systemd.services.ollama-model-loade
 assert builtins.all (
   model: lib.hasInfix model config.systemd.services.ollama-model-loader.script
 ) config.services.ollama.loadModels;
+assert lib.hasInfix "ollama create" config.systemd.services.ollama-model-loader.script;
+assert
+  config.environment.etc."helix/ollama/helix-gemma.Modelfile".text == ''
+    FROM gemma4:12b
+    PARAMETER num_ctx 8192
+  '';
+assert
+  config.environment.etc."helix/ollama/helix-gpt-oss.Modelfile".text == ''
+    FROM gpt-oss:20b
+    PARAMETER num_ctx 8192
+  '';
+assert
+  config.environment.etc."helix/ollama/helix-qwen.Modelfile".text == ''
+    FROM qwen3.6:27b
+    PARAMETER num_ctx 4096
+  '';
+assert
+  config.environment.etc."helix/ollama/helix-embedding.Modelfile".text == ''
+    FROM qwen3-embedding:4b
+    PARAMETER num_ctx 4096
+  '';
+assert !(builtins.hasAttr "helix-ollama-status" config.systemd.services);
+assert !(builtins.hasAttr "helix-ollama-check" config.systemd.services);
 assert builtins.elem "helix-ollama-model-storage.service" config.systemd.services.ollama.requires;
 assert builtins.elem "helix-ollama-model-storage.service" config.systemd.services.ollama.after;
 assert
@@ -176,6 +205,7 @@ assert builtins.all (name: builtins.elem name packageNames) [
   "signal-desktop"
   "pidgin"
   "ollama"
+  "helix-ollama-status"
   "helix-ollama-update-models"
 ];
 assert builtins.any (name: builtins.match "mpv.*" name != null) packageNames;

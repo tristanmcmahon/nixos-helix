@@ -285,6 +285,7 @@ if find "$system_closure/etc/xdg/autostart" "$system_closure/sw/share/autostart"
   exit 1
 fi
 [[ -x $system_closure/sw/bin/ollama ]]
+[[ -x $system_closure/sw/bin/helix-ollama-status ]]
 [[ -x $system_closure/sw/bin/helix-ollama-update-models ]]
 [[ -r $system_closure/etc/systemd/system/ollama.service ]]
 [[ -r $system_closure/etc/systemd/system/ollama-model-loader.service ]]
@@ -295,6 +296,14 @@ grep -qF 'BindsTo=ollama.service' \
 for model in gemma4:12b gpt-oss:20b qwen3.6:27b qwen3-embedding:4b; do
   grep -qF "$model" "$system_closure/sw/bin/helix-ollama-update-models"
 done
+"$system_closure/sw/bin/helix-ollama-status" --help | grep -qF 'GPU, model, residency'
+for profile in helix-gemma helix-gpt-oss helix-qwen helix-embedding; do
+  [[ -r $system_closure/etc/helix/ollama/$profile.Modelfile ]]
+done
+grep -qF 'PARAMETER num_ctx 8192' "$system_closure/etc/helix/ollama/helix-gemma.Modelfile"
+grep -qF 'PARAMETER num_ctx 8192' "$system_closure/etc/helix/ollama/helix-gpt-oss.Modelfile"
+grep -qF 'PARAMETER num_ctx 4096' "$system_closure/etc/helix/ollama/helix-qwen.Modelfile"
+grep -qF 'PARAMETER num_ctx 4096' "$system_closure/etc/helix/ollama/helix-embedding.Modelfile"
 
 printf 'Checking 1Password modules, wrappers, and browser policies...\n'
 onepassword_gui=$(nix-build --no-out-link -E '

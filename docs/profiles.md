@@ -76,15 +76,39 @@ loader lifecycle, run the helper generated from the same canonical Nix list:
 helix-ollama-update-models
 ```
 
-Normal operator inspection remains:
+The same native loader creates small aliases with model-specific context
+defaults after reconciling their upstream models. Aliases reuse Ollama's
+content-addressed blobs; they do not duplicate weights:
+
+| Alias | Upstream model | Context | Measured residency before activation |
+| --- | --- | ---: | --- |
+| `helix-gemma` | `gemma4:12b` | 8192 | 100% GPU, about 8.7 GiB Ollama VRAM, about 78 tok/s |
+| `helix-gpt-oss` | `gpt-oss:20b` | 8192 | 100% GPU, about 12.7 GiB Ollama VRAM, about 151 tok/s |
+| `helix-qwen` | `qwen3.6:27b` | 4096 | 29% CPU / 71% GPU, about 13.2 GiB VRAM, about 7.9 tok/s |
+| `helix-embedding` | `qwen3-embedding:4b` | 4096 | 100% GPU, about 4.5 GiB Ollama VRAM |
+
+These are short cold-start measurements on the RTX 5080, not benchmark claims.
+Reducing Qwen to 2048 left its split unchanged and slightly reduced throughput,
+showing that its 17 GB weights—not the 4K context—cause the offload. It remains
+useful for deliberate larger tasks but is not the everyday responsive model.
+
+The service permits one loaded model and one parallel request at a time. This
+avoids VRAM contention: GPT-OSS at 8K left only about 1.2 GiB free during the
+measurement. Ollama's finite upstream five-minute keep-alive is retained; no
+infinite lifetime is configured. There is deliberately no global context,
+flash-attention, or quantised KV-cache override. The measured contexts already
+meet the residency goal, and unmeasured global tuning would affect every model.
+
+Normal operator inspection is available through either the native commands or
+the concise snapshot helper:
 
 ```bash
+helix-ollama-status
 ollama list
 ollama ps
 ```
 
-After the current downloads finish and the configuration is activated, run a
-representative model and use `ollama ps` plus `nvidia-smi` in another terminal
-to verify actual GPU use. Successful evaluation alone does not prove that
-inference is GPU-accelerated. Context length, quantisation, and keep-alive
-policy remain at Ollama defaults until measurements demonstrate a problem.
+After activation, repeat representative requests through the aliases and use
+`ollama ps` plus `nvidia-smi` to confirm the generated profiles behave like the
+measured upstream models. Successful evaluation alone does not prove that
+inference is GPU-accelerated.
