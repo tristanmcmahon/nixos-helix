@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Merge Helix Abyss-owned keys without discarding unrelated user settings."""
+"""Merge Helix Graphite + Fern-owned keys without discarding user settings."""
 
 import argparse
 import configparser
@@ -102,8 +102,8 @@ def merge_vscode(destination: pathlib.Path) -> None:
     settings.update(
         {
             "window.autoDetectColorScheme": False,
-            "workbench.colorTheme": "Abyss",
-            "workbench.preferredDarkColorTheme": "Abyss",
+            "workbench.colorTheme": "Default Dark Modern",
+            "workbench.preferredDarkColorTheme": "Default Dark Modern",
         }
     )
     colors = settings.get("workbench.colorCustomizations", {})
@@ -111,13 +111,24 @@ def merge_vscode(destination: pathlib.Path) -> None:
         colors = {}
     colors.update(
         {
-            "activityBar.background": "#030405",
-            "editorGroupHeader.tabsBackground": "#050608",
-            "panel.background": "#050608",
-            "sideBar.background": "#030405",
-            "statusBar.background": "#080A0E",
-            "titleBar.activeBackground": "#030405",
-            "titleBar.activeForeground": "#E8ECF2",
+            "activityBar.background": "#181C19",
+            "activityBar.foreground": "#E4E8E5",
+            "activityBarBadge.background": "#315E3E",
+            "activityBarBadge.foreground": "#E4E8E5",
+            "editor.background": "#0B0D0C",
+            "editor.foreground": "#E4E8E5",
+            "editorGroupHeader.tabsBackground": "#181C19",
+            "focusBorder": "#67B87A",
+            "list.activeSelectionBackground": "#315E3E",
+            "list.activeSelectionForeground": "#E4E8E5",
+            "panel.background": "#232824",
+            "sideBar.background": "#232824",
+            "statusBar.background": "#303832",
+            "statusBar.foreground": "#E4E8E5",
+            "titleBar.activeBackground": "#181C19",
+            "titleBar.activeForeground": "#E4E8E5",
+            "titleBar.inactiveBackground": "#0B0D0C",
+            "titleBar.inactiveForeground": "#AEB8B1",
         }
     )
     settings["workbench.colorCustomizations"] = colors

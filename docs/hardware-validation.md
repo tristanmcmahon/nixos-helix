@@ -95,17 +95,17 @@ These are physical tests; a successful build does not prove they pass.
 - [ ] PipeWire audio works in every relevant player.
 - [ ] NVIDIA hardware decoding is inspected separately rather than assumed.
 
-## Helix Abyss appearance
+## Graphite + Fern appearance
 
 - [ ] SDDM is dark with readable login fields and clear password focus.
 - [ ] Plasma is dark immediately after login on every monitor.
 - [ ] The panel, tray, menus, notifications, task switcher, lock screen, and
       logout/shutdown screen are dark.
-- [ ] The Helix Abyss wallpaper appears on every monitor.
+- [ ] The Graphite + Fern wallpaper appears on every monitor.
 - [ ] Active and inactive windows, selected text, and disabled controls remain readable.
 - [ ] Dolphin, System Settings, Ark, Haruna, Strawberry, VLC, and ckb-next are dark.
 - [ ] At least one GTK 3 and one GTK 4 application, their file pickers, and portals are dark.
-- [ ] Ghostty uses Catppuccin Mocha and VS Code uses Abyss.
+- [ ] Ghostty, Konsole, and VS Code use graphite surfaces with restrained fern focus states.
 - [ ] Obsidian follows dark mode or its documented per-vault setting works.
 - [ ] 1Password is dark; Spotify and Plex remain dark.
 - [ ] Firefox, Chrome, Chromium, and Zen browser chrome are dark and websites

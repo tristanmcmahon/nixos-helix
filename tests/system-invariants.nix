@@ -4,6 +4,7 @@ let
   lib = system.pkgs.lib;
   release = import ../release.nix;
   localSsds = import ../system/local-ssds.nix;
+  themePalette = import ../config/theme/palette.nix;
   mountOptions = [
     "noatime"
     "nofail"
@@ -72,6 +73,7 @@ assert config.hardware.nvidia.open;
 assert config.hardware.nvidia.powerManagement.enable;
 assert config.programs.steam.enable;
 assert config.programs.gamemode.enable;
+assert builtins.elem "adwsteamgtk" packageNames;
 assert config.services.ollama.enable;
 assert config.services.ollama.host == "127.0.0.1";
 assert !config.services.ollama.openFirewall;
@@ -134,15 +136,15 @@ assert
     "aeblfdkhhhdcdjpifhhbdiojplfjncoa"
     "eimadpbcbfnmbkopoojfekhnkhdbieeh"
   ];
-assert config.programs.chromium.extraOpts.BrowserThemeColor == "#030405";
+assert config.programs.chromium.extraOpts.BrowserThemeColor == themePalette.background;
 assert !config.programs.chromium.extraOpts.PasswordManagerEnabled;
 assert config.programs.firefox.enable;
 assert !config.programs.firefox.policies.OfferToSaveLogins;
 assert builtins.hasAttr "addon@darkreader.org" config.programs.firefox.policies.ExtensionSettings;
 assert config.programs.firefox.preferences."ui.systemUsesDarkTheme" == 1;
-assert config.services.displayManager.sddm.theme == "helix-abyss";
+assert config.services.displayManager.sddm.theme == "helix-graphite-fern";
 assert config.programs.dconf.enable;
-assert config.systemd.user.services.helix-abyss-theme.unitConfig.ConditionUser == "tristan";
+assert config.systemd.user.services.helix-graphite-fern-theme.unitConfig.ConditionUser == "tristan";
 assert config.systemd.user.services.helix-ghostty-config.unitConfig.ConditionUser == "tristan";
 assert builtins.elem "HOME=/home/tristan"
   config.systemd.user.services.helix-ghostty-config.serviceConfig.Environment;

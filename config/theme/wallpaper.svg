@@ -1,10 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="3840" height="2160" viewBox="0 0 3840 2160">
   <defs>
-    <radialGradient id="abyss" cx="50%" cy="42%" r="78%">
-      <stop offset="0" stop-color="#0A0D11"/>
-      <stop offset="0.48" stop-color="#050608"/>
-      <stop offset="1" stop-color="#030405"/>
+    <linearGradient id="graphite" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#181C19"/>
+      <stop offset="0.52" stop-color="#0B0D0C"/>
+      <stop offset="1" stop-color="#070908"/>
+    </linearGradient>
+    <radialGradient id="mist" cx="78%" cy="18%" r="62%">
+      <stop offset="0" stop-color="#3E7650" stop-opacity="0.14"/>
+      <stop offset="0.55" stop-color="#232824" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#0B0D0C" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <rect width="3840" height="2160" fill="url(#abyss)"/>
+  <rect width="3840" height="2160" fill="url(#graphite)"/>
+  <rect width="3840" height="2160" fill="url(#mist)"/>
+  <g fill="none" stroke="#67B87A" stroke-opacity="0.09" stroke-width="4">
+    <path d="M-160 1710 C520 1330 1050 1590 1550 1260 S2640 730 4010 1010"/>
+    <path d="M-140 1840 C610 1450 1130 1720 1660 1380 S2780 850 4020 1130"/>
+    <path d="M-80 1970 C670 1580 1240 1830 1760 1510 S2860 1010 3980 1260"/>
+  </g>
+  <g fill="none" stroke="#AEB8B1" stroke-opacity="0.045" stroke-width="3">
+    <path d="M2380 -90 C2300 410 2480 650 2830 880 C3090 1050 3210 1340 3150 1690"/>
+    <path d="M2550 -100 C2470 360 2630 580 2950 800 C3220 990 3360 1280 3300 1650"/>
+  </g>
 </svg>

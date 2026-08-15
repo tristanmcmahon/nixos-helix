@@ -109,7 +109,7 @@ if git grep -Il '' -- ':!.git' | xargs grep -El \
   exit 1
 fi
 
-printf 'Validating Helix Abyss assets and merge fixtures...\n'
+printf 'Validating Helix Graphite + Fern assets and merge fixtures...\n'
 python3 scripts/test-theme-settings.py
 
 ./scripts/test-reinstall-safety.sh
@@ -154,15 +154,17 @@ find "$session_data/share" -type f -name '*.desktop' -print
 grep -Rqs '^Name=Plasma' "$session_data/share/wayland-sessions"
 grep -Rqs '^Name=Hyprland' "$session_data/share/wayland-sessions"
 
-printf 'Checking Helix Abyss in the built default system...\n'
-[[ -r $system_closure/sw/share/color-schemes/HelixAbyss.colors ]]
+printf 'Checking Helix Graphite + Fern in the built default system...\n'
+[[ -r $system_closure/sw/share/color-schemes/HelixGraphiteFern.colors ]]
 QT_QPA_PLATFORM=offscreen XDG_DATA_DIRS="$system_closure/sw/share" \
   "$system_closure/sw/bin/plasma-apply-colorscheme" --list-schemes |
-  grep -qF 'HelixAbyss'
-[[ -r $system_closure/sw/share/wallpapers/HelixAbyss/contents/images/wallpaper.svg ]]
-[[ -r $system_closure/sw/share/sddm/themes/helix-abyss/theme.conf ]]
-grep -qF 'HelixAbyss/contents/images/wallpaper.svg' \
-  "$system_closure/sw/share/sddm/themes/helix-abyss/theme.conf"
+  grep -qF 'HelixGraphiteFern'
+[[ -r $system_closure/sw/share/wallpapers/HelixGraphiteFern/contents/images/wallpaper.svg ]]
+[[ -r $system_closure/sw/share/konsole/HelixGraphiteFern.colorscheme ]]
+[[ -r $system_closure/sw/share/konsole/HelixGraphiteFern.profile ]]
+[[ -r $system_closure/sw/share/sddm/themes/helix-graphite-fern/theme.conf ]]
+grep -qF 'HelixGraphiteFern/contents/images/wallpaper.svg' \
+  "$system_closure/sw/share/sddm/themes/helix-graphite-fern/theme.conf"
 for theme_command in plasma-apply-colorscheme plasma-apply-desktoptheme \
   plasma-apply-cursortheme plasma-apply-wallpaperimage kwriteconfig6 helix-apply-theme; do
   [[ -x $system_closure/sw/bin/$theme_command ]]
@@ -186,7 +188,7 @@ for theme_runtime_command in gsettings python3 plasma-apply-colorscheme \
   done
   ((found_runtime_command))
 done
-theme_unit=$system_closure/etc/systemd/user/helix-abyss-theme.service
+theme_unit=$system_closure/etc/systemd/user/helix-graphite-fern-theme.service
 [[ -r $theme_unit ]]
 grep -qF 'ConditionUser=tristan' "$theme_unit"
 grep -qF 'HOME=/home/tristan' "$theme_unit"
@@ -197,9 +199,13 @@ grep -qF 'ConditionUser=tristan' "$ghostty_unit"
 grep -qF 'HOME=/home/tristan' "$ghostty_unit"
 grep -qF 'XDG_CONFIG_HOME=/home/tristan/.config' "$ghostty_unit"
 for theme_asset in gtk-3.0-settings.ini gtk-4.0-settings.ini waybar.css mako.conf \
-  fuzzel.ini wallpaper.svg apply-theme-settings.py; do
+  fuzzel.ini steam.css wallpaper.svg apply-theme-settings.py; do
   [[ -r $system_closure/etc/helix/theme/$theme_asset ]]
 done
+[[ -x $system_closure/sw/bin/adwaita-steam-gtk ]]
+[[ -x $system_closure/sw/bin/helix-apply-steam-theme ]]
+"$system_closure/sw/bin/helix-apply-steam-theme" --help | grep -qF 'Close Steam first'
+grep -qF -- '--adw-accent-rgb: 103, 184, 122' config/theme/steam.css
 [[ -r $system_closure/sw/share/themes/Breeze-Dark/settings.ini ]]
 [[ -r $system_closure/sw/share/icons/breeze-dark/index.theme ]]
 grep -qF 'swaybg --image /etc/helix/theme/wallpaper.svg' "$hyprland_config"
@@ -208,10 +214,8 @@ grep -qF 'mako --config /etc/helix/theme/mako.conf' "$hyprland_config"
 grep -qF 'fuzzel --config /etc/helix/theme/fuzzel.ini' "$hyprland_config"
 "$system_closure/sw/bin/ghostty" +validate-config \
   --config-file=config/ghostty/config.ghostty
-grep -qF 'theme = Catppuccin Mocha' config/ghostty/config.ghostty
-vscode_executable=$(readlink -f "$system_closure/sw/bin/code")
-vscode_package=${vscode_executable%%/bin/*}
-find "$vscode_package" -path '*/theme-abyss/package.json' -print -quit | grep -q .
+grep -qF 'background = #0B0D0C' config/ghostty/config.ghostty
+grep -qF 'palette = 2=#67B87A' config/ghostty/config.ghostty
 
 printf 'Checking ckb-next in the built default system...\n'
 [[ -x $system_closure/sw/bin/ckb-next ]]

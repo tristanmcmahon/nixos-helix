@@ -1,87 +1,88 @@
-# Helix Abyss appearance
+# Graphite + Fern appearance
 
-Helix Abyss is the workstation's repository-owned, near-black appearance policy.
-It uses maintained Breeze components and adds colour rather than replacing the
-desktop rendering stack. Deep backgrounds remain separated, text stays bright,
-and a restrained blue accent provides focus without glow, blur, transparency,
-animated wallpaper, or theme-store content.
+Graphite + Fern is Helix's repository-owned dark appearance policy: layered
+graphite surfaces, restrained fern-green interaction states, readable neutral
+text, and distinct amber/red warning states. It uses maintained Breeze
+components rather than a theme-store stack, excessive transparency, or a new
+theme engine.
 
-The real-hardware palette uses `#030405` (deep background), `#050608`
-(window), `#07090C` (view), `#0D1118` (raised), `#070A0E` (input), and
-`#1B222C` (border). Text is `#E8ECF2`/`#A9B2BE`, the accent is `#7396F5`,
-and selection is `#29467E`.
+The canonical palette is `config/theme/palette.nix`: `#0B0D0C` deep canvas,
+`#181C19` primary surface, `#232824` raised surface, `#303832` hover surface,
+`#3A443C` border,
+`#E4E8E5` primary text, `#AEB8B1` secondary text, `#7E8981` muted text,
+`#67B87A` primary green, `#81C995` active green, `#3E7650` deep green,
+`#315E3E` accessible selection green, `#D6AD63` warning, and `#D77A78` error.
 
 ## Desktop integration
 
-Plasma uses the `Helix Abyss` KDE colour scheme with Breeze Dark desktop style,
-Breeze widget and decoration rendering, Breeze Dark icons, and the visible
-Breeze cursor. The same local SVG is applied to Plasma desktops and the lock
-screen. SDDM retains its packaged Breeze implementation but uses a dark loading
-colour and that wallpaper. Plasma's panel, menus, tray, notifications, task
-switcher, lock, and logout surfaces consequently inherit dark Breeze and the
-custom scheme.
+Plasma, Qt applications, Dolphin, settings, dialogs, panel surfaces, launcher,
+tray, notifications, and task states use the `Helix Graphite Fern` KDE colour
+scheme with Breeze Dark rendering. Breeze also remains the icon, cursor, widget,
+and KWin decoration family. Active windows gain a restrained green blend/focus
+cue, inactive windows recede, and Breeze uses a small border with conservative
+outline and shadow settings. The existing Plasma panel layout remains mutable
+and is not rearranged.
 
-Qt 5 and Qt 6 continue through Plasma's native integration. GTK 3 and GTK 4 use
-Breeze-Dark, Breeze Dark icons, `prefer-dark`, and dconf's desktop preference.
-No global `GTK_THEME`, `QT_STYLE_OVERRIDE`, or `QT_QPA_PLATFORMTHEME` override is
-set. This lets portals and native file pickers keep their normal integration.
+The local scalable SVG anchors Plasma, the lock screen, SDDM, and Hyprland.
+SDDM remains packaged Breeze with the Graphite + Fern wallpaper and loading
+colour. GTK 3/4 use maintained Breeze-Dark, Breeze Dark icons, and the native
+dark preference; no global GTK or Qt environment override is set.
 
-The optional Hyprland session uses the same wallpaper through `swaybg`, blue and
-subdued window borders, and repository-owned dark configurations for Waybar,
-Mako, and Fuzzel. Existing bindings, workspaces, session management, and logout
-behaviour are preserved.
+Ghostty has a repository-owned Graphite + Fern terminal palette. A matching
+Konsole colour scheme/profile is installed and selected when the applicator
+runs in Plasma. VS Code uses built-in Default Dark Modern syntax colours with
+owned workbench surface, selection, focus, and status colours. Browser chrome
+uses the graphite base where policy supports it. Dark Reader remains available
+without fragile per-site CSS.
 
-Ghostty uses its packaged `Catppuccin Mocha` theme with no opacity or blur. VS
-Code uses its verified built-in `Abyss` theme plus restrained workbench surface
-overrides; terminal ANSI and syntax colours remain owned by that theme.
+The optional Hyprland session shares the wallpaper and palette through its
+existing Waybar, Mako, and Fuzzel files. Its bindings, workspaces, and session
+behaviour are unchanged. Obsidian remains per-vault: select its Dark base colour
+scheme when necessary. Zen follows the system preference but retains its own
+profile-local extension state.
 
-Chrome and Chromium receive a managed dark browser appearance plus official
-Dark Reader extension ID `eimadpbcbfnmbkopoojfekhnkhdbieeh`. Firefox receives
-locked dark chrome/content preferences and official Dark Reader add-on
-`addon@darkreader.org`. Existing 1Password extension policy remains intact.
-Dark Reader keeps its normal conservative defaults and can be toggled per site;
-no force-inversion browser flag is used. Zen inherits the desktop dark preference,
-but its immutable AppImage cannot reliably consume this Firefox enterprise
-extension policy. Install official Dark Reader from Mozilla Add-ons once in Zen,
-alongside the already documented 1Password extension.
-
-Spotify and Plex are already dark. Haruna, Strawberry, VLC, ckb-next, and other
-Qt applications inherit the desktop appearance. 1Password should follow the
-system setting; confirm its in-app appearance after activation if it does not.
-Obsidian's base theme is per vault: select **Settings → Appearance → Base color
-scheme → Dark** once in each relevant vault. Helix does not scan for or modify
-vault metadata and installs no community theme.
-
-## Application and ownership
-
-The `helix-abyss-theme` user service is installed system-wide but has
-`ConditionUser=tristan`, explicit `HOME=/home/tristan`, and explicit
-`XDG_CONFIG_HOME=/home/tristan/.config`. It runs once after a graphical session
-starts and only repeats when the repository-owned content hash changes. It
-updates individual KDE keys, merges only Helix-owned GTK keys, and structurally
-merges theme keys into `~/.config/Code/User/settings.json`. Unrelated user values
-are preserved. It does not run graphical applications.
-
-Normal application is revision-idempotent; the revision includes both assets
-and application logic. Inspect or deliberately force reapplication with:
+Steam does not inherit KDE colours. NixOS therefore installs the maintained
+AdwSteamGtk wrapper and a repository-owned Graphite + Fern custom-colour file.
+Applying it remains an explicit runtime operation because the upstream tool
+patches mutable Steam client files, requires a network connection to retrieve
+the skin, and may need to be rerun after a Steam update. Close Steam completely,
+then run:
 
 ```bash
-systemctl --user status helix-abyss-theme.service
-journalctl --user -u helix-abyss-theme.service
-helix-apply-theme --help
+helix-apply-steam-theme
+```
+
+The helper refuses to run while Steam is open, selects the upstream OLED base,
+disables rounded elements, uses conventional window controls, and enables the
+repository-owned colour override. Launch AdwSteamGtk from Plasma to change or
+uninstall the skin. Store, Community, and profile web pages remain controlled by
+Steam and cannot be recoloured by this mechanism.
+
+## Ownership and mutable state
+
+`desktop/theme.nix` owns packaging, SDDM, deployment, and the revision-idempotent
+`helix-graphite-fern-theme` user service. It updates selected KDE keys, merges
+only repository-owned GTK keys, and structurally merges theme keys into VS Code
+without discarding unrelated settings. `desktop/ghostty.nix` deploys Ghostty;
+`desktop/fonts.nix` remains the sole font owner.
+
+Plasma panel geometry, widget order, desktop icon layout, per-monitor geometry,
+and application-specific settings remain mutable user state. This preserves the
+working layout and avoids introducing Home Manager or plasma-manager for visual
+settings the current architecture already handles cleanly.
+
+Inspect or force the current revision with:
+
+```bash
+systemctl --user status helix-graphite-fern-theme.service
+journalctl --user -u helix-graphite-fern-theme.service
 helix-apply-theme --force
 ```
 
-To temporarily return Plasma to ordinary Breeze Dark without deleting settings:
-
-```bash
-plasma-apply-colorscheme BreezeDark
-plasma-apply-desktoptheme breeze-dark
-```
-
-The canonical assets are under `config/theme/`; `desktop/theme.nix` owns their
-deployment and service. The service updates only selected keys in `kdeglobals`,
-`kwinrc`, `plasmarc`, `kscreenlockerrc`, GTK 3/4 `settings.ini`, and VS Code user
-settings. Appearance cannot safely be universal for every website or application,
-so Zen, Obsidian vaults, and any application-specific preference remain documented
-user choices.
+To preview without selecting a persistent boot generation, run
+`./scripts/rebuild.sh test`, then `helix-apply-theme --force`. Apply persistently
+with `./scripts/rebuild.sh switch` and log out/in if shell components have not
+reloaded. Roll back the system generation with
+`sudo nixos-rebuild switch --rollback`; ordinary Breeze Dark can be selected
+temporarily with `plasma-apply-colorscheme BreezeDark` and
+`plasma-apply-desktoptheme breeze-dark`.
