@@ -73,6 +73,7 @@ assert config.hardware.nvidia.open;
 assert config.hardware.nvidia.powerManagement.enable;
 assert config.programs.steam.enable;
 assert config.programs.gamemode.enable;
+assert builtins.elem "adwsteamgtk" packageNames;
 assert config.services.ollama.enable;
 assert config.services.ollama.host == "127.0.0.1";
 assert !config.services.ollama.openFirewall;

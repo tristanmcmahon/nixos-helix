@@ -68,6 +68,11 @@ assert {"main", "colors", "border"}.issubset(fuzzel.sections())
 for key in ("background", "text", "input", "selection", "border"):
     assert len(fuzzel["colors"][key]) == 8
 
+steam = (ROOT / "config/theme/steam.css").read_text(encoding="utf-8")
+assert steam.count("{") == steam.count("}")
+for value in ("11, 13, 12", "24, 28, 25", "35, 40, 36", "103, 184, 122"):
+    assert value in steam
+
 
 with tempfile.TemporaryDirectory() as temporary_directory:
     temporary = pathlib.Path(temporary_directory)

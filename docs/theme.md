@@ -41,6 +41,23 @@ behaviour are unchanged. Obsidian remains per-vault: select its Dark base colour
 scheme when necessary. Zen follows the system preference but retains its own
 profile-local extension state.
 
+Steam does not inherit KDE colours. NixOS therefore installs the maintained
+AdwSteamGtk wrapper and a repository-owned Graphite + Fern custom-colour file.
+Applying it remains an explicit runtime operation because the upstream tool
+patches mutable Steam client files, requires a network connection to retrieve
+the skin, and may need to be rerun after a Steam update. Close Steam completely,
+then run:
+
+```bash
+helix-apply-steam-theme
+```
+
+The helper refuses to run while Steam is open, selects the upstream OLED base,
+disables rounded elements, uses conventional window controls, and enables the
+repository-owned colour override. Launch AdwSteamGtk from Plasma to change or
+uninstall the skin. Store, Community, and profile web pages remain controlled by
+Steam and cannot be recoloured by this mechanism.
+
 ## Ownership and mutable state
 
 `desktop/theme.nix` owns packaging, SDDM, deployment, and the revision-idempotent

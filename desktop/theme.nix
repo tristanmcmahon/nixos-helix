@@ -21,6 +21,7 @@ let
         ../config/theme/waybar.css
         ../config/theme/mako.conf
         ../config/theme/fuzzel.ini
+        ../config/theme/steam.css
         ../scripts/apply-theme-settings.py
         ./theme.nix
       ]
@@ -104,6 +105,7 @@ let
       gsettings set org.gnome.desktop.interface color-scheme prefer-dark
       gsettings set org.gnome.desktop.interface gtk-theme Breeze-Dark
       gsettings set org.gnome.desktop.interface icon-theme breeze-dark
+      gsettings set io.github.Foldex.AdwSteamGtk prefs-install-custom-css true
 
       if [[ $XDG_CURRENT_DESKTOP == *KDE* ]]; then
         plasma-apply-desktoptheme breeze-dark
@@ -129,6 +131,39 @@ let
       printf 'Applied Helix Graphite + Fern revision %s. Restart applications if needed.\n' "$revision"
     '';
   };
+
+  applySteamTheme = pkgs.writeShellApplication {
+    name = "helix-apply-steam-theme";
+    runtimeInputs = [
+      pkgs.adwsteamgtk
+      pkgs.coreutils
+      pkgs.glib
+      pkgs.procps
+    ];
+    text = ''
+      if [[ ''${1:-} == --help ]]; then
+        printf 'Usage: helix-apply-steam-theme\n'
+        printf 'Close Steam first. The command installs Adwaita-for-Steam with Graphite + Fern colours.\n'
+        exit 0
+      fi
+      if [[ $# -ne 0 ]]; then
+        printf 'Usage: helix-apply-steam-theme\n' >&2
+        exit 2
+      fi
+      if pgrep -x steam >/dev/null || pgrep -x steamwebhelper >/dev/null; then
+        printf 'Close Steam completely before applying its theme.\n' >&2
+        exit 1
+      fi
+
+      export XDG_CONFIG_HOME="''${XDG_CONFIG_HOME:-$HOME/.config}"
+      install -Dm644 /etc/helix/theme/steam.css \
+        "$XDG_CONFIG_HOME/AdwSteamGtk/custom.css"
+      gsettings set io.github.Foldex.AdwSteamGtk prefs-install-custom-css true
+      adwaita-steam-gtk --install --options \
+        'color_theme:oled;rounded_corners:false;win_controls:windows;win_controls_layout:auto'
+      printf 'Applied the Graphite + Fern Steam skin. Start Steam to inspect it.\n'
+    '';
+  };
 in
 {
   programs.dconf.enable = true;
@@ -143,6 +178,7 @@ in
     pkgs.kdePackages.breeze-icons
     pkgs.kdePackages.kconfig
     applyTheme
+    applySteamTheme
     sddmTheme
   ];
 
@@ -152,6 +188,7 @@ in
     "helix/theme/waybar.css".source = ../config/theme/waybar.css;
     "helix/theme/mako.conf".source = ../config/theme/mako.conf;
     "helix/theme/fuzzel.ini".source = ../config/theme/fuzzel.ini;
+    "helix/theme/steam.css".source = ../config/theme/steam.css;
     "helix/theme/wallpaper.svg".source = ../config/theme/wallpaper.svg;
     "helix/theme/apply-theme-settings.py".source = ../scripts/apply-theme-settings.py;
   };

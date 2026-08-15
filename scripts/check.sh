@@ -199,9 +199,13 @@ grep -qF 'ConditionUser=tristan' "$ghostty_unit"
 grep -qF 'HOME=/home/tristan' "$ghostty_unit"
 grep -qF 'XDG_CONFIG_HOME=/home/tristan/.config' "$ghostty_unit"
 for theme_asset in gtk-3.0-settings.ini gtk-4.0-settings.ini waybar.css mako.conf \
-  fuzzel.ini wallpaper.svg apply-theme-settings.py; do
+  fuzzel.ini steam.css wallpaper.svg apply-theme-settings.py; do
   [[ -r $system_closure/etc/helix/theme/$theme_asset ]]
 done
+[[ -x $system_closure/sw/bin/adwaita-steam-gtk ]]
+[[ -x $system_closure/sw/bin/helix-apply-steam-theme ]]
+"$system_closure/sw/bin/helix-apply-steam-theme" --help | grep -qF 'Close Steam first'
+grep -qF -- '--adw-accent-rgb: 103, 184, 122' config/theme/steam.css
 [[ -r $system_closure/sw/share/themes/Breeze-Dark/settings.ini ]]
 [[ -r $system_closure/sw/share/icons/breeze-dark/index.theme ]]
 grep -qF 'swaybg --image /etc/helix/theme/wallpaper.svg' "$hyprland_config"
