@@ -1,0 +1,6 @@
+{
+  "id": "msg-123",
+  "timestamp": "2026-08-16T12:00:15Z",
+  "response": {"status": "ok", "model": "helix-qwen:latest"},
+  "status": "sent"
+}
