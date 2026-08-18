@@ -1,8 +1,11 @@
 { pkgs, ... }:
 
+let
+  vscodePinned = pkgs.callPackage ./vscode-pinned.nix { };
+in
 {
   environment.systemPackages = with pkgs; [
-    vscode
+    vscodePinned
     helix
     gh
     git-lfs

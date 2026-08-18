@@ -1,0 +1,15 @@
+{
+  "id": "msg-123",
+  "timestamp": "2026-08-16T12:00:00Z",
+  "payload": {
+    "task": "summarize",
+    "text": "Hello team, here's the long status update... (redacted)"
+  },
+  "metadata": {
+    "source": "gwen",
+    "gmail_message_id": "gmail-ABC123",
+    "log": true,
+    "reply_to": "tristan.mcmahon@gmail.com",
+    "model": "helix-qwen:latest"
+  }
+}
