@@ -98,8 +98,8 @@ in
       BindPaths = [ stateDirectory ];
       BindReadOnlyPaths = [ secretFile ];
       InaccessiblePaths = [
-        "/run/docker.sock"
-        "/var/run/docker.sock"
+        "-/run/docker.sock"
+        "-/var/run/docker.sock"
       ];
       IPAddressDeny = "any";
       IPAddressAllow = "localhost";
