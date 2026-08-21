@@ -41,9 +41,9 @@ in
     # relying on firewall policy alone.
     host = "127.0.0.1";
     openFirewall = false;
-    environmentVariables = [
-      { name = "OLLAMA_CONTEXT_LENGTH"; value = "32768"; }
-    ];
+    environmentVariables = {
+      OLLAMA_CONTEXT_LENGTH = "32768";
+    };
     loadModels = desiredModels;
     syncModels = false;
   };
