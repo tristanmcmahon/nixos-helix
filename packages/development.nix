@@ -8,6 +8,13 @@
     git-lfs
     codex
 
+    bottom
+    ripgrep
+    fd
+    bat
+    fzf
+    dust
+
     gcc
     gnumake
     pkg-config
