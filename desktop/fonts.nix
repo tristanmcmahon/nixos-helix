@@ -9,6 +9,7 @@
       pkgs.maple-mono.NF
       # A dense alternative for higher information density.
       pkgs.nerd-fonts.iosevka
+      pkgs.monaspace
       # General document and emoji coverage.
       pkgs.noto-fonts
       pkgs.noto-fonts-color-emoji
