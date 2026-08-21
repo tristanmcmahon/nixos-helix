@@ -37,6 +37,7 @@ in
     ./system/users.nix
     ./system/locale.nix
     ./services/maintenance.nix
+    ./services/openclaw.nix
     ./services/openssh.nix
 
     # These profiles form the normal Plasma workstation. Gaming and local
@@ -54,6 +55,10 @@ in
   # Nixpkgs will refuse to evaluate it unless unfree packages are permitted.
   # This does not install CUDA or any other compute/development stack.
   nixpkgs.config.allowUnfree = true;
+
+  # Nixpkgs marks OpenClaw insecure because agents can act on untrusted model
+  # input; this exception is intentionally limited to the reviewed version.
+  nixpkgs.config.permittedInsecurePackages = [ "openclaw-2026.5.7" ];
 
   # This is the compatibility floor from Helix's 26.05 fresh installation,
   # not the currently selected channel. Keep it unchanged across upgrades.

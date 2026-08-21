@@ -3,6 +3,7 @@
 {
   environment.systemPackages = with pkgs; [
     ghostty
+    openclaw
 
     unzip
     zip
