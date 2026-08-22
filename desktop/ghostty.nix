@@ -128,17 +128,19 @@ let
   };
 in
 {
-  environment.etc."helix/ghostty/config.ghostty".source = managedConfig;
-  environment.etc."helix/ghostty/profiles/main.ghostty".source = profiles.main;
-  environment.etc."helix/ghostty/profiles/moss.ghostty".source = profiles.moss;
-  environment.etc."helix/ghostty/profiles/slate.ghostty".source = profiles.slate;
-  environment.etc."helix/ghostty/profiles/ember.ghostty".source = profiles.ember;
+  environment = {
+    etc."helix/ghostty/config.ghostty".source = managedConfig;
+    etc."helix/ghostty/profiles/main.ghostty".source = profiles.main;
+    etc."helix/ghostty/profiles/moss.ghostty".source = profiles.moss;
+    etc."helix/ghostty/profiles/slate.ghostty".source = profiles.slate;
+    etc."helix/ghostty/profiles/ember.ghostty".source = profiles.ember;
 
-  environment.systemPackages = [
-    ghosttyProfile
-    ghosttySplitProfile
-    ghosttySurfaceProfile
-  ];
+    systemPackages = [
+      ghosttyProfile
+      ghosttySplitProfile
+      ghosttySurfaceProfile
+    ];
+  };
 
   # Deploy the repository-owned baseline as a regular file. The selected
   # appearance profile is writable state and is only initialised to Main once,
