@@ -13,9 +13,10 @@ let
     exec-once = waybar --style /etc/helix/theme/waybar.css
     exec-once = mako --config /etc/helix/theme/mako.conf
     exec-once = nm-applet --indicator
-    exec-once = ${pkgs.kdePackages.polkit-kde-agent-1}/libexec/polkit-kde-authentication-agent-1
+    exec-once = ${pkgs.kdePackages.polkit-kde-authentication-agent-1}/libexec/polkit-kde-authentication-agent-1
 
     bind = $mainMod, RETURN, exec, $terminal
+    bind = $mainMod SHIFT, RETURN, exec, ghostty-profile
     bind = $mainMod, D, exec, $menu
     bind = $mainMod, Q, killactive,
     bind = $mainMod SHIFT, E, exec, helix-hyprland-exit
