@@ -1,0 +1,29 @@
+# Helix Ghostty profile: Moss
+# Slightly softer, greener sibling of Main.
+
+background = #0D110E
+foreground = #E0E7E2
+cursor-color = #8FC79B
+cursor-text = #0D110E
+selection-background = #355B40
+selection-foreground = #E0E7E2
+
+palette = 0=#0D110E
+palette = 1=#D27C79
+palette = 2=#72B77F
+palette = 3=#CFAB6B
+palette = 4=#7BA4AD
+palette = 5=#A28FAE
+palette = 6=#76AA98
+palette = 7=#D1D9D3
+palette = 8=#78867D
+palette = 9=#E09490
+palette = 10=#8FC79B
+palette = 11=#DEBC81
+palette = 12=#91B7BE
+palette = 13=#B8A5C0
+palette = 14=#8FC3B1
+palette = 15=#EEF2EF
+
+font-family = Maple Mono NF
+font-size = 13.5
