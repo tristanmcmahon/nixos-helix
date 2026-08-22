@@ -1,0 +1,29 @@
+# Helix Ghostty profile: Ember
+# Warmer graphite with muted amber and fern accents.
+
+background = #100F0D
+foreground = #E8E3DC
+cursor-color = #D4B071
+cursor-text = #100F0D
+selection-background = #51452F
+selection-foreground = #E8E3DC
+
+palette = 0=#100F0D
+palette = 1=#D77F79
+palette = 2=#78AF7F
+palette = 3=#D4B071
+palette = 4=#7F9FAC
+palette = 5=#A491A5
+palette = 6=#77A99A
+palette = 7=#D9D3CB
+palette = 8=#837D74
+palette = 9=#E39992
+palette = 10=#8CC18F
+palette = 11=#E2C084
+palette = 12=#96B4BE
+palette = 13=#BAA5B7
+palette = 14=#8EBCAF
+palette = 15=#F3EFE9
+
+font-family = Monaspace Neon
+font-size = 13.5
