@@ -1,4 +1,4 @@
-{ lib, pkgs, ... }:
+{ pkgs, ... }:
 
 let
   user = "tristan";
@@ -18,17 +18,18 @@ in
       ConditionPathExists = serviceImplementation;
     };
 
-    environment = {
-      HOME = home;
-      PATH = lib.makeBinPath [
-        pkgs.bash
-        pkgs.coreutils
-        pkgs.procps
-        pkgs.python3
-        pkgs.steam
-        pkgs.util-linux
-      ];
-    };
+    # Let the NixOS systemd module construct PATH rather than overriding its
+    # built-in user-unit PATH environment value.
+    path = [
+      pkgs.bash
+      pkgs.coreutils
+      pkgs.procps
+      pkgs.python3
+      pkgs.steam
+      pkgs.util-linux
+    ];
+
+    environment.HOME = home;
 
     serviceConfig = {
       Type = "oneshot";
