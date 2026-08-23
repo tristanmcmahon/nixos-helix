@@ -41,15 +41,19 @@ in
     ./services/openssh.nix
 
     # These profiles form the normal Plasma workstation. Gaming and local
-    # inference are enabled by default.
+    # inference are enabled by default. Emulation is a separate, reversible
+    # layer even though it uses the gaming profile's graphics/controller base.
     ./profiles/workstation.nix
     ./profiles/development.nix
     ./profiles/gaming.nix
+    ./profiles/emulation.nix
     ./profiles/local-llm.nix
 
     # The deliberately small package set needed on every Helix installation.
     ./packages/base.nix
   ];
+
+  helix.emulation.enable = true;
 
   # NVIDIA's user-space driver is redistributable but not free software, so
   # Nixpkgs will refuse to evaluate it unless unfree packages are permitted.
