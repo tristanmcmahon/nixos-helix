@@ -11,6 +11,7 @@ let
   romRoot = "${nasRoot}/roms";
   emulationRoot = "${nasRoot}/Emulation";
   arcadeRoot = "${romRoot}/MAME 0.275 ROMs (merged, inc CHDs)";
+  stateRoot = "${emulationRoot}/state";
 
   retroarch = pkgs.retroarch.withCores (
     cores: with cores; [
@@ -18,8 +19,8 @@ let
     ]
   );
 
-  prepare = pkgs.writeShellApplication {
-    name = "helix-emulation-prepare";
+  discover = pkgs.writeShellApplication {
+    name = "helix-emulation-discover";
     runtimeInputs = [
       pkgs.coreutils
       pkgs.findutils
@@ -28,8 +29,55 @@ let
     text = ''
       set -eu
 
+      nas_root=${lib.escapeShellArg nasRoot}
+      rom_root=${lib.escapeShellArg romRoot}
+      report=${lib.escapeShellArg "${emulationRoot}/tools/reports/discovery.txt"}
+
+      if ! mountpoint -q "$nas_root"; then
+        printf 'NAS is not mounted at %s\n' "$nas_root" >&2
+        exit 1
+      fi
+
+      mkdir -p "$(dirname "$report")"
+      {
+        printf 'Helix emulation NAS discovery\n'
+        printf 'NAS root: %s\n' "$nas_root"
+        printf 'ROM root: %s\n\n' "$rom_root"
+
+        printf 'Top-level ROM directories:\n'
+        if [ -d "$rom_root" ]; then
+          find "$rom_root" -mindepth 1 -maxdepth 1 -type d -printf '  %f\n' | sort
+        else
+          printf '  ROM root is absent\n'
+        fi
+
+        printf '\nBIOS/firmware directory candidates (depth <= 4):\n'
+        find "$rom_root" -mindepth 1 -maxdepth 4 -type d \
+          \( -iname bios -o -iname firmware \) -print 2>/dev/null | sort | sed 's/^/  /'
+
+        printf '\nDAT/XML definitions (depth <= 4):\n'
+        find "$rom_root" -mindepth 1 -maxdepth 4 -type f \
+          \( -iname '*.dat' -o -iname '*.xml' \) -print 2>/dev/null | sort | sed 's/^/  /'
+      } | tee "$report"
+
+      printf '\nDiscovery report saved to %s\n' "$report"
+    '';
+  };
+
+  prepare = pkgs.writeShellApplication {
+    name = "helix-emulation-prepare";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.findutils
+      pkgs.util-linux
+      discover
+    ];
+    text = ''
+      set -eu
+
       root=${lib.escapeShellArg emulationRoot}
       rom_root=${lib.escapeShellArg romRoot}
+      state_root=${lib.escapeShellArg stateRoot}
 
       if ! mountpoint -q ${lib.escapeShellArg nasRoot}; then
         printf 'NAS is not mounted at %s\n' ${lib.escapeShellArg nasRoot} >&2
@@ -37,41 +85,87 @@ let
       fi
 
       mkdir -p \
-        "$root/bios" \
-        "$root/saves" \
-        "$root/states" \
+        "$root/bios/sources" \
+        "$root/saves/arcade" \
+        "$root/saves/ps2" \
+        "$root/saves/ps3" \
+        "$root/saves/ps4" \
+        "$root/saves/snes" \
+        "$root/states/arcade" \
+        "$root/states/ps2" \
+        "$root/states/ps3" \
+        "$root/states/ps4" \
+        "$root/states/snes" \
+        "$root/screenshots" \
         "$root/metadata" \
         "$root/tools/downloaded_media" \
         "$root/tools/skyscraper-home" \
         "$root/tools/dat-index" \
         "$root/tools/reports" \
-        "$root/roms"
+        "$root/roms" \
+        "$state_root"
+
+      resolve_source() {
+        for candidate in "$@"; do
+          if [ -d "$rom_root/$candidate" ]; then
+            printf '%s\n' "$rom_root/$candidate"
+            return 0
+          fi
+        done
+
+        for candidate in "$@"; do
+          found=$(find "$rom_root" -mindepth 1 -maxdepth 1 -type d \
+            -iname "$candidate" -print -quit 2>/dev/null || true)
+          if [ -n "$found" ]; then
+            printf '%s\n' "$found"
+            return 0
+          fi
+        done
+
+        return 1
+      }
 
       link_system() {
         system_name=$1
-        source_name=$2
+        shift
+        source=$(resolve_source "$@" || true)
         target="$root/roms/$system_name"
-        source="$rom_root/$source_name"
 
-        if [ ! -e "$source" ]; then
-          printf 'ROM source absent, skipping: %s\n' "$source"
+        if [ -z "$source" ]; then
+          printf 'ROM source absent, skipping %s (aliases: %s)\n' \
+            "$system_name" "$*"
           return 0
         fi
 
-        if [ -e "$target" ] && [ ! -L "$target" ]; then
+        if { [ -e "$target" ] || [ -L "$target" ]; } && [ ! -L "$target" ]; then
           printf 'Refusing to replace non-symlink path: %s\n' "$target" >&2
           return 1
         fi
 
         ln -sfn "$source" "$target"
+        printf 'Resolved %-7s -> %s\n' "$system_name" "$source"
       }
 
-      link_system ps2 PS2
-      link_system ps3 PS3
-      link_system ps4 PS4
-      link_system snes SNES
-      link_system arcade 'MAME 0.275 ROMs (merged, inc CHDs)'
+      link_system ps2 PS2 'PlayStation 2' 'Playstation 2' 'Sony PlayStation 2'
+      link_system ps3 PS3 'PlayStation 3' 'Playstation 3' 'Sony PlayStation 3'
+      link_system ps4 PS4 'PlayStation 4' 'Playstation 4' 'Sony PlayStation 4'
+      link_system snes SNES 'Super Nintendo' 'Super Nintendo Entertainment System'
+      link_system arcade 'MAME 0.275 ROMs (merged, inc CHDs)' 'MAME 0.275' MAME arcade
 
+      find "$root/bios/sources" -mindepth 1 -maxdepth 1 -type l -delete
+      bios_index=0
+      while IFS= read -r candidate; do
+        [ -n "$candidate" ] || continue
+        bios_index=$((bios_index + 1))
+        ln -sfn "$candidate" "$root/bios/sources/source-$bios_index"
+      done < <(
+        find "$rom_root" -mindepth 1 -maxdepth 4 -type d \
+          \( -iname bios -o -iname firmware \) -print 2>/dev/null | sort
+      )
+      printf 'Exposed %s BIOS/firmware candidate directorie(s) under %s\n' \
+        "$bios_index" "$root/bios/sources"
+
+      helix-emulation-discover >/dev/null
       printf 'Prepared NAS-backed emulation tree at %s\n' "$root"
     '';
   };
@@ -185,6 +279,10 @@ let
 
       mkdir -p "$media" "$metadata" "$scraper_home"
       export HOME="$scraper_home"
+      export XDG_CACHE_HOME="$scraper_home/.cache"
+      export XDG_CONFIG_HOME="$scraper_home/.config"
+      export XDG_DATA_HOME="$scraper_home/.local/share"
+      export XDG_STATE_HOME="$scraper_home/.local/state"
 
       printf 'Gathering %s metadata/artwork from %s...\n' "$platform" "$source"
       Skyscraper -p "$platform" -s "$source" -i "$input"
@@ -192,6 +290,161 @@ let
       exec Skyscraper -p "$platform" -f esde -i "$input" -g "$metadata" -o "$media"
     '';
   };
+
+  mkNasLauncher =
+    {
+      name,
+      emulator,
+      package,
+      extraArgs ? [ ],
+    }:
+    pkgs.writeShellApplication {
+      inherit name;
+      runtimeInputs = [
+        pkgs.coreutils
+        pkgs.util-linux
+      ];
+      text = ''
+        set -eu
+
+        if ! mountpoint -q ${lib.escapeShellArg nasRoot}; then
+          printf 'NAS is not mounted at %s\n' ${lib.escapeShellArg nasRoot} >&2
+          exit 1
+        fi
+
+        ${prepare}/bin/helix-emulation-prepare >/dev/null
+
+        state_root=${lib.escapeShellArg stateRoot}/${lib.escapeShellArg emulator}
+        mkdir -p \
+          "$state_root/home" \
+          "$state_root/config" \
+          "$state_root/data" \
+          "$state_root/cache" \
+          "$state_root/state"
+
+        export HOME="$state_root/home"
+        export XDG_CONFIG_HOME="$state_root/config"
+        export XDG_DATA_HOME="$state_root/data"
+        export XDG_CACHE_HOME="$state_root/cache"
+        export XDG_STATE_HOME="$state_root/state"
+
+        exec ${lib.getExe package} ${lib.escapeShellArgs extraArgs} "$@"
+      '';
+    };
+
+  pcsx2Launcher = mkNasLauncher {
+    name = "helix-pcsx2";
+    emulator = "pcsx2";
+    package = pkgs.pcsx2;
+  };
+
+  rpcs3Launcher = mkNasLauncher {
+    name = "helix-rpcs3";
+    emulator = "rpcs3";
+    package = pkgs.rpcs3;
+  };
+
+  shadps4Launcher = mkNasLauncher {
+    name = "helix-shadps4";
+    emulator = "shadps4";
+    package = pkgs.shadps4;
+  };
+
+  mameLauncher = mkNasLauncher {
+    name = "helix-mame";
+    emulator = "mame";
+    package = pkgs.mame;
+    extraArgs = [
+      "-rompath"
+      arcadeRoot
+    ];
+  };
+
+  retroarchLauncher = pkgs.writeShellApplication {
+    name = "helix-retroarch";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.util-linux
+    ];
+    text = ''
+      set -eu
+
+      if ! mountpoint -q ${lib.escapeShellArg nasRoot}; then
+        printf 'NAS is not mounted at %s\n' ${lib.escapeShellArg nasRoot} >&2
+        exit 1
+      fi
+
+      ${prepare}/bin/helix-emulation-prepare >/dev/null
+
+      state_root=${lib.escapeShellArg stateRoot}/retroarch
+      config_dir="$state_root/config/retroarch"
+      config_file="$config_dir/retroarch.cfg"
+      mkdir -p \
+        "$state_root/home" \
+        "$config_dir" \
+        "$state_root/data" \
+        "$state_root/cache" \
+        "$state_root/state" \
+        ${lib.escapeShellArg "${emulationRoot}/saves/snes"} \
+        ${lib.escapeShellArg "${emulationRoot}/states/snes"} \
+        ${lib.escapeShellArg "${emulationRoot}/screenshots/snes"}
+
+      export HOME="$state_root/home"
+      export XDG_CONFIG_HOME="$state_root/config"
+      export XDG_DATA_HOME="$state_root/data"
+      export XDG_CACHE_HOME="$state_root/cache"
+      export XDG_STATE_HOME="$state_root/state"
+
+      if [ ! -e "$config_file" ]; then
+        cat > "$config_file" <<'EOF'
+      savefile_directory = "${emulationRoot}/saves/snes"
+      savestate_directory = "${emulationRoot}/states/snes"
+      system_directory = "${emulationRoot}/bios"
+      screenshot_directory = "${emulationRoot}/screenshots/snes"
+      EOF
+      fi
+
+      exec ${lib.getExe retroarch} --config "$config_file" "$@"
+    '';
+  };
+
+  desktopItems = [
+    (pkgs.makeDesktopItem {
+      name = "helix-pcsx2";
+      desktopName = "PCSX2 (Helix NAS)";
+      exec = "helix-pcsx2";
+      icon = "applications-games";
+      categories = [ "Game" ];
+    })
+    (pkgs.makeDesktopItem {
+      name = "helix-rpcs3";
+      desktopName = "RPCS3 (Helix NAS)";
+      exec = "helix-rpcs3";
+      icon = "applications-games";
+      categories = [ "Game" ];
+    })
+    (pkgs.makeDesktopItem {
+      name = "helix-shadps4";
+      desktopName = "shadPS4 (Helix NAS)";
+      exec = "helix-shadps4";
+      icon = "applications-games";
+      categories = [ "Game" ];
+    })
+    (pkgs.makeDesktopItem {
+      name = "helix-mame";
+      desktopName = "MAME (Helix NAS)";
+      exec = "helix-mame";
+      icon = "applications-games";
+      categories = [ "Game" ];
+    })
+    (pkgs.makeDesktopItem {
+      name = "helix-retroarch";
+      desktopName = "RetroArch / SNES (Helix NAS)";
+      exec = "helix-retroarch";
+      icon = "applications-games";
+      categories = [ "Game" ];
+    })
+  ];
 
   status = pkgs.writeShellApplication {
     name = "helix-emulation-status";
@@ -202,7 +455,8 @@ let
       printf 'NAS root: %s\n' ${lib.escapeShellArg nasRoot}
       printf 'ROM root: %s\n' ${lib.escapeShellArg romRoot}
       printf 'Managed emulation root: %s\n' ${lib.escapeShellArg emulationRoot}
-      printf '\nExpected systems:\n'
+      printf 'Managed emulator state: %s\n' ${lib.escapeShellArg stateRoot}
+      printf '\nResolved systems:\n'
       for system in ps2 ps3 ps4 snes arcade; do
         path=${lib.escapeShellArg "${emulationRoot}/roms"}/"$system"
         if [ -e "$path" ]; then
@@ -211,6 +465,7 @@ let
           printf '  %-7s missing\n' "$system"
         fi
       done
+      printf '\nLaunch only the Helix NAS entries (helix-pcsx2, helix-rpcs3, helix-shadps4, helix-mame, helix-retroarch) to keep emulator state off local SSDs.\n'
     '';
   };
 in
@@ -219,19 +474,20 @@ in
 
   config = lib.mkIf cfg.enable {
     environment.systemPackages = [
-      pkgs.pcsx2
-      pkgs.rpcs3
-      pkgs.shadps4
-      pkgs.mame
       pkgs.igir
       pkgs.skyscraper
-      retroarch
+      discover
       prepare
       datIndex
       auditArcade
       scrape
       status
-    ];
+      pcsx2Launcher
+      rpcs3Launcher
+      shadps4Launcher
+      mameLauncher
+      retroarchLauncher
+    ] ++ desktopItems;
 
     # These applications use Vulkan/OpenGL and benefit from the same graphics
     # support as the normal gaming profile.
