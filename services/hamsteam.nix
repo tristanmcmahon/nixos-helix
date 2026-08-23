@@ -78,9 +78,9 @@ in
   };
 
   # One-time ownership migration. The earlier hamSteam installer placed repo
-  # symlinks in ~/.config/systemd/user, which outrank /etc/systemd/user. Remove
-  # only links that resolve back into this hamSteam checkout; leave any unrelated
-  # user-managed unit with the same name untouched.
+  # symlinks in ~/.config/systemd/user, which outrank /etc/systemd/user. Match
+  # the raw absolute target so cleanup also works after the repo-owned unit files
+  # have disappeared and the links are dangling.
   system.activationScripts.hamsteamLegacyUserUnitCleanup.text = ''
     legacy_dir=${home}/.config/systemd/user
     for relative in \
@@ -89,7 +89,7 @@ in
       timers.target.wants/hamsteam-maintain.timer; do
       path="$legacy_dir/$relative"
       if [ -L "$path" ]; then
-        target="$(${pkgs.coreutils}/bin/readlink -f "$path" || true)"
+        target="$(${pkgs.coreutils}/bin/readlink "$path" || true)"
         case "$target" in
           ${repo}/systemd/hamsteam-maintain.service|${repo}/systemd/hamsteam-maintain.timer)
             ${pkgs.coreutils}/bin/rm -f "$path"
