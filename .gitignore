@@ -9,7 +9,7 @@
 *.backup
 *.bak
 
-# Local environments, editor scratch data, and runtime model storage.
+# Local environments, editor scratch data, runtime model storage, and Python caches.
 /.direnv/
 /.env
 /.env.*
@@ -18,3 +18,5 @@
 /.vscode/*.local.json
 /.ollama/
 /models/
+__pycache__/
+*.pyc
