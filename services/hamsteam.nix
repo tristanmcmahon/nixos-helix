@@ -75,4 +75,26 @@ in
       Unit = "hamsteam-maintain.service";
     };
   };
+
+  # One-time ownership migration. The earlier hamSteam installer placed repo
+  # symlinks in ~/.config/systemd/user, which outrank /etc/systemd/user. Remove
+  # only links that resolve back into this hamSteam checkout; leave any unrelated
+  # user-managed unit with the same name untouched.
+  system.activationScripts.hamsteamLegacyUserUnitCleanup.text = ''
+    legacy_dir=${home}/.config/systemd/user
+    for relative in \
+      hamsteam-maintain.service \
+      hamsteam-maintain.timer \
+      timers.target.wants/hamsteam-maintain.timer; do
+      path="$legacy_dir/$relative"
+      if [ -L "$path" ]; then
+        target="$(${pkgs.coreutils}/bin/readlink -f "$path" || true)"
+        case "$target" in
+          ${repo}/systemd/hamsteam-maintain.service|${repo}/systemd/hamsteam-maintain.timer)
+            ${pkgs.coreutils}/bin/rm -f "$path"
+            ;;
+        esac
+      fi
+    done
+  '';
 }
