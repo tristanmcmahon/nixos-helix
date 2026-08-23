@@ -12,11 +12,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: cachix/install-nix-action@v31
         with:
           nix_path: nixpkgs=channel:nixos-26.05
       - name: Validate and build
+        env:
+          TMPDIR: /tmp
         run: |
           export HELIX_NIXPKGS_PATH="$(nix-instantiate --find-file nixpkgs)"
           ./scripts/dev-shell.sh --run './scripts/check.sh'
