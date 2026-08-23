@@ -23,6 +23,7 @@ let
     runtimeInputs = [
       pkgs.coreutils
       pkgs.findutils
+      pkgs.util-linux
     ];
     text = ''
       set -eu
@@ -39,8 +40,11 @@ let
         "$root/bios" \
         "$root/saves" \
         "$root/states" \
+        "$root/metadata" \
         "$root/tools/downloaded_media" \
+        "$root/tools/skyscraper-home" \
         "$root/tools/dat-index" \
+        "$root/tools/reports" \
         "$root/roms"
 
       link_system() {
@@ -50,6 +54,7 @@ let
         source="$rom_root/$source_name"
 
         if [ ! -e "$source" ]; then
+          printf 'ROM source absent, skipping: %s\n' "$source"
           return 0
         fi
 
@@ -76,8 +81,7 @@ let
     runtimeInputs = [
       pkgs.coreutils
       pkgs.findutils
-      pkgs.gnugrep
-      pkgs.gnused
+      pkgs.util-linux
     ];
     text = ''
       set -eu
@@ -91,8 +95,6 @@ let
       fi
 
       mkdir -p "$(dirname "$output")"
-      : > "$output"
-
       find "$source_root" -type f \
         \( -iname '*.dat' -o -iname '*.xml' \) \
         -print | sort > "$output"
@@ -107,13 +109,15 @@ let
     runtimeInputs = [
       pkgs.coreutils
       pkgs.findutils
-      pkgs.mame
+      pkgs.igir
+      datIndex
     ];
     text = ''
       set -eu
 
       roms=${lib.escapeShellArg arcadeRoot}
       dat_index=${lib.escapeShellArg "${emulationRoot}/tools/dat-index/arcade-dats.txt"}
+      report=${lib.escapeShellArg "${emulationRoot}/tools/reports/arcade-0.275.csv"}
 
       if [ ! -d "$roms" ]; then
         printf 'Arcade ROM tree not found: %s\n' "$roms" >&2
@@ -124,11 +128,30 @@ let
         helix-emulation-index-dats >/dev/null
       fi
 
-      printf 'Arcade ROM root: %s\n' "$roms"
-      printf 'Discovered DAT/XML definitions:\n'
-      sed 's/^/  /' "$dat_index"
-      printf '\nMAME verification follows. This checks the installed MAME set against the ROM tree.\n'
-      exec mame -rompath "$roms" -verifyroms
+      mapfile -t dats < <(grep -Ei 'mame[^/]*0[._ -]?275|0[._ -]?275[^/]*mame' "$dat_index" || true)
+      if [ "''${#dats[@]}" -eq 0 ]; then
+        mapfile -t dats < <(grep -Ei '/MAME 0[.]275 ROMs .*\.(dat|xml)$' "$dat_index" || true)
+      fi
+
+      if [ "''${#dats[@]}" -eq 0 ]; then
+        printf 'No MAME 0.275 DAT/XML was found on the NAS.\n' >&2
+        printf 'Indexed definitions are in %s\n' "$dat_index" >&2
+        exit 1
+      fi
+
+      dat_args=()
+      for dat in "''${dats[@]}"; do
+        dat_args+=(--dat "$dat")
+      done
+
+      mkdir -p "$(dirname "$report")"
+      printf 'Read-only Igir audit of the MAME 0.275 collection using %s DAT file(s).\n' "''${#dats[@]}"
+      igir report \
+        "''${dat_args[@]}" \
+        --input "$roms" \
+        --input-checksum-quick \
+        --report-output "$report"
+      printf 'Report: %s\n' "$report"
     '';
   };
 
@@ -139,35 +162,39 @@ let
       set -eu
 
       platform=''${1:-}
+      source=''${2:-screenscraper}
       case "$platform" in
         ps2|ps3|ps4|snes|arcade) ;;
         *)
-          printf 'Usage: helix-emulation-scrape {ps2|ps3|ps4|snes|arcade}\n' >&2
+          printf 'Usage: helix-emulation-scrape {ps2|ps3|ps4|snes|arcade} [scraper-source]\n' >&2
           exit 2
           ;;
       esac
 
       input=${lib.escapeShellArg "${emulationRoot}/roms"}/"$platform"
       media=${lib.escapeShellArg "${emulationRoot}/tools/downloaded_media"}/"$platform"
+      metadata=${lib.escapeShellArg "${emulationRoot}/metadata"}/"$platform"
+      scraper_home=${lib.escapeShellArg "${emulationRoot}/tools/skyscraper-home"}
 
       if [ ! -e "$input" ]; then
         printf 'ROM path is missing: %s\n' "$input" >&2
+        printf 'Run helix-emulation-prepare first.\n' >&2
         exit 1
       fi
 
-      mkdir -p "$media"
+      mkdir -p "$media" "$metadata" "$scraper_home"
+      export HOME="$scraper_home"
 
-      printf 'Scraping %s metadata/artwork. Skyscraper cache remains in your normal user cache; generated media is for the NAS-backed library.\n' "$platform"
-      exec Skyscraper -p "$platform" -f esde -i "$input" -o "$media"
+      printf 'Gathering %s metadata/artwork from %s...\n' "$platform" "$source"
+      Skyscraper -p "$platform" -s "$source" -i "$input"
+      printf 'Generating ES-DE metadata and artwork on the NAS...\n'
+      exec Skyscraper -p "$platform" -f esde -i "$input" -g "$metadata" -o "$media"
     '';
   };
 
   status = pkgs.writeShellApplication {
     name = "helix-emulation-status";
-    runtimeInputs = [
-      pkgs.coreutils
-      pkgs.findutils
-    ];
+    runtimeInputs = [ pkgs.coreutils ];
     text = ''
       set -eu
       printf 'Helix emulation module: enabled\n'
@@ -195,6 +222,7 @@ in
       pkgs.rpcs3
       pkgs.shadps4
       pkgs.mame
+      pkgs.igir
       pkgs.skyscraper
       retroarch
       prepare
