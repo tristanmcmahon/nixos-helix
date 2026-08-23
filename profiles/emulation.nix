@@ -8,7 +8,9 @@
 let
   cfg = config.helix.emulation;
   nasRoot = "/mnt/infernalnexus/nas1";
-  romRoot = "${nasRoot}/roms";
+  nasSource = "//192.168.1.8/nas1";
+  romRoot = "/mnt/infernalnexus/roms";
+  romSource = "//192.168.1.8/roms";
   emulationRoot = "${nasRoot}/Emulation";
   arcadeRoot = "${emulationRoot}/roms/arcade";
   stateRoot = "${emulationRoot}/state";
@@ -28,16 +30,24 @@ let
     text = ''
       set -eu
 
-      nas_root=${lib.escapeShellArg nasRoot}
+      verify_cifs() {
+        mount_path=$1
+        expected_source=$2
 
-      # Touch the autofs path to trigger the existing systemd automount, then
-      # verify that the backing filesystem is really CIFS rather than merely
-      # accepting the automount stub as a mounted path.
-      ls -d "$nas_root/." >/dev/null 2>&1 || true
-      if ! findmnt -rn --target "$nas_root" --types cifs >/dev/null; then
-        printf 'Infernalnexus is not available as CIFS at %s\n' "$nas_root" >&2
-        exit 1
-      fi
+        ls -d "$mount_path/." >/dev/null 2>&1 || true
+        actual_source=$(findmnt -rn --target "$mount_path" --types cifs -o SOURCE || true)
+        if [ "''${actual_source%/}" != "$expected_source" ]; then
+          printf 'Expected CIFS source %s at %s, found %s\n' \
+            "$expected_source" "$mount_path" "''${actual_source:-nothing}" >&2
+          exit 1
+        fi
+      }
+
+      # Touch both autofs paths, then reject a bare systemd automount stub or a
+      # different share. ROMs are authoritative on the dedicated read-only
+      # Synology share used by tfpga; writable state remains on nas1.
+      verify_cifs ${lib.escapeShellArg nasRoot} ${lib.escapeShellArg nasSource}
+      verify_cifs ${lib.escapeShellArg romRoot} ${lib.escapeShellArg romSource}
     '';
   };
 
@@ -125,9 +135,18 @@ let
         "$state_root"
 
       resolve_source() {
+        prefer_nested() {
+          resolved=$1
+          if [ -d "$resolved/roms" ]; then
+            printf '%s\n' "$resolved/roms"
+          else
+            printf '%s\n' "$resolved"
+          fi
+        }
+
         for candidate in "$@"; do
           if [ -d "$rom_root/$candidate" ]; then
-            printf '%s\n' "$rom_root/$candidate"
+            prefer_nested "$rom_root/$candidate"
             return 0
           fi
         done
@@ -136,7 +155,7 @@ let
           found=$(find "$rom_root" -mindepth 1 -maxdepth 1 -type d \
             -iname "$candidate" -print -quit 2>/dev/null || true)
           if [ -n "$found" ]; then
-            printf '%s\n' "$found"
+            prefer_nested "$found"
             return 0
           fi
         done
@@ -181,7 +200,7 @@ let
         find "$rom_root" -mindepth 1 -maxdepth 4 -type d \
           \( -iname bios -o -iname firmware \) -print 2>/dev/null | sort
       )
-      printf 'Exposed %s BIOS/firmware candidate directorie(s) under %s\n' \
+      printf 'Exposed %s BIOS/firmware candidate directories under %s\n' \
         "$bios_index" "$root/bios/sources"
 
       helix-emulation-discover >/dev/null
@@ -476,6 +495,42 @@ in
   options.helix.emulation.enable = lib.mkEnableOption "NAS-first emulator stack";
 
   config = lib.mkIf cfg.enable {
+    # tfpga and Helix share one authoritative ROM collection. It is exposed
+    # only while this module is enabled and is deliberately read-only here.
+    system.fsPackages = [ pkgs.cifs-utils ];
+    systemd.mounts = [
+      {
+        description = "Infernalnexus authoritative ROM collection";
+        what = romSource;
+        where = romRoot;
+        type = "cifs";
+        wants = [ "network-online.target" ];
+        after = [ "network-online.target" ];
+        options = builtins.concatStringsSep "," [
+          "credentials=/etc/nixos/secrets/infernalnexus-smb"
+          "uid=tristan"
+          "gid=users"
+          "dir_mode=0555"
+          "file_mode=0444"
+          "vers=2.0"
+          "sec=ntlmssp"
+          "ro"
+        ];
+        mountConfig.TimeoutSec = "15s";
+      }
+    ];
+    systemd.automounts = [
+      {
+        description = "Automount Infernalnexus ROM collection";
+        where = romRoot;
+        wantedBy = [ "multi-user.target" ];
+        automountConfig = {
+          TimeoutIdleSec = "10min";
+          DirectoryMode = "0755";
+        };
+      }
+    ];
+
     environment.systemPackages = [
       pkgs.igir
       pkgs.skyscraper

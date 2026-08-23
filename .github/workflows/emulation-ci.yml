@@ -5,11 +5,15 @@ on:
     paths:
       - configuration.nix
       - profiles/emulation.nix
+      - tests/emulation-configuration.nix
+      - tests/emulation-disabled.nix
       - .github/workflows/emulation-ci.yml
   pull_request:
     paths:
       - configuration.nix
       - profiles/emulation.nix
+      - tests/emulation-configuration.nix
+      - tests/emulation-disabled.nix
       - .github/workflows/emulation-ci.yml
 
 permissions:
@@ -24,7 +28,9 @@ jobs:
       - uses: cachix/install-nix-action@v31
         with:
           nix_path: nixpkgs=channel:nixos-26.05
-      - name: Build Helix with emulation enabled
+      - name: Build isolated emulation closure
         run: |
           nix-build --no-out-link '<nixpkgs/nixos>' -A system \
-            -I "nixos-config=$PWD/configuration.nix"
+            -I "nixos-config=$PWD/tests/emulation-configuration.nix"
+      - name: Prove the subsystem disappears when disabled
+        run: nix-instantiate --eval --strict tests/emulation-disabled.nix

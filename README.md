@@ -20,7 +20,7 @@ hardware/                  device and driver policy
 desktop/                   Plasma, Hyprland, browsers, applications, and theme
 system/                    boot, users, networking, NAS, and storage
 services/                  OpenSSH and routine native maintenance
-profiles/                  workstation, development, gaming, and local LLM
+profiles/                  workstation, development, gaming, emulation, and local LLM
 packages/                  package sets and custom package definitions
 shell/                     immutable modern-bash integration
 scripts/                   checks, rebuilds, inventory, backup, and recovery
@@ -67,6 +67,7 @@ for disaster recovery and any deliberately planned future reinstall; see
 - [Reinstall and recovery](docs/reinstall.md)
 - [Hardware validation](docs/hardware-validation.md)
 - [Infernalnexus NAS](docs/nas.md)
+- [NAS-first emulation](docs/emulation.md)
 - [Profiles and package boundaries](docs/profiles.md)
 - [Local development](docs/local-development.md)
 - [Graphite + Fern appearance](docs/theme.md)
