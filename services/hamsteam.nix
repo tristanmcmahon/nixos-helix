@@ -5,6 +5,7 @@ let
   home = "/home/${user}";
   repo = "${home}/Projects/hamSteam";
   entrypoint = "${repo}/hamsteam.py";
+  serviceImplementation = "${repo}/hamsteam/service.py";
 in
 {
   # nixos-helix owns hamSteam's lifecycle. hamSteam remains a separately
@@ -14,7 +15,7 @@ in
 
     unitConfig = {
       ConditionUser = user;
-      ConditionPathExists = entrypoint;
+      ConditionPathExists = serviceImplementation;
     };
 
     environment = {
