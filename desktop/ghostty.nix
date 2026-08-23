@@ -11,6 +11,7 @@ let
 
   ghosttySurfaceProfile = pkgs.writeShellApplication {
     name = "ghostty-surface-profile";
+    excludeShellChecks = [ "SC1003" ];
     text = ''
       profile=''${1:-}
 
