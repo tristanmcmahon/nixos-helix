@@ -109,6 +109,7 @@ let
     runtimeInputs = [
       pkgs.coreutils
       pkgs.findutils
+      pkgs.gnugrep
       pkgs.igir
       datIndex
     ];
