@@ -45,13 +45,13 @@ in
       OOMScoreAdjust = 500;
 
       # Healthy no-op runs are silent. The service itself emits only maintenance
-      # summaries and safety/errors on stderr.
+      # summaries and safety/errors on stderr. Do not isolate /tmp here: the
+      # Steam launcher/client may use local IPC there when accepting commands.
       StandardOutput = "null";
       StandardError = "journal";
       TimeoutStartSec = "4h";
 
       NoNewPrivileges = true;
-      PrivateTmp = true;
       ProtectClock = true;
       ProtectControlGroups = true;
       ProtectKernelLogs = true;
