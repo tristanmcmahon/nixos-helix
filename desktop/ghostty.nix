@@ -129,11 +129,13 @@ let
 in
 {
   environment = {
-    etc."helix/ghostty/config.ghostty".source = managedConfig;
-    etc."helix/ghostty/profiles/main.ghostty".source = profiles.main;
-    etc."helix/ghostty/profiles/moss.ghostty".source = profiles.moss;
-    etc."helix/ghostty/profiles/slate.ghostty".source = profiles.slate;
-    etc."helix/ghostty/profiles/ember.ghostty".source = profiles.ember;
+    etc = {
+      "helix/ghostty/config.ghostty".source = managedConfig;
+      "helix/ghostty/profiles/main.ghostty".source = profiles.main;
+      "helix/ghostty/profiles/moss.ghostty".source = profiles.moss;
+      "helix/ghostty/profiles/slate.ghostty".source = profiles.slate;
+      "helix/ghostty/profiles/ember.ghostty".source = profiles.ember;
+    };
 
     systemPackages = [
       ghosttyProfile
