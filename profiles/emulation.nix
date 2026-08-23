@@ -10,7 +10,7 @@ let
   nasRoot = "/mnt/infernalnexus/nas1";
   romRoot = "${nasRoot}/roms";
   emulationRoot = "${nasRoot}/Emulation";
-  arcadeRoot = "${romRoot}/MAME 0.275 ROMs (merged, inc CHDs)";
+  arcadeRoot = "${emulationRoot}/roms/arcade";
   stateRoot = "${emulationRoot}/state";
 
   retroarch = pkgs.retroarch.withCores (
@@ -19,24 +19,43 @@ let
     ]
   );
 
-  discover = pkgs.writeShellApplication {
-    name = "helix-emulation-discover";
+  requireNas = pkgs.writeShellApplication {
+    name = "helix-emulation-require-nas";
     runtimeInputs = [
       pkgs.coreutils
-      pkgs.findutils
       pkgs.util-linux
     ];
     text = ''
       set -eu
 
       nas_root=${lib.escapeShellArg nasRoot}
-      rom_root=${lib.escapeShellArg romRoot}
-      report=${lib.escapeShellArg "${emulationRoot}/tools/reports/discovery.txt"}
 
-      if ! mountpoint -q "$nas_root"; then
-        printf 'NAS is not mounted at %s\n' "$nas_root" >&2
+      # Touch the autofs path to trigger the existing systemd automount, then
+      # verify that the backing filesystem is really CIFS rather than merely
+      # accepting the automount stub as a mounted path.
+      ls -d "$nas_root/." >/dev/null 2>&1 || true
+      if ! findmnt -rn --target "$nas_root" --types cifs >/dev/null; then
+        printf 'Infernalnexus is not available as CIFS at %s\n' "$nas_root" >&2
         exit 1
       fi
+    '';
+  };
+
+  discover = pkgs.writeShellApplication {
+    name = "helix-emulation-discover";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.findutils
+      pkgs.gnused
+    ];
+    text = ''
+      set -eu
+
+      ${requireNas}/bin/helix-emulation-require-nas
+
+      nas_root=${lib.escapeShellArg nasRoot}
+      rom_root=${lib.escapeShellArg romRoot}
+      report=${lib.escapeShellArg "${emulationRoot}/tools/reports/discovery.txt"}
 
       mkdir -p "$(dirname "$report")"
       {
@@ -69,20 +88,16 @@ let
     runtimeInputs = [
       pkgs.coreutils
       pkgs.findutils
-      pkgs.util-linux
       discover
     ];
     text = ''
       set -eu
 
+      ${requireNas}/bin/helix-emulation-require-nas
+
       root=${lib.escapeShellArg emulationRoot}
       rom_root=${lib.escapeShellArg romRoot}
       state_root=${lib.escapeShellArg stateRoot}
-
-      if ! mountpoint -q ${lib.escapeShellArg nasRoot}; then
-        printf 'NAS is not mounted at %s\n' ${lib.escapeShellArg nasRoot} >&2
-        exit 1
-      fi
 
       mkdir -p \
         "$root/bios/sources" \
@@ -96,7 +111,11 @@ let
         "$root/states/ps3" \
         "$root/states/ps4" \
         "$root/states/snes" \
-        "$root/screenshots" \
+        "$root/screenshots/arcade" \
+        "$root/screenshots/ps2" \
+        "$root/screenshots/ps3" \
+        "$root/screenshots/ps4" \
+        "$root/screenshots/snes" \
         "$root/metadata" \
         "$root/tools/downloaded_media" \
         "$root/tools/skyscraper-home" \
@@ -175,21 +194,17 @@ let
     runtimeInputs = [
       pkgs.coreutils
       pkgs.findutils
-      pkgs.util-linux
     ];
     text = ''
       set -eu
 
+      ${requireNas}/bin/helix-emulation-require-nas
+
       source_root=${lib.escapeShellArg romRoot}
       output=${lib.escapeShellArg "${emulationRoot}/tools/dat-index/arcade-dats.txt"}
 
-      if ! mountpoint -q ${lib.escapeShellArg nasRoot}; then
-        printf 'NAS is not mounted at %s\n' ${lib.escapeShellArg nasRoot} >&2
-        exit 1
-      fi
-
       mkdir -p "$(dirname "$output")"
-      find "$source_root" -type f \
+      find "$source_root" -mindepth 1 -maxdepth 4 -type f \
         \( -iname '*.dat' -o -iname '*.xml' \) \
         -print | sort > "$output"
 
@@ -202,13 +217,14 @@ let
     name = "helix-emulation-audit-arcade";
     runtimeInputs = [
       pkgs.coreutils
-      pkgs.findutils
       pkgs.gnugrep
       pkgs.igir
       datIndex
     ];
     text = ''
       set -eu
+
+      ${prepare}/bin/helix-emulation-prepare >/dev/null
 
       roms=${lib.escapeShellArg arcadeRoot}
       dat_index=${lib.escapeShellArg "${emulationRoot}/tools/dat-index/arcade-dats.txt"}
@@ -256,6 +272,8 @@ let
     text = ''
       set -eu
 
+      ${prepare}/bin/helix-emulation-prepare >/dev/null
+
       platform=''${1:-}
       source=''${2:-screenscraper}
       case "$platform" in
@@ -273,7 +291,6 @@ let
 
       if [ ! -e "$input" ]; then
         printf 'ROM path is missing: %s\n' "$input" >&2
-        printf 'Run helix-emulation-prepare first.\n' >&2
         exit 1
       fi
 
@@ -300,21 +317,13 @@ let
     }:
     pkgs.writeShellApplication {
       inherit name;
-      runtimeInputs = [
-        pkgs.coreutils
-        pkgs.util-linux
-      ];
+      runtimeInputs = [ pkgs.coreutils ];
       text = ''
         set -eu
 
-        if ! mountpoint -q ${lib.escapeShellArg nasRoot}; then
-          printf 'NAS is not mounted at %s\n' ${lib.escapeShellArg nasRoot} >&2
-          exit 1
-        fi
-
         ${prepare}/bin/helix-emulation-prepare >/dev/null
 
-        state_root=${lib.escapeShellArg stateRoot}/${lib.escapeShellArg emulator}
+        state_root=${lib.escapeShellArg "${stateRoot}/${emulator}"}
         mkdir -p \
           "$state_root/home" \
           "$state_root/config" \
@@ -362,21 +371,13 @@ let
 
   retroarchLauncher = pkgs.writeShellApplication {
     name = "helix-retroarch";
-    runtimeInputs = [
-      pkgs.coreutils
-      pkgs.util-linux
-    ];
+    runtimeInputs = [ pkgs.coreutils ];
     text = ''
       set -eu
 
-      if ! mountpoint -q ${lib.escapeShellArg nasRoot}; then
-        printf 'NAS is not mounted at %s\n' ${lib.escapeShellArg nasRoot} >&2
-        exit 1
-      fi
-
       ${prepare}/bin/helix-emulation-prepare >/dev/null
 
-      state_root=${lib.escapeShellArg stateRoot}/retroarch
+      state_root=${lib.escapeShellArg "${stateRoot}/retroarch"}
       config_dir="$state_root/config/retroarch"
       config_file="$config_dir/retroarch.cfg"
       mkdir -p \
@@ -465,7 +466,9 @@ let
           printf '  %-7s missing\n' "$system"
         fi
       done
-      printf '\nLaunch only the Helix NAS entries (helix-pcsx2, helix-rpcs3, helix-shadps4, helix-mame, helix-retroarch) to keep emulator state off local SSDs.\n'
+      printf '\nDiscovery report: %s\n' \
+        ${lib.escapeShellArg "${emulationRoot}/tools/reports/discovery.txt"}
+      printf 'Launch only the Helix NAS entries to keep emulator state off local SSDs.\n'
     '';
   };
 in
@@ -476,6 +479,7 @@ in
     environment.systemPackages = [
       pkgs.igir
       pkgs.skyscraper
+      requireNas
       discover
       prepare
       datIndex
@@ -487,12 +491,24 @@ in
       shadps4Launcher
       mameLauncher
       retroarchLauncher
-    ] ++ desktopItems;
+    ]
+    ++ desktopItems;
 
     # These applications use Vulkan/OpenGL and benefit from the same graphics
     # support as the normal gaming profile.
     hardware.graphics.enable32Bit = true;
     services.pipewire.alsa.support32Bit = true;
+
+    systemd.user.services.helix-emulation-prepare = {
+      description = "Prepare NAS-backed emulation paths for Tristan";
+      wantedBy = [ "graphical-session.target" ];
+      after = [ "graphical-session-pre.target" ];
+      unitConfig.ConditionUser = "tristan";
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${prepare}/bin/helix-emulation-prepare";
+      };
+    };
 
     assertions = [
       {
