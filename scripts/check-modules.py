@@ -9,7 +9,9 @@ import sys
 
 root = pathlib.Path(__file__).resolve().parent.parent
 entry = root / "configuration.nix"
-dormant_roots: set[pathlib.Path] = set()
+dormant_roots: set[pathlib.Path] = {
+    (root / "packages/chatgpt.nix").resolve(),
+}
 module_dirs = ("hardware", "desktop", "system", "services", "profiles", "packages", "shell")
 maintained = {
     path.resolve()
