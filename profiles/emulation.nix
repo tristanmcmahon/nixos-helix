@@ -15,6 +15,8 @@ let
   arcadeRoot = "${emulationRoot}/roms/arcade";
   stateRoot = "${emulationRoot}/state";
 
+  mame0275 = pkgs.callPackage ../packages/mame-0275.nix { };
+
   retroarch = pkgs.retroarch.withCores (
     cores: with cores; [
       bsnes
@@ -386,7 +388,7 @@ let
   mameLauncher = mkNasLauncher {
     name = "helix-mame";
     emulator = "mame";
-    package = pkgs.mame;
+    package = mame0275;
     extraArgs = [
       "-rompath"
       arcadeRoot
@@ -575,6 +577,10 @@ in
     services.pipewire.alsa.support32Bit = true;
 
     assertions = [
+      {
+        assertion = mame0275.version == "0.275";
+        message = "helix.emulation must keep MAME aligned with the NAS 0.275 collection and DATs.";
+      }
       {
         assertion = config.programs.steam.enable;
         message = "helix.emulation requires the normal gaming profile so controller udev rules are present.";

@@ -5,6 +5,17 @@
   ...
 }:
 
+let
+  mame0275 = pkgs.callPackage ../packages/mame-0275.nix { };
+  romMounts = builtins.filter (
+    mount: mount.where == "/mnt/infernalnexus/roms"
+  ) config.systemd.mounts;
+  romMount = builtins.head romMounts;
+  romMountOptions = builtins.filter builtins.isString (builtins.split "," romMount.options);
+  romAutomounts = builtins.filter (
+    automount: automount.where == "/mnt/infernalnexus/roms"
+  ) config.systemd.automounts;
+in
 {
   imports = [ ../profiles/emulation.nix ];
 
@@ -33,23 +44,44 @@
         pkgs.pcsx2
         pkgs.rpcs3
         pkgs.shadps4
-        pkgs.mame
+        mame0275
         pkgs.igir
         pkgs.skyscraper
       ];
       message = "An enabled emulator or curation package is unavailable.";
     }
     {
-      assertion = builtins.any (
-        mount: mount.where == "/mnt/infernalnexus/roms" && mount.what == "//192.168.1.8/roms"
-      ) config.systemd.mounts;
-      message = "The enabled module must expose the authoritative ROM share.";
+      assertion = mame0275.version == "0.275";
+      message = "The MAME launcher must match the NAS 0.275 collection and DATs.";
     }
     {
-      assertion = builtins.any (
-        automount: automount.where == "/mnt/infernalnexus/roms"
-      ) config.systemd.automounts;
-      message = "The authoritative ROM share must be automounted.";
+      assertion = builtins.length romMounts == 1;
+      message = "The enabled module must define exactly one authoritative ROM mount.";
+    }
+    {
+      assertion = romMount.what == "//192.168.1.8/roms" && romMount.type == "cifs";
+      message = "The authoritative ROM mount must use the dedicated CIFS share.";
+    }
+    {
+      assertion = builtins.all (option: builtins.elem option romMountOptions) [
+        "credentials=/etc/nixos/secrets/infernalnexus-smb"
+        "dir_mode=0555"
+        "file_mode=0444"
+        "ro"
+      ];
+      message = "The authoritative ROM mount must be credentialed and read-only.";
+    }
+    {
+      assertion = !(builtins.elem "rw" romMountOptions);
+      message = "The authoritative ROM mount must never be writable.";
+    }
+    {
+      assertion = builtins.length romAutomounts == 1;
+      message = "The authoritative ROM share must have exactly one automount.";
+    }
+    {
+      assertion = builtins.hasAttr "helix-emulation-prepare" config.systemd.user.services;
+      message = "The enabled module must install its NAS preparation service.";
     }
   ];
 }

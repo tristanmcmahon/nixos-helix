@@ -31,6 +31,10 @@ Only the `Helix NAS` desktop entries should be used. They force the emulator's
 HOME, config, cache, and data directories onto the NAS before starting PCSX2,
 RPCS3, shadPS4, MAME, or RetroArch with bsnes.
 
+The MAME launcher is pinned to 0.275 so the emulator, NAS ROM collection, and
+NAS DATs stay on the same release. Nixpkgs updates must not silently move that
+launcher to a newer MAME release.
+
 ## First run and maintenance
 
 After activating the configuration, inspect the setup:
