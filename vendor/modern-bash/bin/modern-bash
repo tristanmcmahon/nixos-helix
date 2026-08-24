@@ -1,0 +1,237 @@
+#!/usr/bin/env bash
+
+set -o nounset
+set -o pipefail
+
+modern_bash::cli::_resolve_entrypoint() {
+    local entrypoint=$1
+    local link_target=''
+    local link_dir=''
+    local link_count=0
+
+    while [[ -h ${entrypoint} ]]; do
+        link_count=$((link_count + 1))
+        if ((link_count > 40)); then
+            printf 'modern-bash: too many symbolic links while resolving %s\n' "${1}" >&2
+            return 1
+        fi
+
+        case ${entrypoint} in
+            */*) link_dir=${entrypoint%/*} ;;
+            *) link_dir=. ;;
+        esac
+        link_dir=$(CDPATH='' builtin cd -- "${link_dir}" 2>/dev/null && builtin pwd -P) || {
+            printf 'modern-bash: cannot resolve executable directory for %s\n' "${entrypoint}" >&2
+            return 1
+        }
+        link_target=$(command readlink "${entrypoint}" 2>/dev/null) || {
+            printf 'modern-bash: cannot read symbolic link %s\n' "${entrypoint}" >&2
+            return 1
+        }
+        case ${link_target} in
+            /*) entrypoint=${link_target} ;;
+            *) entrypoint=${link_dir}/${link_target} ;;
+        esac
+    done
+
+    printf '%s\n' "${entrypoint}"
+}
+
+modern_bash_entrypoint=$(modern_bash::cli::_resolve_entrypoint "${BASH_SOURCE[0]}") || exit 1
+case ${modern_bash_entrypoint} in
+    */*) modern_bash_entrypoint_dir=${modern_bash_entrypoint%/*} ;;
+    *) modern_bash_entrypoint_dir=. ;;
+esac
+modern_bash_bin_dir=$(CDPATH='' builtin cd -- "${modern_bash_entrypoint_dir}" && builtin pwd -P) || {
+    printf 'modern-bash: cannot resolve the executable directory\n' >&2
+    exit 1
+}
+modern_bash_root_dir=$(CDPATH='' builtin cd -- "${modern_bash_bin_dir}/.." && builtin pwd -P) || exit 1
+
+modern_bash::cli::install_usage() {
+    cat <<'USAGE'
+Usage: modern-bash <install|uninstall> [options]
+
+Options:
+  --prefix PATH    Installation prefix (default: $HOME/.local)
+  --destdir PATH   Staging root for package builders (default: empty)
+  -h, --help       Show this help
+
+Neither command changes shell startup files or user configuration.
+USAGE
+}
+
+modern_bash::cli::run_installer() {
+    local action=$1
+    local installer_path=${modern_bash_root_dir}/scripts/install.bash
+
+    shift
+    if (($# == 1)) && [[ $1 == -h || $1 == --help ]]; then
+        modern_bash::cli::install_usage
+        return 0
+    fi
+    if [[ ! -f ${installer_path} || ! -r ${installer_path} ]]; then
+        printf 'modern-bash %s: installer is unavailable at %s\n' \
+            "${action}" "${installer_path}" >&2
+        return 1
+    fi
+    "${BASH}" "${installer_path}" "${action}" "$@"
+}
+
+# Installation lifecycle commands remain available even if a managed runtime
+# module is damaged, providing a built-in recovery and uninstall path.
+case ${1:-} in
+    install|uninstall)
+        modern_bash_lifecycle_action=$1
+        shift
+        modern_bash::cli::run_installer "${modern_bash_lifecycle_action}" "$@"
+        exit $?
+        ;;
+esac
+
+for modern_bash_required_file in \
+    "${modern_bash_root_dir}/src/modern-bash.bash" \
+    "${modern_bash_root_dir}/src/commands/doctor.bash"; do
+    if [[ ! -f ${modern_bash_required_file} || ! -r ${modern_bash_required_file} ]]; then
+        printf 'modern-bash: installation is incomplete; cannot read %s\n' \
+            "${modern_bash_required_file}" >&2
+        exit 1
+    fi
+done
+
+# shellcheck source=src/modern-bash.bash
+if ! builtin source "${modern_bash_root_dir}/src/modern-bash.bash" ||
+    [[ ${MODERN_BASH_LOADED:-0} != 1 ]] ||
+    ! declare -F modern_bash::runtime::_api_complete >/dev/null ||
+    ! modern_bash::runtime::_api_complete; then
+    printf 'modern-bash: failed to load the runtime from %s\n' "${modern_bash_root_dir}" >&2
+    exit 1
+fi
+# shellcheck source=src/commands/doctor.bash
+modern_bash_doctor_state_declaration=''
+if ! builtin source "${modern_bash_root_dir}/src/commands/doctor.bash" ||
+    ! modern_bash_doctor_state_declaration=$(declare -p MODERN_BASH_DOCTOR_LOAD_STATE 2>/dev/null) ||
+    [[ ${modern_bash_doctor_state_declaration} != declare\ -a\ * ]] ||
+    [[ ${MODERN_BASH_DOCTOR_LOAD_STATE[0]-} != complete ]] ||
+    [[ ${MODERN_BASH_DOCTOR_LOADED:-0} != 1 ]] ||
+    ! declare -F modern_bash::doctor::run >/dev/null ||
+    ! declare -F modern_bash::doctor::usage >/dev/null; then
+    printf 'modern-bash: failed to load the doctor command from %s\n' "${modern_bash_root_dir}" >&2
+    exit 1
+fi
+unset modern_bash_doctor_state_declaration
+
+modern_bash::cli::usage() {
+    cat <<'USAGE'
+Usage: modern-bash <command> [options]
+
+Commands:
+  doctor    Inspect the shell and terminal environment
+  init      Print the shell code that activates Modern Bash
+  install   Install a user-local, self-contained runtime
+  uninstall Remove an installed runtime (configuration is preserved)
+  version   Print the Modern Bash version
+  help      Show general or command-specific help
+
+Options:
+  -h, --help       Show this help
+  -V, --version    Show the Modern Bash version
+USAGE
+}
+
+modern_bash::cli::init_usage() {
+    cat <<'USAGE'
+Usage: modern-bash init
+
+Print one safely quoted source command for activating Modern Bash in the
+current interactive Bash process.
+USAGE
+}
+
+modern_bash::cli::print_init() {
+    if (($# == 1)) && [[ $1 == -h || $1 == --help ]]; then
+        modern_bash::cli::init_usage
+        return 0
+    fi
+    if (($# > 0)); then
+        printf 'modern-bash init: this command takes no arguments\n' >&2
+        return 64
+    fi
+    printf 'builtin source %q\n' "${MODERN_BASH_SOURCE_DIR}/init.bash"
+}
+
+modern_bash::cli::print_version() {
+    if (($# > 0)); then
+        printf 'modern-bash version: this command takes no arguments\n' >&2
+        return 64
+    fi
+    printf 'modern-bash %s\n' "${MODERN_BASH_VERSION}"
+}
+
+modern_bash::cli::help() {
+    local command_name=${1:-}
+
+    if (($# > 1)); then
+        printf 'modern-bash help: expected at most one command name\n' >&2
+        return 64
+    fi
+    case ${command_name} in
+        '') modern_bash::cli::usage ;;
+        doctor) modern_bash::doctor::usage ;;
+        init) modern_bash::cli::init_usage ;;
+        install|uninstall) modern_bash::cli::install_usage ;;
+        version)
+            printf 'Usage: modern-bash version\n'
+            ;;
+        help)
+            printf 'Usage: modern-bash help [command]\n'
+            ;;
+        *)
+            printf 'modern-bash help: unknown command: %s\n' "${command_name}" >&2
+            return 64
+            ;;
+    esac
+}
+
+modern_bash::cli::main() {
+    local command_name=${1:-help}
+
+    if (($# > 0)); then
+        shift
+    fi
+
+    case ${command_name} in
+        doctor)
+            modern_bash::doctor::run "$@"
+            ;;
+        init)
+            modern_bash::cli::print_init "$@"
+            ;;
+        install|uninstall)
+            modern_bash::cli::run_installer "${command_name}" "$@"
+            ;;
+        version)
+            modern_bash::cli::print_version "$@"
+            ;;
+        help)
+            modern_bash::cli::help "$@"
+            ;;
+        -h|--help)
+            if (($# > 0)); then
+                printf 'modern-bash %s: this option takes no arguments\n' "${command_name}" >&2
+                return 64
+            fi
+            modern_bash::cli::usage
+            ;;
+        -V|--version)
+            modern_bash::cli::print_version "$@"
+            ;;
+        *)
+            printf 'modern-bash: unknown command: %s\n' "${command_name}" >&2
+            printf "Run 'modern-bash --help' for usage.\n" >&2
+            return 64
+            ;;
+    esac
+}
+
+modern_bash::cli::main "$@"

@@ -1,16 +1,11 @@
 { pkgs, ... }:
 
 let
-  # Source: https://github.com/tristanmcmahon/modern-bash
-  # Commit: 55b1c4de6bc47e14285d55f6a1dfdf9fb494e806 (2026-08-01 integration)
-  # The upstream runtime is packaged intact. The system-facing wrapper blocks
-  # lifecycle commands so it cannot create a competing mutable installation.
-  source = pkgs.fetchFromGitHub {
-    owner = "tristanmcmahon";
-    repo = "modern-bash";
-    rev = "55b1c4de6bc47e14285d55f6a1dfdf9fb494e806";
-    hash = "sha256-7H4SkRupATaGTqkACfCqdCLKaNDsd488+hxVmQ//IUY=";
-  };
+  # Pinned from tristanmcmahon/modern-bash commit
+  # 55b1c4de6bc47e14285d55f6a1dfdf9fb494e806. Keeping the small runtime
+  # snapshot in this repository makes NixOS builds independent of sibling
+  # repository visibility and GitHub credentials.
+  source = ../vendor/modern-bash;
 
   runtime = pkgs.stdenvNoCC.mkDerivation {
     pname = "modern-bash-runtime";
