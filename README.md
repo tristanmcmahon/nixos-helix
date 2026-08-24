@@ -5,27 +5,36 @@ Plasma 6, an optional Hyprland/UWSM session, and an NVIDIA RTX 5080. It uses
 ordinary NixOS modules and the root Nix channel: no flakes, Home Manager,
 overlays, or host framework.
 
-The active configuration includes workstation, development, gaming, emulation, and local
-LLM profiles. Ollama runs locally on `127.0.0.1:11434`; SSH is the only service
-intentionally exposed through the firewall. Hardware support includes
-PipeWire, Bluetooth, redistributable firmware, NVIDIA open kernel modules, and
-ckb-next for the Corsair K70.
+The active configuration includes workstation, development, gaming, emulation,
+and local LLM profiles. Ollama runs locally on `127.0.0.1:11434`; SSH is the
+only service intentionally exposed through the firewall. Hardware support
+includes PipeWire, Bluetooth, redistributable firmware, NVIDIA open kernel
+modules, and ckb-next for the Corsair K70.
 
 ## Repository layout
 
+`configuration.nix` imports stable layer entrypoints rather than every
+implementation module directly:
+
 ```text
-configuration.nix          top-level module imports and release assertion
-hardware-configuration.nix generated facts for the currently installed system
-hardware/                  device and driver policy
-desktop/                   Plasma, Hyprland, browsers, applications, and theme
-system/                    boot, users, networking, NAS, and storage
-services/                  OpenSSH and routine native maintenance
-profiles/                  workstation, development, gaming, emulation, and local LLM
-packages/                  package sets and custom package definitions
-shell/                     immutable modern-bash integration
-scripts/                   checks, rebuilds, inventory, backup, and recovery
-docs/                      focused operating guides
+configuration.nix          layer composition and release assertion
+hardware-configuration.nix generated facts for the installed machine
+config/host.nix             primary user/home/project-root data
+hardware/default.nix        device and driver policy entrypoint
+desktop/default.nix         graphical desktop entrypoint
+shell/default.nix           interactive shell entrypoint
+system/default.nix          boot/network/storage/user entrypoint
+services/default.nix        cross-cutting service entrypoint
+profiles/default.nix        functional feature entrypoint
+packages/default.nix        always-present recovery packages
+scripts/                    checks, rebuilds, inventory, backup, and recovery
+docs/                       focused operating and architecture guides
 ```
+
+Implementation files stay behind those entrypoints. Feature-specific lifecycle
+belongs to the owning profile: for example gaming owns hamSteam integration and
+local LLM owns OpenClaw integration. Emulation has one public enable switch but
+keeps storage, metadata and launcher internals separate.
 
 `hardware-configuration.nix` is generated machine evidence. Do not edit or
 reformat it during ordinary changes.
@@ -63,6 +72,8 @@ for disaster recovery and any deliberately planned future reinstall; see
 
 ## Focused guides
 
+- [Everyday commands](docs/usage.md)
+- [Architecture and ownership](docs/architecture.md)
 - [Normal installation and recovery](docs/installation.md)
 - [Reinstall and recovery](docs/reinstall.md)
 - [Hardware validation](docs/hardware-validation.md)

@@ -1,90 +1,80 @@
 # Package and profile boundaries
 
-NixOS merges package lists contributed by ordinary imported modules. Package
-modules contain software only; profiles compose those packages and own related
-system policy.
+NixOS merges package and policy contributions from ordinary imported modules.
+Packages stay close to the feature that needs them; profiles own the complete
+feature boundary, including related service lifecycle when applicable.
 
-## Enabled layers
+## Base
 
-### Base
+`packages/default.nix` imports `packages/base.nix`, the deliberately small
+always-present recovery set: Git, network/download tools, file/tree inspection
+and Vim. Language runtimes, desktop conveniences, gaming and inference do not
+belong here.
 
-`packages/base.nix` is imported directly and contains Git, curl, wget, `file`,
-`tree`, and Vim as the guaranteed console recovery editor (`vi` and `vim`). It
-deliberately excludes language runtimes, GPU tools, desktop conveniences,
-gaming, and inference software.
-
-### Workstation
+## Workstation
 
 `profiles/workstation.nix` imports daily interactive tools, hardware diagnostic
-clients, and desktop media clients. Font policy is owned once by
-`desktop/fonts.nix`. The profile contains no compiler toolchain or code
-publishing tools.
+clients and desktop media clients. Font policy is owned once by
+`desktop/fonts.nix`.
 
-### Development
+## Development
 
-`profiles/development.nix` is an explicit enable/disable boundary for editors,
-GitHub publishing tools, Codex, compilers, runtimes, the Nix language server and
-formatter, and ShellCheck. It remains separate even though it currently adds no
-system service policy.
+`profiles/development.nix` owns editors, GitHub publishing tools, Codex,
+compilers, runtimes, Nix development tools and ShellCheck. It remains a distinct
+feature even though it currently adds no service policy.
 
-### Gaming
+## Gaming
 
-The enabled conservative gaming profile provides Steam, GameMode, MangoHud,
-32-bit graphics, and 32-bit PipeWire/ALSA audio support. Steam owns its client
-package and controller udev rules; it is not duplicated in the system package
-list. Emulation remains outside this profile. Heroic, Lutris, Wine, Gamescope,
-and custom Proton tooling have not been added.
+`profiles/gaming.nix` owns Steam, GameMode, MangoHud and 32-bit graphics/audio
+support. It also imports `services/hamsteam.nix`: hamSteam remains a separate
+application checkout, while Helix owns the lifecycle of its quiet maintenance
+service.
 
-The normal default dry build validates this active profile. Disabling the single
-`./profiles/gaming.nix` import returns the evaluated configuration to the
-non-gaming workstation layer.
+Emulation builds on gaming but remains a separate reversible feature.
 
-### Local LLM
+## Emulation
 
-The enabled local-LLM profile selects the CUDA-enabled Ollama package for both
-the service and user-facing CLI. Local inference is part of the normal default
-system. The API binds only to `127.0.0.1`, and its firewall port remains closed.
-Display-driver policy stays in `hardware/nvidia.nix`.
+`profiles/emulation.nix` exposes one public option:
 
-Models are stored at `/mnt/games_nvme/ollama/models`, outside the Steam library.
-The service will not start unless GAMES_NVME is mounted and its narrowly scoped
-initializer has created the model directory for the `ollama` service account.
-Nix declares this baseline model set:
+```nix
+helix.emulation.enable = true;
+```
 
-- `gemma4:12b` — fast/general local model
-- `gpt-oss:20b` — stronger reasoning, agentic, and general work
-- `qwen3.6:27b` — larger coding and reasoning model
-- `qwen3-embedding:4b` — embeddings/retrieval, not conversational chat
+Its implementation is split into storage/preparation, metadata/DAT tooling and
+launchers under `profiles/emulation/`. ROMs remain on the authoritative NAS
+share and emulator state remains NAS-backed.
 
-The native NixOS `ollama-model-loader` starts after and binds to
-`ollama.service`. It pulls every declared tag in parallel when the loader starts
-and retries failed pulls with bounded backoff. Existing Ollama blobs and
-manifests remain mutable data in the same model store; they never enter the Nix
-store. `syncModels = false` means manually pulled experimental models are
-preserved rather than treated as undeclared state to delete.
+## Local LLM
 
-Update ownership remains deliberately simple:
+`profiles/local-llm.nix` owns the CUDA-enabled Ollama service and CLI, the model
+baseline, the model-refresh helper, and the OpenClaw gateway lifecycle. Ollama
+binds only to `127.0.0.1` and its firewall port remains closed. Display-driver
+policy stays in `hardware/nvidia.nix`.
 
-- Ollama program updates come from a nixpkgs update and NixOS rebuild.
-- Model tag updates come from `ollama pull`, including the native loader.
-- Experimental models remain untouched because model syncing is disabled.
+Models live at `/mnt/games_nvme/ollama/models`, outside the Steam library. The
+service depends on the narrowly scoped storage initializer for that path.
 
-To deliberately refresh all four declared tags without waiting for the model
-loader lifecycle, run the helper generated from the same canonical Nix list:
+The declared baseline is:
+
+- `deepseek-r1:8b`
+- `gemma4:12b`
+- `gpt-oss:20b`
+- `qwen3.6:27b`
+- `qwen3-embedding:4b`
+
+`syncModels = false` preserves manually pulled experimental models. Refresh the
+baseline deliberately with:
 
 ```bash
 helix-ollama-update-models
 ```
 
-Normal operator inspection remains:
+Inspect live state with:
 
 ```bash
 ollama list
 ollama ps
+nvidia-smi
 ```
 
-After the current downloads finish and the configuration is activated, run a
-representative model and use `ollama ps` plus `nvidia-smi` in another terminal
-to verify actual GPU use. Successful evaluation alone does not prove that
-inference is GPU-accelerated. Context length, quantisation, and keep-alive
-policy remain at Ollama defaults until measurements demonstrate a problem.
+Successful Nix evaluation proves configuration, not physical GPU execution.
