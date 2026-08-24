@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   pkgs,
   ...
@@ -14,7 +15,7 @@ let
   ];
   updateModels = pkgs.writeShellApplication {
     name = "helix-ollama-update-models";
-    runtimeInputs = [ pkgs.ollama-cuda ];
+    runtimeInputs = [ config.services.ollama.package ];
     text = ''
       if ! ollama list >/dev/null; then
         printf 'Ollama is unavailable at %s. Start the service before refreshing models.\n' \
