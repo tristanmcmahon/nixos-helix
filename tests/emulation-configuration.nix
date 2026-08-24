@@ -7,9 +7,7 @@
 
 let
   mame0275 = pkgs.callPackage ../packages/mame-0275.nix { };
-  romMounts = builtins.filter (
-    mount: mount.where == "/mnt/infernalnexus/roms"
-  ) config.systemd.mounts;
+  romMounts = builtins.filter (mount: mount.where == "/mnt/infernalnexus/roms") config.systemd.mounts;
   romMount = builtins.head romMounts;
   romMountOptions = builtins.filter builtins.isString (builtins.split "," romMount.options);
   romAutomounts = builtins.filter (
