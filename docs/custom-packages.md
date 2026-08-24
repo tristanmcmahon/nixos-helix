@@ -6,6 +6,8 @@ package at a time, build it against the maintained NixOS release, run
 
 ## Current audit
 
+- ChatGPT `26.818.61809` packages OpenAI's official x86_64 Debian build with a
+  fixed content hash because OpenAI does not currently publish a NixOS package.
 - Zen Browser `1.21.10b` uses the official x86_64 AppImage because the selected
   NixOS package set does not provide the required browser package.
 - GridPlayer is pinned to tested `0.5.4` because later candidates change its

@@ -120,7 +120,7 @@ nix-instantiate --eval --strict tests/system-invariants.nix
 
 printf 'Building the complete default system closure...\n'
 system_closure=$(nix-build --no-out-link '<nixpkgs/nixos>' -A system \
-  -I "nixos-config=$repo_root/configuration.nix")
+  -I "nixos-config=$repo_root/tests/build-configuration.nix")
 
 printf 'Checking Vim and modern-bash in the built default system...\n'
 ./scripts/test-modern-bash.sh "$system_closure"
@@ -212,10 +212,21 @@ grep -qF 'swaybg --image /etc/helix/theme/wallpaper.svg' "$hyprland_config"
 grep -qF 'waybar --style /etc/helix/theme/waybar.css' "$hyprland_config"
 grep -qF 'mako --config /etc/helix/theme/mako.conf' "$hyprland_config"
 grep -qF 'fuzzel --config /etc/helix/theme/fuzzel.ini' "$hyprland_config"
+ghostty_config=config/ghostty/config.ghostty
+ghostty_appearance=$ghostty_config
+ghostty_validation_config=$ghostty_config
+if grep -qF 'config-file = /home/tristan/.config/ghostty/profile.ghostty' "$ghostty_config"; then
+  ghostty_appearance=config/ghostty/profiles/main.ghostty
+  ghostty_validation_profile=$temporary_directory/ghostty-profile.ghostty
+  ghostty_validation_config=$temporary_directory/ghostty-config.ghostty
+  cp -- "$ghostty_appearance" "$ghostty_validation_profile"
+  sed "s|config-file = /home/tristan/.config/ghostty/profile.ghostty|config-file = $ghostty_validation_profile|" \
+    "$ghostty_config" > "$ghostty_validation_config"
+fi
 "$system_closure/sw/bin/ghostty" +validate-config \
-  --config-file=config/ghostty/config.ghostty
-grep -qF 'background = #0B0D0C' config/ghostty/config.ghostty
-grep -qF 'palette = 2=#67B87A' config/ghostty/config.ghostty
+  --config-file="$ghostty_validation_config"
+grep -qF 'background = #0B0D0C' "$ghostty_appearance"
+grep -qF 'palette = 2=#67B87A' "$ghostty_appearance"
 
 printf 'Checking ckb-next in the built default system...\n'
 [[ -x $system_closure/sw/bin/ckb-next ]]
@@ -292,9 +303,11 @@ grep -qF 'OLLAMA_HOST=127.0.0.1:11434' \
   "$system_closure/etc/systemd/system/ollama.service"
 grep -qF 'BindsTo=ollama.service' \
   "$system_closure/etc/systemd/system/ollama-model-loader.service"
-for model in gemma4:12b gpt-oss:20b qwen3.6:27b qwen3-embedding:4b; do
+for model in deepseek-r1:8b gemma4:12b gpt-oss:20b qwen3.6:27b qwen3-embedding:4b; do
   grep -qF "$model" "$system_closure/sw/bin/helix-ollama-update-models"
 done
+[[ -x $system_closure/sw/bin/chatgpt ]]
+grep -Rqs '^Name=ChatGPT$' "$system_closure/sw/share/applications"
 
 printf 'Checking 1Password modules, wrappers, and browser policies...\n'
 onepassword_gui=$(nix-build --no-out-link -E '

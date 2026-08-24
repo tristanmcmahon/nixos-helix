@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   pkgs,
   ...
@@ -6,6 +7,7 @@
 
 let
   desiredModels = [
+    "deepseek-r1:8b"
     "gemma4:12b"
     "gpt-oss:20b"
     "qwen3.6:27b"
@@ -13,7 +15,7 @@ let
   ];
   updateModels = pkgs.writeShellApplication {
     name = "helix-ollama-update-models";
-    runtimeInputs = [ pkgs.ollama-cuda ];
+    runtimeInputs = [ config.services.ollama.package ];
     text = ''
       if ! ollama list >/dev/null; then
         printf 'Ollama is unavailable at %s. Start the service before refreshing models.\n' \
