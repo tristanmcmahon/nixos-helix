@@ -48,6 +48,44 @@ testing below does not imply hibernation support.
   `bluetoothctl devices` and
   `rfkill list`, then reboot once to verify reconnection.
 
+## PS5 DualSense controller
+
+Helix uses the kernel's upstream `hid_playstation` driver for the DualSense
+over USB and Bluetooth. Steam supplies its maintained controller udev rules,
+including raw-device access for Sony USB ID `054c:0ce6`. No third-party Sony
+driver or controller daemon is installed. The abandoned Xbox experiment is not
+part of the configuration: `xpadneo` is disabled and `hid_xpadneo` is
+blacklisted.
+
+Test USB first, before introducing Bluetooth pairing state:
+
+```bash
+lsusb | grep -i '054c:0ce6'
+lsmod | grep hid_playstation
+grep -A 8 -B 2 -i 'Wireless Controller' /proc/bus/input/devices
+sudo evtest
+```
+
+Select the DualSense event device in `evtest`, then verify both sticks, every
+button, the D-pad, and both analogue triggers. Event numbers are dynamic and
+must not be copied into configuration.
+
+For wireless use, disconnect USB, hold the controller's Create and PS buttons
+until the light bar flashes rapidly, and pair `Wireless Controller` in Plasma
+System Settings. Then inspect the connection and driver before repeating
+`evtest`:
+
+```bash
+bluetoothctl devices
+bluetoothctl info
+lsmod | grep hid_playstation
+```
+
+Finally, open Steam Settings → Controller and confirm it identifies a PS5
+controller. Test once with Steam Input enabled for a game that needs controller
+translation and once in a native SDL/emulator input screen. USB and Bluetooth
+must expose one logical controller each, not duplicate devices.
+
 ## Corsair K70 RGB
 
 Helix's original Corsair K70 RGB reports USB ID `1b1c:1b13` and kernel name

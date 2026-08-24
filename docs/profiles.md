@@ -31,9 +31,11 @@ system service policy.
 
 The enabled conservative gaming profile provides Steam, GameMode, MangoHud,
 32-bit graphics, and 32-bit PipeWire/ALSA audio support. Steam owns its client
-package and controller udev rules; it is not duplicated in the system package
-list. Emulation remains outside this profile. Heroic, Lutris, Wine, Gamescope,
-and custom Proton tooling have not been added.
+package and maintained controller udev rules, including DualSense raw-device
+access; it is not duplicated in the system package list. The upstream
+`hid_playstation` driver and explicit absence of xpadneo are hardware policy in
+`hardware/controllers.nix`. Emulation remains outside this profile. Heroic,
+Lutris, Wine, Gamescope, and custom Proton tooling have not been added.
 
 The normal default dry build validates this active profile. Disabling the single
 `./profiles/gaming.nix` import returns the evaluated configuration to the

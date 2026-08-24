@@ -8,8 +8,8 @@ overlays, or host framework.
 The active configuration includes workstation, development, gaming, emulation, and local
 LLM profiles. Ollama runs locally on `127.0.0.1:11434`; SSH is the only service
 intentionally exposed through the firewall. Hardware support includes
-PipeWire, Bluetooth, redistributable firmware, NVIDIA open kernel modules, and
-ckb-next for the Corsair K70.
+PipeWire, Bluetooth, native DualSense support, redistributable firmware, NVIDIA
+open kernel modules, and ckb-next for the Corsair K70.
 
 ## Repository layout
 
