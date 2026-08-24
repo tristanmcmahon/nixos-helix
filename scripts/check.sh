@@ -306,8 +306,11 @@ grep -qF 'BindsTo=ollama.service' \
 for model in deepseek-r1:8b gemma4:12b gpt-oss:20b qwen3.6:27b qwen3-embedding:4b; do
   grep -qF "$model" "$system_closure/sw/bin/helix-ollama-update-models"
 done
-[[ -x $system_closure/sw/bin/chatgpt ]]
-grep -Rqs '^Name=ChatGPT$' "$system_closure/sw/share/applications"
+[[ ! -e $system_closure/sw/bin/chatgpt ]]
+if grep -Rqs '^Name=ChatGPT$' "$system_closure/sw/share/applications"; then
+  printf 'ChatGPT remains in the active system closure.\n' >&2
+  exit 1
+fi
 
 printf 'Checking 1Password modules, wrappers, and browser policies...\n'
 onepassword_gui=$(nix-build --no-out-link -E '
