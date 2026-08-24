@@ -498,38 +498,53 @@ in
     # tfpga and Helix share one authoritative ROM collection. It is exposed
     # only while this module is enabled and is deliberately read-only here.
     system.fsPackages = [ pkgs.cifs-utils ];
-    systemd.mounts = [
-      {
-        description = "Infernalnexus authoritative ROM collection";
-        what = romSource;
-        where = romRoot;
-        type = "cifs";
-        wants = [ "network-online.target" ];
-        after = [ "network-online.target" ];
-        options = builtins.concatStringsSep "," [
-          "credentials=/etc/nixos/secrets/infernalnexus-smb"
-          "uid=tristan"
-          "gid=users"
-          "dir_mode=0555"
-          "file_mode=0444"
-          "vers=2.0"
-          "sec=ntlmssp"
-          "ro"
-        ];
-        mountConfig.TimeoutSec = "15s";
-      }
-    ];
-    systemd.automounts = [
-      {
-        description = "Automount Infernalnexus ROM collection";
-        where = romRoot;
-        wantedBy = [ "multi-user.target" ];
-        automountConfig = {
-          TimeoutIdleSec = "10min";
-          DirectoryMode = "0755";
+
+    systemd = {
+      mounts = [
+        {
+          description = "Infernalnexus authoritative ROM collection";
+          what = romSource;
+          where = romRoot;
+          type = "cifs";
+          wants = [ "network-online.target" ];
+          after = [ "network-online.target" ];
+          options = builtins.concatStringsSep "," [
+            "credentials=/etc/nixos/secrets/infernalnexus-smb"
+            "uid=tristan"
+            "gid=users"
+            "dir_mode=0555"
+            "file_mode=0444"
+            "vers=2.0"
+            "sec=ntlmssp"
+            "ro"
+          ];
+          mountConfig.TimeoutSec = "15s";
+        }
+      ];
+
+      automounts = [
+        {
+          description = "Automount Infernalnexus ROM collection";
+          where = romRoot;
+          wantedBy = [ "multi-user.target" ];
+          automountConfig = {
+            TimeoutIdleSec = "10min";
+            DirectoryMode = "0755";
+          };
+        }
+      ];
+
+      user.services.helix-emulation-prepare = {
+        description = "Prepare NAS-backed emulation paths for Tristan";
+        wantedBy = [ "graphical-session.target" ];
+        after = [ "graphical-session-pre.target" ];
+        unitConfig.ConditionUser = "tristan";
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = "${prepare}/bin/helix-emulation-prepare";
         };
-      }
-    ];
+      };
+    };
 
     environment.systemPackages = [
       pkgs.igir
@@ -553,17 +568,6 @@ in
     # support as the normal gaming profile.
     hardware.graphics.enable32Bit = true;
     services.pipewire.alsa.support32Bit = true;
-
-    systemd.user.services.helix-emulation-prepare = {
-      description = "Prepare NAS-backed emulation paths for Tristan";
-      wantedBy = [ "graphical-session.target" ];
-      after = [ "graphical-session-pre.target" ];
-      unitConfig.ConditionUser = "tristan";
-      serviceConfig = {
-        Type = "oneshot";
-        ExecStart = "${prepare}/bin/helix-emulation-prepare";
-      };
-    };
 
     assertions = [
       {
