@@ -14,7 +14,7 @@ module_dirs = ("hardware", "desktop", "system", "services", "profiles", "package
 maintained = {
     path.resolve()
     for directory in module_dirs
-    for path in (root / directory).glob("*.nix")
+    for path in (root / directory).rglob("*.nix")
 }
 
 
