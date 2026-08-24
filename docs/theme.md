@@ -28,18 +28,25 @@ SDDM remains packaged Breeze with the Graphite + Fern wallpaper and loading
 colour. GTK 3/4 use maintained Breeze-Dark, Breeze Dark icons, and the native
 dark preference; no global GTK or Qt environment override is set.
 
-Ghostty has a repository-owned Graphite + Fern terminal palette. A matching
-Konsole colour scheme/profile is installed and selected when the applicator
-runs in Plasma. VS Code uses built-in Default Dark Modern syntax colours with
-owned workbench surface, selection, focus, and status colours. Browser chrome
-uses the graphite base where policy supports it. Dark Reader remains available
-without fragile per-site CSS.
+Ghostty has four repository-owned profiles: Main, Moss, Slate, and
+Ember. In Plasma, launch **Ghostty Profile** or press
+`Meta+Shift+Return` to switch the default font and palette live. Every new
+Ghostty surface after the first one—including a split, tab, or window—opens the
+same compact colour chooser before Bash starts. This runs inside the new PTY,
+so it works in Plasma and the optional Hyprland session without compositor
+window/PID timing hooks. Cancelling the chooser simply keeps the current
+default. A matching Konsole colour scheme/profile is installed and selected
+when the applicator runs in Plasma. VS Code uses built-in Default Dark Modern
+syntax colours with owned workbench surface, selection, focus, and status
+colours. Browser chrome uses the graphite base where policy supports it. Dark
+Reader remains available without fragile per-site CSS.
 
 The optional Hyprland session shares the wallpaper and palette through its
-existing Waybar, Mako, and Fuzzel files. Its bindings, workspaces, and session
-behaviour are unchanged. Obsidian remains per-vault: select its Dark base colour
-scheme when necessary. Zen follows the system preference but retains its own
-profile-local extension state.
+existing Waybar, Mako, and Fuzzel files. Its workspaces and normal session
+behaviour are unchanged; the Ghostty surface chooser is now shared with Plasma.
+Obsidian remains per-vault: select its Dark base colour scheme when necessary.
+Zen follows the system preference but retains its own profile-local extension
+state.
 
 Steam does not inherit KDE colours. NixOS therefore installs the maintained
 AdwSteamGtk wrapper and a repository-owned Graphite + Fern custom-colour file.
