@@ -165,6 +165,12 @@ assert builtins.elem "HOME=/home/tristan"
   config.systemd.user.services.helix-ghostty-config.serviceConfig.Environment;
 assert builtins.elem "XDG_CONFIG_HOME=/home/tristan/.config"
   config.systemd.user.services.helix-ghostty-config.serviceConfig.Environment;
+assert builtins.all (name: builtins.elem name packageNames) [
+  "ghostty-profile"
+  "ghostty-surface-profile"
+  "ghostty-surface-shell"
+];
+assert !(builtins.elem "ghostty-split-profile" packageNames);
 assert !(builtins.hasAttr "GTK_THEME" config.environment.variables);
 assert !(builtins.hasAttr "QT_STYLE_OVERRIDE" config.environment.variables);
 assert !(builtins.hasAttr "QT_QPA_PLATFORMTHEME" config.environment.variables);
