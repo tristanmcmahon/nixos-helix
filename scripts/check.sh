@@ -118,29 +118,9 @@ python3 scripts/test-theme-settings.py
 printf 'Evaluating release, storage, desktop, and security invariants...\n'
 nix-instantiate --eval --strict tests/system-invariants.nix
 
-printf 'Instantiating the exact CUDA-enabled default system closure...\n'
-nix-instantiate '<nixpkgs/nixos>' -A system \
-  -I "nixos-config=$repo_root/configuration.nix" >/dev/null
-
-printf 'Building the default system closure with CI-only CPU Ollama...\n'
-system_closure=$(nix-build --no-out-link -E '
-  let
-    system = import <nixpkgs/nixos> {
-      configuration = {
-        imports = [ ./configuration.nix ];
-        nixpkgs.overlays = [
-          (_final: previous: {
-            # The real Helix configuration remains pkgs.ollama-cuda. CI
-            # instantiates that exact closure above, but builds the CPU package
-            # here so hosted runners do not compile ggml-cuda for hours.
-            ollama-cuda = previous.ollama;
-          })
-        ];
-      };
-    };
-  in
-  system.config.system.build.toplevel
-')
+printf 'Building the complete default system closure...\n'
+system_closure=$(nix-build --no-out-link '<nixpkgs/nixos>' -A system \
+  -I "nixos-config=$repo_root/tests/build-configuration.nix")
 
 printf 'Checking Vim and modern-bash in the built default system...\n'
 ./scripts/test-modern-bash.sh "$system_closure"
@@ -323,9 +303,11 @@ grep -qF 'OLLAMA_HOST=127.0.0.1:11434' \
   "$system_closure/etc/systemd/system/ollama.service"
 grep -qF 'BindsTo=ollama.service' \
   "$system_closure/etc/systemd/system/ollama-model-loader.service"
-for model in gemma4:12b gpt-oss:20b qwen3.6:27b qwen3-embedding:4b; do
+for model in deepseek-r1:8b gemma4:12b gpt-oss:20b qwen3.6:27b qwen3-embedding:4b; do
   grep -qF "$model" "$system_closure/sw/bin/helix-ollama-update-models"
 done
+[[ -x $system_closure/sw/bin/chatgpt ]]
+grep -Rqs '^Name=ChatGPT$' "$system_closure/sw/share/applications"
 
 printf 'Checking 1Password modules, wrappers, and browser policies...\n'
 onepassword_gui=$(nix-build --no-out-link -E '

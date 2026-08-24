@@ -83,6 +83,7 @@ assert config.services.ollama.group == "ollama";
 assert config.services.ollama.models == "/mnt/games_nvme/ollama/models";
 assert
   config.services.ollama.loadModels == [
+    "deepseek-r1:8b"
     "gemma4:12b"
     "gpt-oss:20b"
     "qwen3.6:27b"

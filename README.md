@@ -5,7 +5,7 @@ Plasma 6, an optional Hyprland/UWSM session, and an NVIDIA RTX 5080. It uses
 ordinary NixOS modules and the root Nix channel: no flakes, Home Manager,
 overlays, or host framework.
 
-The active configuration includes workstation, development, gaming, and local
+The active configuration includes workstation, development, gaming, emulation, and local
 LLM profiles. Ollama runs locally on `127.0.0.1:11434`; SSH is the only service
 intentionally exposed through the firewall. Hardware support includes
 PipeWire, Bluetooth, redistributable firmware, NVIDIA open kernel modules, and

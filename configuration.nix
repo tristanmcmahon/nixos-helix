@@ -37,6 +37,7 @@ in
     ./system/users.nix
     ./system/locale.nix
     ./services/maintenance.nix
+    ./services/hamsteam.nix
     ./services/openclaw.nix
     ./services/openssh.nix
 

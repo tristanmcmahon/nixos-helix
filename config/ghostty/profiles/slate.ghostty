@@ -1,0 +1,29 @@
+# Helix Ghostty profile: Slate
+# Cooler graphite with restrained blue-green accents.
+
+background = #0C0F11
+foreground = #E2E7E8
+cursor-color = #87B7C0
+cursor-text = #0C0F11
+selection-background = #294A52
+selection-foreground = #E2E7E8
+
+palette = 0=#0C0F11
+palette = 1=#D47D7B
+palette = 2=#70B58A
+palette = 3=#D0AD6D
+palette = 4=#79A9B6
+palette = 5=#A18FAC
+palette = 6=#72B0A6
+palette = 7=#D5DDDE
+palette = 8=#778286
+palette = 9=#E19693
+palette = 10=#86C29A
+palette = 11=#DCBD82
+palette = 12=#93BDC7
+palette = 13=#B5A4BF
+palette = 14=#8BC4BA
+palette = 15=#F0F4F4
+
+font-family = Iosevka Nerd Font Mono
+font-size = 13.5

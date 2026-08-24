@@ -1,6 +1,7 @@
 { pkgs, ... }:
 
 let
+  chatgpt = pkgs.callPackage ../packages/chatgpt.nix { };
   zen-browser = pkgs.callPackage ../packages/zen-browser.nix { };
 in
 {
@@ -9,6 +10,7 @@ in
   environment.systemPackages = [
     # Chrome remains separate from Chromium, which is owned by programs.chromium.
     pkgs.google-chrome
+    chatgpt
     zen-browser
     pkgs.obsidian
     pkgs.signal-desktop
