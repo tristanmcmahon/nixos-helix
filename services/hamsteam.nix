@@ -2,8 +2,7 @@
 
 let
   host = import ../config/host.nix;
-  user = host.user;
-  home = host.home;
+  inherit (host) user home;
   repo = "${host.projectsRoot}/hamSteam";
   entrypoint = "${repo}/hamsteam.py";
   serviceImplementation = "${repo}/hamsteam/service.py";
