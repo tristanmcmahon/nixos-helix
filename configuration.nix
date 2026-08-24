@@ -4,66 +4,25 @@ let
   release = import ./release.nix;
 in
 {
-  # A NixOS configuration is assembled by importing modules. Each module below
-  # contributes option values to one combined system configuration; file order
-  # does not imply service start order.
+  # The root assembles ownership boundaries rather than implementation files.
+  # Each default.nix below is the public entrypoint for one Helix layer.
   imports = [
-    # This is Helix's real generated hardware module. It owns filesystems,
-    # boot-critical modules, the platform, and CPU microcode selection.
+    # Generated machine facts remain separate from maintained hardware policy.
     ./hardware-configuration.nix
-
-    ./hardware/nvidia.nix
-    ./hardware/audio.nix
-    ./hardware/bluetooth.nix
-    ./hardware/firmware.nix
-    ./hardware/corsair-k70.nix
-
-    ./desktop/plasma.nix
-    ./desktop/hyprland.nix
-    ./desktop/applications.nix
-    ./desktop/fonts.nix
-    ./desktop/ghostty.nix
-    ./desktop/browsers.nix
-    ./desktop/onepassword.nix
-    ./desktop/theme.nix
-
-    ./shell/modern-bash.nix
-
-    ./system/boot.nix
-    ./system/hosts.nix
-    ./system/networking.nix
-    ./system/nas.nix
-    ./system/storage.nix
-    ./system/users.nix
-    ./system/locale.nix
-    ./services/maintenance.nix
-    ./services/hamsteam.nix
-    ./services/openclaw.nix
-    ./services/openssh.nix
-
-    # These profiles form the normal Plasma workstation. Gaming and local
-    # inference are enabled by default. Emulation is a separate, reversible
-    # layer even though it uses the gaming profile's graphics/controller base.
-    ./profiles/workstation.nix
-    ./profiles/development.nix
-    ./profiles/gaming.nix
-    ./profiles/emulation.nix
-    ./profiles/local-llm.nix
-
-    # The deliberately small package set needed on every Helix installation.
-    ./packages/base.nix
+    ./hardware/default.nix
+    ./desktop/default.nix
+    ./shell/default.nix
+    ./system/default.nix
+    ./services/default.nix
+    ./profiles/default.nix
+    ./packages/default.nix
   ];
 
   helix.emulation.enable = true;
 
-  # NVIDIA's user-space driver is redistributable but not free software, so
-  # Nixpkgs will refuse to evaluate it unless unfree packages are permitted.
-  # This does not install CUDA or any other compute/development stack.
+  # NVIDIA, Chrome, ChatGPT and other selected workstation packages are not all
+  # free software, so evaluation must permit unfree packages globally.
   nixpkgs.config.allowUnfree = true;
-
-  # Nixpkgs marks OpenClaw insecure because agents can act on untrusted model
-  # input; this exception is intentionally limited to the reviewed version.
-  nixpkgs.config.permittedInsecurePackages = [ "openclaw-2026.5.7" ];
 
   # This is the compatibility floor from Helix's 26.05 fresh installation,
   # not the currently selected channel. Keep it unchanged across upgrades.

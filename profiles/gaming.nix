@@ -1,7 +1,10 @@
 { ... }:
 
 {
-  imports = [ ../packages/gaming.nix ];
+  imports = [
+    ../packages/gaming.nix
+    ../services/hamsteam.nix
+  ];
 
   # Steam's NixOS integration installs the client and its controller udev rules.
   programs.steam.enable = true;

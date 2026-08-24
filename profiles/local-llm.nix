@@ -30,7 +30,14 @@ let
   };
 in
 {
-  imports = [ ../packages/local-llm.nix ];
+  imports = [
+    ../packages/local-llm.nix
+    ../services/openclaw.nix
+  ];
+
+  # OpenClaw belongs to the local-inference feature. Keep its reviewed insecure
+  # package exception here so disabling this profile removes both together.
+  nixpkgs.config.permittedInsecurePackages = [ "openclaw-2026.5.7" ];
 
   services.ollama = {
     enable = true;
