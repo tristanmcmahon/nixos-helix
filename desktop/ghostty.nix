@@ -40,57 +40,36 @@ let
     '';
   };
 
-  ghosttySplitProfile = pkgs.writeShellApplication {
-    name = "ghostty-split-profile";
+  # Ghostty applies command to every surface after the first one. Running the
+  # chooser inside that fresh PTY makes per-surface colours compositor-neutral
+  # and avoids compositor-specific PID or timing heuristics.
+  ghosttySurfaceShell = pkgs.writeShellApplication {
+    name = "ghostty-surface-shell";
     runtimeInputs = [
-      pkgs.coreutils
       pkgs.fuzzel
-      pkgs.gawk
-      pkgs.hyprland
-      pkgs.jq
-      pkgs.procps
       ghosttySurfaceProfile
     ];
     text = ''
-      # Hyprland invokes this from a non-consuming bind: the same keypress still
-      # reaches Ghostty and creates the split using Ghostty's native action.
-      active=$(hyprctl activewindow -j)
-      class=$(jq -r '.class // ""' <<< "$active")
-      case "$class" in
-        com.mitchellh.ghostty | ghostty) ;;
-        *) exit 0 ;;
-      esac
-      ghostty_pid=$(jq -r '.pid // empty' <<< "$active")
-      [[ -n "$ghostty_pid" ]] || exit 0
-
-      # Give Ghostty time to consume the non-consumed key event and start the
-      # fresh shell before Fuzzel takes keyboard focus.
-      sleep 0.10
-
-      selection=$(printf '%s\n' \
-        'Main  · graphite / fern' \
-        'Moss  · softer green' \
-        'Slate · cool graphite' \
+      selection=$(printf '%s\n' \\
+        'Main  · graphite / fern' \\
+        'Moss  · softer green' \\
+        'Slate · cool graphite' \\
         'Ember · warm graphite' |
-        fuzzel --config /etc/helix/theme/fuzzel.ini --dmenu --prompt='New split: ')
+        fuzzel --config /etc/helix/theme/fuzzel.ini --dmenu --prompt='New Ghostty surface: ' || true)
 
       case "$selection" in
         Main*) profile=main ;;
         Moss*) profile=moss ;;
         Slate*) profile=slate ;;
         Ember*) profile=ember ;;
-        *) exit 0 ;;
+        *) profile= ;;
       esac
 
-      # A Ghostty split is its own PTY-backed surface. The newest direct child
-      # of the owning Ghostty process is the shell for the split just created.
-      # Writing OSC colour controls to that PTY changes only that surface and
-      # does not inject a command into shell history or disturb a running TUI.
-      tty=$(ps --ppid "$ghostty_pid" -o tty= --sort=start_time |
-        awk 'NF && $1 != "?" { tty=$1 } END { print tty }')
-      [[ -n "$tty" ]] || exit 0
+      if [[ -n "$profile" ]]; then
+        ghostty-surface-profile "$profile"
+      fi
 
-      ghostty-surface-profile "$profile" > "/dev/$tty"
+      exec ${pkgs.bashInteractive}/bin/bash
     '';
   };
 
@@ -108,7 +87,7 @@ let
         'Moss   · Maple Mono     · softer green' \
         'Slate  · Iosevka        · cool graphite' \
         'Ember  · Monaspace Neon · warm graphite' |
-        fuzzel --config /etc/helix/theme/fuzzel.ini --dmenu --prompt='Ghostty profile: ')
+        fuzzel --config /etc/helix/theme/fuzzel.ini --dmenu --prompt='Ghostty profile: ' || true)
 
       case "$selection" in
         Main*) profile=main ;;
@@ -127,6 +106,21 @@ let
         pkill -USR2 -x ghostty 2>/dev/null || true
     '';
   };
+
+  ghosttyProfileLauncher = pkgs.makeDesktopItem {
+    name = "ghostty-profile";
+    desktopName = "Ghostty Profile";
+    comment = "Switch the Ghostty font and colour profile";
+    exec = "${ghosttyProfile}/bin/ghostty-profile";
+    icon = "com.mitchellh.ghostty";
+    categories = [
+      "System"
+      "Utility"
+    ];
+    extraConfig = {
+      "X-KDE-Shortcuts" = "Meta+Shift+Return";
+    };
+  };
 in
 {
   environment = {
@@ -140,8 +134,9 @@ in
 
     systemPackages = [
       ghosttyProfile
-      ghosttySplitProfile
+      ghosttyProfileLauncher
       ghosttySurfaceProfile
+      ghosttySurfaceShell
     ];
   };
 

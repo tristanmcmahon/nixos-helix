@@ -25,13 +25,6 @@ let
     bind = $mainMod, UP, movefocus, u
     bind = $mainMod, DOWN, movefocus, d
 
-    # Ghostty's stock Linux split bindings are Ctrl+Shift+O (right) and
-    # Ctrl+Shift+E (down). These Hyprland binds deliberately do not consume the
-    # keypress: Ghostty still performs its native split while the companion
-    # helper opens a profile chooser for the newly-created surface.
-    bindn = CTRL SHIFT, O, exec, ghostty-split-profile
-    bindn = CTRL SHIFT, E, exec, ghostty-split-profile
-
     bind = $mainMod, 1, workspace, 1
     bind = $mainMod, 2, workspace, 2
     bind = $mainMod, 3, workspace, 3
