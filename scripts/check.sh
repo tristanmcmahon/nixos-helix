@@ -228,6 +228,21 @@ fi
 grep -qF 'background = #0B0D0C' "$ghostty_appearance"
 grep -qF 'palette = 2=#67B87A' "$ghostty_appearance"
 
+grep -qF 'initial-command = direct:/run/current-system/sw/bin/bash' "$ghostty_config"
+grep -qF 'command = direct:/run/current-system/sw/bin/ghostty-surface-shell' "$ghostty_config"
+grep -qF 'shell-integration = bash' "$ghostty_config"
+for ghostty_helper in ghostty-profile ghostty-surface-profile ghostty-surface-shell; do
+  [[ -x $system_closure/sw/bin/$ghostty_helper ]]
+done
+[[ ! -e $system_closure/sw/bin/ghostty-split-profile ]]
+ghostty_profile_launcher=$system_closure/sw/share/applications/ghostty-profile.desktop
+[[ -r $ghostty_profile_launcher ]]
+grep -qF 'X-KDE-Shortcuts=Meta+Shift+Return' "$ghostty_profile_launcher"
+if grep -qF 'ghostty-split-profile' "$hyprland_config"; then
+  printf 'The Hyprland-only Ghostty split hook is still configured.\n' >&2
+  exit 1
+fi
+
 printf 'Checking ckb-next in the built default system...\n'
 [[ -x $system_closure/sw/bin/ckb-next ]]
 [[ -x $system_closure/sw/bin/ckb-next-daemon ]]
