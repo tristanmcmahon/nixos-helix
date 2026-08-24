@@ -7,6 +7,7 @@
     usbutils
     lm_sensors
     smartmontools
+    evtest
     # Helix has an NVIDIA GPU; the vendor-specific build avoids pulling AMD,
     # Intel, and other GPU backends into the workstation closure.
     nvtopPackages.nvidia

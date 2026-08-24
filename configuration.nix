@@ -15,6 +15,7 @@ in
     ./hardware/nvidia.nix
     ./hardware/audio.nix
     ./hardware/bluetooth.nix
+    ./hardware/controllers.nix
     ./hardware/firmware.nix
     ./hardware/corsair-k70.nix
 
