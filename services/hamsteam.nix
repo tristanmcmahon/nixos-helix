@@ -1,9 +1,10 @@
 { pkgs, ... }:
 
 let
-  user = "tristan";
-  home = "/home/${user}";
-  repo = "${home}/Projects/hamSteam";
+  host = import ../config/host.nix;
+  user = host.user;
+  home = host.home;
+  repo = "${host.projectsRoot}/hamSteam";
   entrypoint = "${repo}/hamsteam.py";
   serviceImplementation = "${repo}/hamsteam/service.py";
 in

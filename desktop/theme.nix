@@ -5,6 +5,7 @@
 }:
 
 let
+  host = import ../config/host.nix;
   themeDirectory = ../config/theme;
   palette = import ../config/theme/palette.nix;
   wallpaper = "${themePackage}/share/wallpapers/HelixGraphiteFern/contents/images/wallpaper.svg";
@@ -67,7 +68,7 @@ let
       pkgs.python3
     ];
     text = ''
-      export HOME=/home/tristan
+      export HOME=${lib.escapeShellArg host.home}
       export XDG_CONFIG_HOME="''${XDG_CONFIG_HOME:-$HOME/.config}"
       marker="$XDG_CONFIG_HOME/helix/theme-revision"
       revision=${lib.escapeShellArg themeRevision}
@@ -194,16 +195,16 @@ in
   };
 
   systemd.user.services.helix-graphite-fern-theme = {
-    description = "Apply the Helix Graphite + Fern appearance policy for Tristan";
+    description = "Apply the Helix Graphite + Fern appearance policy for ${host.displayName}";
     wantedBy = [ "graphical-session.target" ];
     after = [ "graphical-session-pre.target" ];
-    unitConfig.ConditionUser = "tristan";
+    unitConfig.ConditionUser = host.user;
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${applyTheme}/bin/helix-apply-theme";
       Environment = [
-        "HOME=/home/tristan"
-        "XDG_CONFIG_HOME=/home/tristan/.config"
+        "HOME=${host.home}"
+        "XDG_CONFIG_HOME=${host.home}/.config"
       ];
     };
   };

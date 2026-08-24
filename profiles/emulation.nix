@@ -6,6 +6,7 @@
 }:
 
 let
+  host = import ../config/host.nix;
   cfg = config.helix.emulation;
   nasRoot = "/mnt/infernalnexus/nas1";
   nasSource = "//192.168.1.8/nas1";
@@ -81,8 +82,8 @@ in
           after = [ "network-online.target" ];
           options = builtins.concatStringsSep "," [
             "credentials=/etc/nixos/secrets/infernalnexus-smb"
-            "uid=tristan"
-            "gid=users"
+            "uid=${host.user}"
+            "gid=${host.userGroup}"
             "dir_mode=0555"
             "file_mode=0444"
             "vers=2.0"
@@ -106,10 +107,10 @@ in
       ];
 
       user.services.helix-emulation-prepare = {
-        description = "Prepare NAS-backed emulation paths for Tristan";
+        description = "Prepare NAS-backed emulation paths for ${host.displayName}";
         wantedBy = [ "graphical-session.target" ];
         after = [ "graphical-session-pre.target" ];
-        unitConfig.ConditionUser = "tristan";
+        unitConfig.ConditionUser = host.user;
         serviceConfig = {
           Type = "oneshot";
           ExecStart = "${prepare}/bin/helix-emulation-prepare";

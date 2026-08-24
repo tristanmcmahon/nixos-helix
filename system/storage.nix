@@ -6,6 +6,7 @@
 }:
 
 let
+  host = import ../config/host.nix;
   localSsds = import ./local-ssds.nix;
   mountOptions = [
     "noatime"
@@ -52,7 +53,7 @@ in
           };
           script = ''
             ${pkgs.util-linux}/bin/mountpoint -q ${lib.escapeShellArg ssd.mountPoint}
-            ${pkgs.coreutils}/bin/install -d -o tristan -g users -m 0775 \
+            ${pkgs.coreutils}/bin/install -d -o ${host.user} -g ${host.userGroup} -m 0775 \
               ${lib.escapeShellArg "${ssd.mountPoint}/data"}
           '';
         };

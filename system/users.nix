@@ -1,9 +1,10 @@
-_:
-
+let
+  host = import ../config/host.nix;
+in
 {
-  users.users.tristan = {
+  users.users.${host.user} = {
     isNormalUser = true;
-    description = "Tristan";
+    description = host.displayName;
 
     # wheel permits authenticated sudo; networkmanager permits changing wired
     # and wireless connections from Plasma System Settings.
@@ -14,8 +15,8 @@ _:
   };
 
   # NixOS keeps account passwords mutable by default. No password, hash, or SSH
-  # key belongs in this repository: set the account password locally with
-  # `sudo passwd tristan` before relying on this account for login.
+  # key belongs in this repository: set the account password locally before
+  # relying on this account for login.
   users.mutableUsers = true;
 
   # Retain the normal password prompt for administrative actions. Membership in

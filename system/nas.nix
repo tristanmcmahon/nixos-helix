@@ -1,5 +1,8 @@
 { pkgs, ... }:
 
+let
+  host = import ../config/host.nix;
+in
 {
   # mount.cifs is a filesystem helper, not an interactive workstation tool.
   system.fsPackages = [ pkgs.cifs-utils ];
@@ -19,8 +22,8 @@
       options = builtins.concatStringsSep "," [
         # This runtime-only file remains outside Git and the Nix store.
         "credentials=/etc/nixos/secrets/infernalnexus-smb"
-        "uid=tristan"
-        "gid=users"
+        "uid=${host.user}"
+        "gid=${host.userGroup}"
         "dir_mode=0775"
         "file_mode=0664"
 

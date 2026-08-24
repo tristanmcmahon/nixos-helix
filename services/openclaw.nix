@@ -1,9 +1,10 @@
 { pkgs, ... }:
 
 let
-  stateDirectory = "/home/tristan/.local/state/openclaw";
+  host = import ../config/host.nix;
+  stateDirectory = "${host.home}/.local/state/openclaw";
   workspaceDirectory = "${stateDirectory}/workspace";
-  secretFile = "/home/tristan/.config/openclaw/gateway.env";
+  secretFile = "${host.home}/.config/openclaw/gateway.env";
 
   openclawConfig = (pkgs.formats.json { }).generate "openclaw.json" {
     gateway = {
@@ -57,10 +58,10 @@ in
     wantedBy = [ "default.target" ];
     after = [ "network.target" ];
 
-    unitConfig.ConditionUser = "tristan";
+    unitConfig.ConditionUser = host.user;
 
     environment = {
-      HOME = "/home/tristan";
+      HOME = host.home;
       OPENCLAW_CONFIG_PATH = openclawConfig;
       OPENCLAW_STATE_DIR = stateDirectory;
     };
