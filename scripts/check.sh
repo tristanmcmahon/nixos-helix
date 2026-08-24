@@ -212,8 +212,12 @@ grep -qF 'swaybg --image /etc/helix/theme/wallpaper.svg' "$hyprland_config"
 grep -qF 'waybar --style /etc/helix/theme/waybar.css' "$hyprland_config"
 grep -qF 'mako --config /etc/helix/theme/mako.conf' "$hyprland_config"
 grep -qF 'fuzzel --config /etc/helix/theme/fuzzel.ini' "$hyprland_config"
+ghostty_validation_config=$temporary_directory/ghostty-config.ghostty
+sed \
+  "s|config-file = /home/tristan/.config/ghostty/profile.ghostty|config-file = $repo_root/config/ghostty/profiles/main.ghostty|" \
+  config/ghostty/config.ghostty > "$ghostty_validation_config"
 "$system_closure/sw/bin/ghostty" +validate-config \
-  --config-file=config/ghostty/config.ghostty
+  --config-file="$ghostty_validation_config"
 grep -qF 'background = #0B0D0C' config/ghostty/config.ghostty
 grep -qF 'palette = 2=#67B87A' config/ghostty/config.ghostty
 
