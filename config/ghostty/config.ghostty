@@ -7,6 +7,11 @@
 # touching the repository-owned baseline configuration.
 config-file = /home/tristan/.config/ghostty/profile.ghostty
 
+# Start the first terminal immediately. Every later Ghostty surface runs the
+# compositor-neutral chooser before handing the PTY to Bash.
+initial-command = direct:/run/current-system/sw/bin/bash
+command = direct:/run/current-system/sw/bin/ghostty-surface-shell
+
 cursor-style = block
 cursor-style-blink = false
 
@@ -24,7 +29,7 @@ copy-on-select = clipboard
 clipboard-read = allow
 clipboard-write = allow
 
-shell-integration = detect
+shell-integration = bash
 
 # Ghostty 1.3 replaced audible-bell with feature flags; disable every bell UI.
 bell-features = no-system,no-audio,no-attention,no-title,no-border
