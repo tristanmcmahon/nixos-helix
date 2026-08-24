@@ -69,6 +69,7 @@ stdenv.mkDerivation {
 
   dontConfigure = true;
   dontBuild = true;
+  dontWrapQtApps = true;
 
   # The Debian package includes both desktop-integration shims. Helix uses
   # Plasma 6, so patch the Qt 6 shim and leave the unused Qt 5 shim optional.
