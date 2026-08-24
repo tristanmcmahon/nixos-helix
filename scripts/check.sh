@@ -120,7 +120,7 @@ nix-instantiate --eval --strict tests/system-invariants.nix
 
 printf 'Building the complete default system closure...\n'
 system_closure=$(nix-build --no-out-link '<nixpkgs/nixos>' -A system \
-  -I "nixos-config=$repo_root/configuration.nix")
+  -I "nixos-config=$repo_root/tests/build-configuration.nix")
 
 printf 'Checking Vim and modern-bash in the built default system...\n'
 ./scripts/test-modern-bash.sh "$system_closure"
