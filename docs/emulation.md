@@ -54,15 +54,19 @@ helix-emulation-audit-arcade
 This is deliberately read-only. Igir writes a CSV report under
 `Emulation/tools/reports`; it does not rebuild or mutate the set.
 
-Fetch artwork and generate ES-DE metadata one platform at a time:
+Fetch artwork and generate ES-DE metadata for platforms supported by
+Skyscraper:
 
 ```bash
 helix-emulation-scrape ps2
-helix-emulation-scrape ps3
-helix-emulation-scrape ps4
 helix-emulation-scrape snes
 helix-emulation-scrape arcade
 ```
+
+Skyscraper does not expose PS3 or PS4 platform IDs, so this helper deliberately
+rejects those two systems rather than claiming scraping support that will fail.
+RPCS3 and shadPS4 themselves remain fully NAS-backed; only their automated
+metadata/artwork scraping is outside this helper.
 
 Skyscraper uses ScreenScraper by default. An alternative supported scraper can
 be supplied as the second argument. Its cache, downloaded media, and generated

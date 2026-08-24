@@ -296,9 +296,14 @@ let
       platform=''${1:-}
       source=''${2:-screenscraper}
       case "$platform" in
-        ps2|ps3|ps4|snes|arcade) ;;
+        ps2|snes|arcade) ;;
+        ps3|ps4)
+          printf 'Skyscraper does not support %s; automated scraping is available for ps2, snes, and arcade only.\n' \
+            "$platform" >&2
+          exit 2
+          ;;
         *)
-          printf 'Usage: helix-emulation-scrape {ps2|ps3|ps4|snes|arcade} [scraper-source]\n' >&2
+          printf 'Usage: helix-emulation-scrape {ps2|snes|arcade} [scraper-source]\n' >&2
           exit 2
           ;;
       esac
