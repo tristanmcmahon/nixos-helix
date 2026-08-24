@@ -18,6 +18,7 @@
   libdrm,
   libgbm,
   libxkbcommon,
+  libusb1,
   nspr,
   nss,
   pango,
@@ -53,6 +54,7 @@ stdenv.mkDerivation {
     libdrm
     libgbm
     libxkbcommon
+    libusb1
     nspr
     nss
     pango
@@ -77,6 +79,7 @@ stdenv.mkDerivation {
     "libQt5Core.so.5"
     "libQt5Gui.so.5"
     "libQt5Widgets.so.5"
+    "libc.musl-x86_64.so.1"
   ];
 
   unpackPhase = ''
