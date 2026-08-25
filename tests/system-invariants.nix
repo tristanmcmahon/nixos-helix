@@ -69,6 +69,7 @@ assert config.services.grafana.settings.server.http_addr == "127.0.0.1";
 assert config.services.grafana.settings.server.http_port == 3000;
 assert config.services.grafana.settings."auth.anonymous".org_role == "Viewer";
 assert config.services.grafana.settings.auth.disable_login_form;
+assert lib.hasPrefix "$__file{" config.services.grafana.settings.security.secret_key;
 assert config.programs.coolercontrol.enable;
 assert !(builtins.elem 3000 config.networking.firewall.allowedTCPPorts);
 assert !(builtins.elem 9090 config.networking.firewall.allowedTCPPorts);

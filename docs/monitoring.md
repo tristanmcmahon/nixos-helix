@@ -26,6 +26,11 @@ telemetry away from Helix, and Grafana's reporting and update checks are
 disabled. Rebuilds and Nix garbage collection do not delete Prometheus history;
 deleting its state directory is a separate, explicit operation.
 
+Grafana's database-encryption key is generated once at first service start and
+kept in its private state directory. The key is referenced through Grafana's
+file provider, so it never enters the world-readable Nix store or this
+repository.
+
 ## Using it
 
 Launch **Helix Monitor** from Plasma or run:

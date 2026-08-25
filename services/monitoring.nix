@@ -8,6 +8,7 @@
 let
   cfg = config.helix.monitoring;
   dashboard = ../config/monitoring/helix-overview.json;
+  grafanaSecretFile = "${config.services.grafana.dataDir}/secret_key";
   grafanaUrl = "http://localhost:${toString cfg.grafanaPort}/d/helix-overview";
 
   monitorCommand = pkgs.writeShellApplication {
@@ -178,6 +179,7 @@ in
         security = {
           disable_gravatar = true;
           cookie_samesite = "strict";
+          secret_key = "$__file{${grafanaSecretFile}}";
         };
         dashboards.default_home_dashboard_path = dashboard;
       };
@@ -225,5 +227,15 @@ in
       monitorCommand
       monitorLauncher
     ];
+
+    # Grafana 12 requires a stable database-encryption key. Generate it once
+    # inside Grafana's private state directory instead of exposing it through
+    # the world-readable Nix store.
+    systemd.services.grafana.preStart = lib.mkBefore ''
+      if [[ ! -s ${lib.escapeShellArg grafanaSecretFile} ]]; then
+        umask 077
+        ${pkgs.openssl}/bin/openssl rand -hex 32 > ${lib.escapeShellArg grafanaSecretFile}
+      fi
+    '';
   };
 }
