@@ -50,10 +50,10 @@ let
       ghosttySurfaceProfile
     ];
     text = ''
-      selection=$(printf '%s\n' \\
-        'Main  · graphite / fern' \\
-        'Moss  · softer green' \\
-        'Slate · cool graphite' \\
+      selection=$(printf '%s\n' \
+        'Main  · graphite / fern' \
+        'Moss  · softer green' \
+        'Slate · cool graphite' \
         'Ember · warm graphite' |
         fuzzel --config /etc/helix/theme/fuzzel.ini --dmenu --prompt='New Ghostty surface: ' || true)
 
