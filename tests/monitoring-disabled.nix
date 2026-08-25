@@ -17,6 +17,8 @@ assert !config.services.prometheus.exporters.nvidia-gpu.enable;
 assert !config.services.prometheus.exporters.smartctl.enable;
 assert !config.services.grafana.enable;
 assert !config.programs.coolercontrol.enable;
+assert !(builtins.elem "nct6775" config.boot.kernelModules);
 assert !(builtins.hasAttr "helix/monitoring/dashboards/helix-overview.json" config.environment.etc);
 assert !(builtins.elem "helix-monitor" packageNames);
+assert !(builtins.elem "helix-fan-commission" packageNames);
 true

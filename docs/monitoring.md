@@ -54,33 +54,41 @@ temperature, GPU board power, scrape health, and SMART status. A missing panel
 usually means that the underlying device or driver does not expose that metric;
 it is not replaced with guessed data.
 
-## Commissioning fan control
+## Automatic fan commissioning
 
-CoolerControl is enabled, but the repository intentionally does not prescribe
-curves on the first activation. Fan channel names, safe minimum duty cycles,
-stop/start hysteresis, and which temperature should govern a channel are
-physical facts that must be observed on Helix.
+Helix's ASUS TUF GAMING X570-PLUS (WI-FI) exposes its Nuvoton controller through
+the kernel's supported `nct6775` WMBD path. The driver provides CoolerControl
+with motherboard fan RPM and PWM channels without a forced chip identifier.
 
-After `./scripts/rebuild.sh test`:
+Commissioning is automated:
 
-1. Open `helix-monitor fans` and record every detected fan, pump, and
-   controllable channel.
-2. Change one channel at a time for a few seconds and identify the physical fan.
-   Do not lower a pump or an unidentified channel.
-3. Establish the lowest stable RPM for each chassis fan before allowing a low
-   duty value. Give start-up duty a margin above the stall point.
-4. Use CPU package temperature for CPU cooling and a conservative blend of CPU
-   and GPU temperature for shared case airflow. Apply hysteresis or smoothing
-   so short Ryzen temperature spikes do not produce audible hunting.
-5. Suspend and resume once, then confirm every controlled channel and RPM
-   reading recover correctly.
-6. Keep the firmware's existing cooling policy available as the rollback until
-   the curves have survived a sustained CPU/GPU load test.
+```bash
+helix-monitor inventory
+helix-monitor commission
+```
 
-CoolerControl's discovered devices and profiles are mutable machine state. Once
-the physical map is known, document the channel names and validated limits here;
-do not commit raw inventory dumps or unstable device IDs merely to make the
-configuration look complete.
+The commissioner works only on the exact Helix board and only on spinning,
+fixed-speed-capable Nuvoton channels. NVIDIA channels, named pump/AIO/water
+channels, stopped headers, and pump-like high-RPM channels are excluded. It
+probes upward first, protects any newly detected high-speed channel before a
+downward step, never tests below 40% duty, watches CPU temperature, and recovers
+a stalled fan at full duty. Every original control mode is restored after its
+test or on interruption. After every safe fan passes, it applies a conservative
+maximum-of-CPU-and-GPU curve with a measured safety margin.
+
+No pump is fitted to Helix. The high-speed auxiliary guard remains to avoid
+mistaking the X570 chipset fan for an ordinary case or CPU fan. Commissioning
+stores the complete previous control state before its first write. Restore it
+without opening the GUI:
+
+```bash
+helix-monitor restore
+```
+
+The report is retained at
+`~/.local/state/helix/fan-commissioning.json`. CoolerControl profiles remain
+mutable machine state, while the board driver and guarded commissioning policy
+are repository-owned.
 
 ## Validation and rollback
 
@@ -97,5 +105,5 @@ helix-monitor status
 Check all three Prometheus targets at `http://localhost:9090/targets`, inspect
 **Helix · Long View**, and confirm CoolerControl sees the expected devices. Use
 `./scripts/rebuild.sh switch` only after those checks. A previous NixOS
-generation restores the prior service set; any CoolerControl profile should
-also be disabled in its GUI before testing a conflicting firmware curve.
+generation restores the prior service set. `helix-monitor restore` restores the
+pre-commissioning CoolerControl settings as a separate mutable-state rollback.
