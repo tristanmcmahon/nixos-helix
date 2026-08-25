@@ -11,12 +11,21 @@ let
   grafanaSecretFile = "${config.services.grafana.dataDir}/secret_key";
   grafanaUrl = "http://localhost:${toString cfg.grafanaPort}/d/helix-overview";
 
+  fanCommissionCommand = pkgs.writeShellApplication {
+    name = "helix-fan-commission";
+    runtimeInputs = [ pkgs.python3 ];
+    text = ''
+      exec python3 ${../scripts/helix-fan-commission.py} "$@"
+    '';
+  };
+
   monitorCommand = pkgs.writeShellApplication {
     name = "helix-monitor";
     runtimeInputs = [
       pkgs.coolercontrol.coolercontrol-gui
       pkgs.systemd
       pkgs.xdg-utils
+      fanCommissionCommand
     ];
     text = ''
       case ''${1:-dashboard} in
@@ -25,6 +34,15 @@ let
         ;;
       fans)
         exec coolercontrol
+        ;;
+      commission)
+        exec helix-fan-commission commission --apply
+        ;;
+      inventory)
+        exec helix-fan-commission inventory
+        ;;
+      restore)
+        exec helix-fan-commission restore
         ;;
       status)
         exec systemctl --no-pager --full status \
@@ -36,10 +54,10 @@ let
           coolercontrold.service
         ;;
       --help|-h)
-        printf 'Usage: helix-monitor [dashboard|fans|status]\n'
+        printf 'Usage: helix-monitor [dashboard|fans|commission|inventory|restore|status]\n'
         ;;
       *)
-        printf 'Usage: helix-monitor [dashboard|fans|status]\n' >&2
+        printf 'Usage: helix-monitor [dashboard|fans|commission|inventory|restore|status]\n' >&2
         exit 2
         ;;
       esac
@@ -89,9 +107,14 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # CoolerControl owns interactive fan curves and their mutable device-level
-    # configuration. The repository enables it, but does not guess channel
-    # names, safe PWM floors, or curves before physical validation on Helix.
+    # This exact ASUS board is supported by nct6775 through WMBD. The device is
+    # not PCI-discoverable, so explicitly load the module for motherboard
+    # temperatures, fan RPM, and PWM channels.
+    boot.kernelModules = [ "nct6775" ];
+
+    # CoolerControl owns the mutable device-level settings. The repository's
+    # guarded commissioner discovers usable channels, measures conservative
+    # floors, and creates profiles through CoolerControl's local API.
     programs.coolercontrol.enable = true;
 
     services.prometheus = {
@@ -224,6 +247,7 @@ in
 
     environment.etc."helix/monitoring/dashboards/helix-overview.json".source = dashboard;
     environment.systemPackages = [
+      fanCommissionCommand
       monitorCommand
       monitorLauncher
     ];

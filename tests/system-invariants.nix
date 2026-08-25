@@ -50,6 +50,7 @@ assert config.system.stateVersion == release.stateVersion;
 assert config.nix.gc.automatic;
 assert config.nix.gc.options == "--delete-older-than 30d";
 assert config.nix.optimise.automatic;
+assert builtins.elem "nct6775" config.boot.kernelModules;
 assert config.helix.monitoring.enable;
 assert config.helix.monitoring.retentionTime == "400d";
 assert config.helix.monitoring.scrapeInterval == "15s";

@@ -111,6 +111,7 @@ fi
 
 printf 'Validating Helix Graphite + Fern assets and merge fixtures...\n'
 python3 scripts/test-theme-settings.py
+python3 scripts/test-fan-commission.py
 python3 -m json.tool config/monitoring/helix-overview.json >/dev/null
 
 ./scripts/test-reinstall-safety.sh
@@ -260,7 +261,8 @@ python3 -m json.tool "$monitoring_dashboard" >/dev/null
 grep -qF '"uid": "helix-overview"' "$monitoring_dashboard"
 grep -qF '"from": "now-24h"' "$monitoring_dashboard"
 [[ -x $system_closure/sw/bin/helix-monitor ]]
-"$system_closure/sw/bin/helix-monitor" --help | grep -qF 'dashboard|fans|status'
+"$system_closure/sw/bin/helix-monitor" --help | grep -qF 'dashboard|fans|commission|inventory|restore|status'
+[[ -x $system_closure/sw/bin/helix-fan-commission ]]
 monitoring_launcher=$system_closure/sw/share/applications/helix-monitor.desktop
 [[ -r $monitoring_launcher ]]
 grep -qF 'Name=Helix Monitor' "$monitoring_launcher"
