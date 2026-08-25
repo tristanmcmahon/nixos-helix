@@ -5,11 +5,12 @@ Plasma 6, an optional Hyprland/UWSM session, and an NVIDIA RTX 5080. It uses
 ordinary NixOS modules and the root Nix channel: no flakes, Home Manager,
 overlays, or host framework.
 
-The active configuration includes workstation, development, gaming, emulation, and local
-LLM profiles. Ollama runs locally on `127.0.0.1:11434`; SSH is the only service
-intentionally exposed through the firewall. Hardware support includes
-PipeWire, Bluetooth, native DualSense support, redistributable firmware, NVIDIA
-open kernel modules, and ckb-next for the Corsair K70.
+The active configuration includes workstation, development, gaming, emulation,
+and local LLM profiles, plus a local-only hardware-monitoring stack. Ollama runs
+on `127.0.0.1:11434`; SSH is the only service intentionally exposed through the
+firewall. Hardware support includes PipeWire, Bluetooth, native DualSense
+support, redistributable firmware, NVIDIA open kernel modules, ckb-next for the
+Corsair K70, long-history monitoring, and fan control.
 
 ## Repository layout
 
@@ -19,7 +20,7 @@ hardware-configuration.nix generated facts for the currently installed system
 hardware/                  device and driver policy
 desktop/                   Plasma, Hyprland, browsers, applications, and theme
 system/                    boot, users, networking, NAS, and storage
-services/                  OpenSSH and routine native maintenance
+services/                  OpenSSH, monitoring, and routine native maintenance
 profiles/                  workstation, development, gaming, emulation, and local LLM
 packages/                  package sets and custom package definitions
 shell/                     immutable modern-bash integration
@@ -66,6 +67,7 @@ for disaster recovery and any deliberately planned future reinstall; see
 - [Normal installation and recovery](docs/installation.md)
 - [Reinstall and recovery](docs/reinstall.md)
 - [Hardware validation](docs/hardware-validation.md)
+- [Monitoring and fan control](docs/monitoring.md)
 - [Infernalnexus NAS](docs/nas.md)
 - [NAS-first emulation](docs/emulation.md)
 - [Profiles and package boundaries](docs/profiles.md)
