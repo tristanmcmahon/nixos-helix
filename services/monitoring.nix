@@ -97,7 +97,7 @@ in
       enable = true;
       listenAddress = "127.0.0.1";
       port = 9090;
-      retentionTime = cfg.retentionTime;
+      inherit (cfg) retentionTime;
       globalConfig = {
         scrape_interval = cfg.scrapeInterval;
         evaluation_interval = "30s";
