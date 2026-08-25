@@ -181,8 +181,7 @@ in
           cookie_samesite = "strict";
           secret_key = "$__file{${grafanaSecretFile}}";
         };
-        dashboards.default_home_dashboard_path =
-          "/etc/helix/monitoring/dashboards/helix-overview.json";
+        dashboards.default_home_dashboard_path = "/etc/helix/monitoring/dashboards/helix-overview.json";
       };
 
       provision = {
