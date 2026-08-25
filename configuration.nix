@@ -38,6 +38,7 @@ in
     ./system/users.nix
     ./system/locale.nix
     ./services/maintenance.nix
+    ./services/monitoring.nix
     ./services/hamsteam.nix
     ./services/openclaw.nix
     ./services/openssh.nix
@@ -56,6 +57,7 @@ in
   ];
 
   helix.emulation.enable = false;
+  helix.monitoring.enable = true;
 
   # NVIDIA's user-space driver is redistributable but not free software, so
   # Nixpkgs will refuse to evaluate it unless unfree packages are permitted.
