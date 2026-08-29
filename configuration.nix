@@ -44,8 +44,8 @@ in
     ./services/openssh.nix
 
     # These profiles form the normal Plasma workstation. Gaming and local
-    # inference are enabled by default. The emulation module remains available
-    # for redesign, but is deliberately disabled in the active generation.
+    # inference and the SSD-backed, read-only-ROM emulation stack are enabled
+    # by default.
     ./profiles/workstation.nix
     ./profiles/development.nix
     ./profiles/gaming.nix
@@ -56,7 +56,7 @@ in
     ./packages/base.nix
   ];
 
-  helix.emulation.enable = false;
+  helix.emulation.enable = true;
   helix.monitoring.enable = true;
 
   # NVIDIA's user-space driver is redistributable but not free software, so

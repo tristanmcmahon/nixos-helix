@@ -7,11 +7,9 @@
 
 let
   cfg = config.helix.emulation;
-  nasRoot = "/mnt/infernalnexus/nas1";
-  nasSource = "//192.168.1.8/nas1";
   romRoot = "/mnt/infernalnexus/roms";
   romSource = "//192.168.1.8/roms";
-  emulationRoot = "${nasRoot}/Emulation";
+  emulationRoot = "/mnt/games_nvme/emulation";
   arcadeRoot = "${emulationRoot}/roms/arcade";
   stateRoot = "${emulationRoot}/state";
 
@@ -43,10 +41,9 @@ let
         fi
       }
 
-      # Touch both autofs paths, then reject a bare systemd automount stub or a
+      # Touch the autofs path, then reject a bare systemd automount stub or a
       # different share. ROMs are authoritative on the dedicated read-only
-      # Synology share used by tfpga; writable state remains on nas1.
-      verify_cifs ${lib.escapeShellArg nasRoot} ${lib.escapeShellArg nasSource}
+      # Synology share used by tfpga; writable state remains on GAMES_NVME.
       verify_cifs ${lib.escapeShellArg romRoot} ${lib.escapeShellArg romSource}
     '';
   };
@@ -63,14 +60,12 @@ let
 
       ${requireNas}/bin/helix-emulation-require-nas
 
-      nas_root=${lib.escapeShellArg nasRoot}
       rom_root=${lib.escapeShellArg romRoot}
       report=${lib.escapeShellArg "${emulationRoot}/tools/reports/discovery.txt"}
 
       mkdir -p "$(dirname "$report")"
       {
         printf 'Helix emulation NAS discovery\n'
-        printf 'NAS root: %s\n' "$nas_root"
         printf 'ROM root: %s\n\n' "$rom_root"
 
         printf 'Top-level ROM directories:\n'
@@ -327,12 +322,12 @@ let
 
       printf 'Gathering %s metadata/artwork from %s...\n' "$platform" "$source"
       Skyscraper -p "$platform" -s "$source" -i "$input"
-      printf 'Generating ES-DE metadata and artwork on the NAS...\n'
+      printf 'Generating ES-DE metadata and artwork on GAMES_NVME...\n'
       exec Skyscraper -p "$platform" -f esde -i "$input" -g "$metadata" -o "$media"
     '';
   };
 
-  mkNasLauncher =
+  mkHelixLauncher =
     {
       name,
       emulator,
@@ -365,25 +360,25 @@ let
       '';
     };
 
-  pcsx2Launcher = mkNasLauncher {
+  pcsx2Launcher = mkHelixLauncher {
     name = "helix-pcsx2";
     emulator = "pcsx2";
     package = pkgs.pcsx2;
   };
 
-  rpcs3Launcher = mkNasLauncher {
+  rpcs3Launcher = mkHelixLauncher {
     name = "helix-rpcs3";
     emulator = "rpcs3";
     package = pkgs.rpcs3;
   };
 
-  shadps4Launcher = mkNasLauncher {
+  shadps4Launcher = mkHelixLauncher {
     name = "helix-shadps4";
     emulator = "shadps4";
     package = pkgs.shadps4;
   };
 
-  mameLauncher = mkNasLauncher {
+  mameLauncher = mkHelixLauncher {
     name = "helix-mame";
     emulator = "mame";
     package = pkgs.mame;
@@ -436,35 +431,35 @@ let
   desktopItems = [
     (pkgs.makeDesktopItem {
       name = "helix-pcsx2";
-      desktopName = "PCSX2 (Helix NAS)";
+      desktopName = "PCSX2 (Helix)";
       exec = "helix-pcsx2";
       icon = "applications-games";
       categories = [ "Game" ];
     })
     (pkgs.makeDesktopItem {
       name = "helix-rpcs3";
-      desktopName = "RPCS3 (Helix NAS)";
+      desktopName = "RPCS3 (Helix)";
       exec = "helix-rpcs3";
       icon = "applications-games";
       categories = [ "Game" ];
     })
     (pkgs.makeDesktopItem {
       name = "helix-shadps4";
-      desktopName = "shadPS4 (Helix NAS)";
+      desktopName = "shadPS4 (Helix)";
       exec = "helix-shadps4";
       icon = "applications-games";
       categories = [ "Game" ];
     })
     (pkgs.makeDesktopItem {
       name = "helix-mame";
-      desktopName = "MAME (Helix NAS)";
+      desktopName = "MAME (Helix)";
       exec = "helix-mame";
       icon = "applications-games";
       categories = [ "Game" ];
     })
     (pkgs.makeDesktopItem {
       name = "helix-retroarch";
-      desktopName = "RetroArch / SNES (Helix NAS)";
+      desktopName = "RetroArch (Helix)";
       exec = "helix-retroarch";
       icon = "applications-games";
       categories = [ "Game" ];
@@ -477,9 +472,8 @@ let
     text = ''
       set -eu
       printf 'Helix emulation module: enabled\n'
-      printf 'NAS root: %s\n' ${lib.escapeShellArg nasRoot}
-      printf 'ROM root: %s\n' ${lib.escapeShellArg romRoot}
-      printf 'Managed emulation root: %s\n' ${lib.escapeShellArg emulationRoot}
+      printf 'Read-only ROM root: %s\n' ${lib.escapeShellArg romRoot}
+      printf 'SSD emulation root: %s\n' ${lib.escapeShellArg emulationRoot}
       printf 'Managed emulator state: %s\n' ${lib.escapeShellArg stateRoot}
       printf '\nResolved systems:\n'
       for system in ps2 ps3 ps4 snes arcade; do
@@ -492,7 +486,7 @@ let
       done
       printf '\nDiscovery report: %s\n' \
         ${lib.escapeShellArg "${emulationRoot}/tools/reports/discovery.txt"}
-      printf 'Launch only the Helix NAS entries to keep emulator state off local SSDs.\n'
+      printf 'Launch the Helix entries to keep ROMs read-only and mutable state on GAMES_NVME.\n'
     '';
   };
 in

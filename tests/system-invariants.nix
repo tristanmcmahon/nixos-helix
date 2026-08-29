@@ -105,8 +105,31 @@ assert config.hardware.bluetooth.enable;
 assert !config.hardware.xpadneo.enable;
 assert builtins.elem "hid_playstation" config.boot.kernelModules;
 assert builtins.elem "hid_xpadneo" config.boot.blacklistedKernelModules;
-assert !config.helix.emulation.enable;
-assert !(builtins.hasAttr "helix-emulation-prepare" config.systemd.user.services);
+assert config.helix.emulation.enable;
+assert builtins.hasAttr "helix-emulation-prepare" config.systemd.user.services;
+assert builtins.elem "helix-retroarch" packageNames;
+assert builtins.elem "helix-emulation-status" packageNames;
+assert builtins.any (
+  mount:
+  mount.where == "/mnt/infernalnexus/roms"
+  && mount.what == "//192.168.1.8/roms"
+  && lib.hasInfix ",ro" mount.options
+) config.systemd.mounts;
+assert
+  config.systemd.services."helix-emulation-storage".unitConfig.ConditionPathIsMountPoint
+  == "/mnt/games_nvme";
+assert
+  lib.hasInfix "/mnt/games_nvme/emulation"
+    config.systemd.services."helix-emulation-storage".script;
+assert
+  builtins.elem "/home/tristan/Projects/nixos-helix"
+    config.systemd.user.services."openclaw-gateway".serviceConfig.BindPaths;
+assert
+  builtins.elem "/mnt/games_nvme/emulation"
+    config.systemd.user.services."openclaw-gateway".serviceConfig.BindPaths;
+assert
+  builtins.elem "-/mnt/infernalnexus"
+    config.systemd.user.services."openclaw-gateway".serviceConfig.ReadOnlyPaths;
 assert !(builtins.elem "chatgpt" packageNames);
 assert builtins.elem "adwsteamgtk" packageNames;
 assert builtins.elem "doomrunner" packageNames;
