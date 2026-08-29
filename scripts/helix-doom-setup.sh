@@ -117,7 +117,7 @@ jq -n \
         demo_dir: "",
         screenshot_dir: ""
       },
-      additional_args: "",
+      additional_args: "+vid_preferbackend 1",
       env_vars: {}
     };
 
@@ -326,7 +326,7 @@ jq -n \
         demo_dir: "",
         screenshot_dir: ""
       },
-      additional_args: "",
+      additional_args: "+vid_preferbackend 1",
       env_vars: {}
     };
 
