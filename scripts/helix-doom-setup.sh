@@ -167,8 +167,8 @@ download \
   exit 1
 }
 
-idgames=https://youfailit.net/pub/idgames/levels/doom2
-install_zip eviternity-ii "$idgames/Ports/megawads/eviternity2.zip"
+idgames=https://www.gamers.org/pub/idgames/levels/doom2
+install_zip eviternity-ii "$idgames/Ports/megawads/eviternityii.zip"
 install_zip ancient-aliens "$idgames/Ports/megawads/aaliens.zip"
 install_zip sunlust "$idgames/Ports/megawads/sunlust.zip"
 install_zip going-down "$idgames/Ports/megawads/gd.zip"
