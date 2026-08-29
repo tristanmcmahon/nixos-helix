@@ -129,7 +129,7 @@ jq -n \
       ),
       gameplay_preset(
         "Doom Deluxe";
-        $uzdoom_id;
+        $gzdoom_id;
         ($mod_dir + "/doom-deluxe-beta1/doom_deluxe_beta1.pk3")
       )
     ] as $gameplay_presets |
@@ -332,7 +332,7 @@ jq -n \
 
     [
       preset("Brutal Doom"; $gzdoom_id; []; $brutal),
-      preset("Doom Deluxe"; $uzdoom_id; []; $doom_deluxe),
+      preset("Doom Deluxe"; $gzdoom_id; []; $doom_deluxe),
       preset("Eviternity II"; $gzdoom_id; $eviternity; []),
       preset("Ancient Aliens"; $gzdoom_id; $ancient_aliens; []),
       preset("Sunlust"; $gzdoom_id; $sunlust; []),
