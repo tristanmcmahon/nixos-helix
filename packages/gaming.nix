@@ -14,7 +14,6 @@ let
     text = builtins.readFile ../scripts/helix-doom-setup.sh;
   };
 in
-
 {
   environment.systemPackages = with pkgs; [
     adwsteamgtk
