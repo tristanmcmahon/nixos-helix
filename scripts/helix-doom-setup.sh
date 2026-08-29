@@ -18,6 +18,11 @@ if (($#)); then
   exit 2
 fi
 
+if pgrep -x DoomRunner >/dev/null; then
+  printf 'DoomRunner is open. Close it before running helix-doom-setup.\n' >&2
+  exit 1
+fi
+
 mountpoint -q /mnt/games_nvme || {
   printf '/mnt/games_nvme is not mounted. Refusing to write elsewhere.\n' >&2
   exit 1
@@ -93,6 +98,42 @@ jq -n \
   --arg mod_dir "$mod_dir" \
   --arg gzdoom_id "$gzdoom_id" \
   --arg uzdoom_id "$uzdoom_id" '
+    def gameplay_preset($name; $engine; $mod): {
+      name: $name,
+      selected_engine: $engine,
+      selected_config: "",
+      selected_IWAD: ($iwad_dir + "/DOOM2.WAD"),
+      selected_mappacks: [],
+      mods: [{path: $mod, checked: true}],
+      load_maps_after_mods: false,
+      compatibility_options: {
+        compat_mode: -1,
+        compatflags1: 0,
+        compatflags2: 0
+      },
+      alternative_paths: {
+        config_dir: "",
+        save_dir: "",
+        demo_dir: "",
+        screenshot_dir: ""
+      },
+      additional_args: "",
+      env_vars: {}
+    };
+
+    [
+      gameplay_preset(
+        "Brutal Doom";
+        $gzdoom_id;
+        ($mod_dir + "/brutal-doom-v21/brutalv21.pk3")
+      ),
+      gameplay_preset(
+        "Doom Deluxe";
+        $uzdoom_id;
+        ($mod_dir + "/doom-deluxe-beta1/doom_deluxe_beta1.pk3")
+      )
+    ] as $gameplay_presets |
+    ($gameplay_presets | map(.name)) as $gameplay_names |
     $base |
     .version = "1.9.2" |
     .engines = (($base.engines // {}) + {
@@ -125,7 +166,13 @@ jq -n \
       default_iwad: ($iwad_dir + "/DOOM2.WAD")
     } |
     .maps = (($base.maps // {}) + {directory: $map_dir}) |
-    .mods = (($base.mods // {}) + {last_used_dir: $mod_dir})
+    .mods = (($base.mods // {}) + {last_used_dir: $mod_dir}) |
+    .presets = (
+      (($base.presets // []) | map(select(
+        .name as $name | ($gameplay_names | index($name)) == null
+      ))) + $gameplay_presets
+    ) |
+    .selected_preset = "Brutal Doom"
   ' > "$core_tmp"
 mv "$core_tmp" "$doomrunner_options"
 
