@@ -1,12 +1,21 @@
 { pkgs, ... }:
 
 let
+  doomRunnerCommand = pkgs.writeShellApplication {
+    name = "doomrunner";
+    runtimeInputs = [ pkgs.doomrunner ];
+    text = ''
+      exec DoomRunner "$@"
+    '';
+  };
+
   doomSetup = pkgs.writeShellApplication {
     name = "helix-doom-setup";
     runtimeInputs = with pkgs; [
       coreutils
       curl
       findutils
+      gnused
       p7zip
       unzip
       util-linux
@@ -18,6 +27,7 @@ in
   environment.systemPackages = with pkgs; [
     adwsteamgtk
     doomrunner
+    doomRunnerCommand
     doomSetup
     gzdoom
     mangohud
