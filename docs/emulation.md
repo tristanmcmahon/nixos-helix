@@ -19,7 +19,7 @@ moves, or repairs files there. It recognizes PS2, PS3, PS4, SNES, and
 system directory contains a nested `roms` directory, that directory wins; this
 matches the tfpga layout.
 
-Writable data lives below `/mnt/infernalnexus/nas1/Emulation`:
+Writable data lives on the games NVMe below `/mnt/games_nvme/emulation`:
 
 - `state/`: isolated HOME and XDG trees for each emulator
 - `saves/`, `states/`, and `screenshots/`: user data
@@ -27,9 +27,32 @@ Writable data lives below `/mnt/infernalnexus/nas1/Emulation`:
 - `metadata/` and `tools/downloaded_media/`: scraped ES-DE metadata and artwork
 - `tools/reports/`: discovery and DAT-audit reports
 
-Only the `Helix NAS` desktop entries should be used. They force the emulator's
-HOME, config, cache, and data directories onto the NAS before starting PCSX2,
-RPCS3, shadPS4, MAME, or RetroArch with bsnes.
+Only the `Helix` desktop entries should be used. They force the emulator's
+HOME, config, cache, and data directories onto GAMES_NVME before starting
+PCSX2, RPCS3, shadPS4, MAME, or RetroArch. ROM paths remain symlinks into the
+kernel-enforced read-only share.
+
+## OpenClaw curation
+
+OpenClaw is the local operator for the MAME/RetroArch redesign. Its systemd
+sandbox permits writes only to its own state, this repository, and
+`/mnt/games_nvme/emulation`. `/mnt/infernalnexus` is read-only inside the
+service, command execution is allowlisted and always asks for approval, and
+elevated execution remains disabled.
+
+After rebuilding, give OpenClaw this exact instruction:
+
+```text
+Read /home/tristan/Projects/nixos-helix/docs/openclaw-emulation.md completely,
+then carry out the discovery phase. Preserve the NAS read-only boundary. Use
+the evidence you collect from Helix to finish the MAME library and RetroArch
+configuration; do not substitute generic defaults.
+```
+
+The discovery phase writes reports only to the SSD. OpenClaw must inspect the
+real ROM layout, DAT headers, installed core versions, display session, audio
+stack, and connected controllers before selecting a MAME core or generating a
+playlist.
 
 ## First run and maintenance
 
@@ -70,6 +93,6 @@ metadata/artwork scraping is outside this helper.
 
 Skyscraper uses ScreenScraper by default. An alternative supported scraper can
 be supplied as the second argument. Its cache, downloaded media, and generated
-metadata all remain on the NAS. Scraping service credentials, BIOS/firmware,
+metadata remain on GAMES_NVME. Scraping service credentials, BIOS/firmware,
 games, and console keys remain user-supplied and are not stored in this
 repository.

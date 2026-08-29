@@ -3,6 +3,8 @@
 let
   stateDirectory = "/home/tristan/.local/state/openclaw";
   workspaceDirectory = "${stateDirectory}/workspace";
+  repositoryDirectory = "/home/tristan/Projects/nixos-helix";
+  emulationDirectory = "/mnt/games_nvme/emulation";
   secretFile = "/home/tristan/.config/openclaw/gateway.env";
 
   openclawConfig = (pkgs.formats.json { }).generate "openclaw.json" {
@@ -42,9 +44,15 @@ let
     };
 
     tools = {
-      fs.workspaceOnly = true;
+      # The service sandbox below is the filesystem boundary: only OpenClaw's
+      # state, the Helix repository, and the SSD emulation tree are writable.
+      # The NAS is independently mounted read-only and reinforced here with a
+      # read-only systemd path. This lets the agent inspect real machine state
+      # and edit the declarative configuration without granting host-wide
+      # writes.
+      fs.workspaceOnly = false;
       exec = {
-        security = "deny";
+        security = "allowlist";
         ask = "always";
       };
       elevated.enabled = false;
@@ -95,9 +103,14 @@ in
       ];
       RestrictSUIDSGID = true;
 
-      BindPaths = [ stateDirectory ];
-      BindReadOnlyPaths = [ secretFile ];
+      BindPaths = [
+        stateDirectory
+        repositoryDirectory
+        emulationDirectory
+      ];
+      ReadOnlyPaths = [ "-/mnt/infernalnexus" ];
       InaccessiblePaths = [
+        "-/etc/nixos/secrets"
         "-/run/docker.sock"
         "-/var/run/docker.sock"
       ];
