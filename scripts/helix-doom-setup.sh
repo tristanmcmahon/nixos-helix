@@ -70,6 +70,65 @@ fi
   exit 1
 }
 
+doomrunner_data_dir=${XDG_DATA_HOME:-"$HOME/.local/share"}/DoomRunner
+doomrunner_options=$doomrunner_data_dir/options.json
+gzdoom_id=8b9019b0-6141-4e08-a5dd-helixgzdoom
+uzdoom_id=8a2b29e5-daaf-45c8-b162-helixuzdoom
+install -d "$doomrunner_data_dir"
+
+core_base={}
+if [[ -e $doomrunner_options ]]; then
+  cp --no-clobber --preserve=timestamps \
+    "$doomrunner_options" "$doomrunner_options.pre-helix-doom"
+fi
+if jq -e 'type == "object"' "$doomrunner_options" >/dev/null 2>&1; then
+  core_base=$(jq -c . "$doomrunner_options")
+fi
+core_tmp=$(mktemp "$doomrunner_data_dir/options.json.XXXXXX")
+jq -n \
+  --argjson base "$core_base" \
+  --arg home "$HOME" \
+  --arg iwad_dir "$iwad_dir" \
+  --arg map_dir "$map_dir" \
+  --arg mod_dir "$mod_dir" \
+  --arg gzdoom_id "$gzdoom_id" \
+  --arg uzdoom_id "$uzdoom_id" '
+    $base |
+    .version = "1.9.2" |
+    .engines = (($base.engines // {}) + {
+      default_engine: $gzdoom_id,
+      engine_list: (
+        (($base.engines.engine_list // []) | map(select(
+          .id != $gzdoom_id and .id != $uzdoom_id and
+          .path != "/run/current-system/sw/bin/gzdoom" and
+          .path != "/run/current-system/sw/bin/uzdoom"
+        ))) + [
+          {
+            id: $gzdoom_id, name: "GZDoom",
+            path: "/run/current-system/sw/bin/gzdoom",
+            config_dir: ($home + "/.config/gzdoom"),
+            data_dir: ($home + "/.config/gzdoom"), family: "ZDoom"
+          },
+          {
+            id: $uzdoom_id, name: "UZDoom",
+            path: "/run/current-system/sw/bin/uzdoom",
+            config_dir: ($home + "/.config/uzdoom"),
+            data_dir: ($home + "/.config/uzdoom"), family: "ZDoom"
+          }
+        ]
+      )
+    }) |
+    .IWADs = {
+      auto_update: true,
+      directory: $iwad_dir,
+      search_subdirs: false,
+      default_iwad: ($iwad_dir + "/DOOM2.WAD")
+    } |
+    .maps = (($base.maps // {}) + {directory: $map_dir}) |
+    .mods = (($base.mods // {}) + {last_used_dir: $mod_dir})
+  ' > "$core_tmp"
+mv "$core_tmp" "$doomrunner_options"
+
 download() {
   local url=$1
   local destination=$2
@@ -90,15 +149,23 @@ install_zip() {
   unzip -q -o "$archive" -d "$mod_dir/$name"
 }
 
-download 'https://www.moddb.com/downloads/start/95667' "$download_dir/brutal-doom-v21.rar"
-printf '%s  %s\n' a42f7a1f4fbec5b19591ece7f9811034 "$download_dir/brutal-doom-v21.rar" | md5sum -c -
 install -d "$mod_dir/brutal-doom-v21"
-7z x -y -bso0 -bsp0 -o"$mod_dir/brutal-doom-v21" "$download_dir/brutal-doom-v21.rar"
+download \
+  'https://allfearthesentinel.com/zandronum/download.php?file=brutalv21.pk3' \
+  "$mod_dir/brutal-doom-v21/brutalv21.pk3"
+[[ $(stat -c %s "$mod_dir/brutal-doom-v21/brutalv21.pk3") == 86566833 ]] || {
+  printf 'Unexpected size for brutalv21.pk3; refusing to use it.\n' >&2
+  exit 1
+}
 
-download 'https://www.moddb.com/downloads/start/307465' "$download_dir/doom-deluxe-beta1.zip"
-printf '%s  %s\n' 46abfbe1b992fb48e1cac27e209d9560 "$download_dir/doom-deluxe-beta1.zip" | md5sum -c -
 install -d "$mod_dir/doom-deluxe-beta1"
-unzip -q -o "$download_dir/doom-deluxe-beta1.zip" -d "$mod_dir/doom-deluxe-beta1"
+download \
+  'https://allfearthesentinel.com/zandronum/download.php?file=doom_deluxe_beta1.pk3' \
+  "$mod_dir/doom-deluxe-beta1/doom_deluxe_beta1.pk3"
+[[ $(stat -c %s "$mod_dir/doom-deluxe-beta1/doom_deluxe_beta1.pk3") == 49596148 ]] || {
+  printf 'Unexpected size for doom_deluxe_beta1.pk3; refusing to use it.\n' >&2
+  exit 1
+}
 
 idgames=https://youfailit.net/pub/idgames/levels/doom2
 install_zip eviternity-ii "$idgames/Ports/megawads/eviternity2.zip"
@@ -163,10 +230,6 @@ btsx_e1_files=$(map_files_json back-to-saturn-x-e1)
 btsx_e2_files=$(map_files_json back-to-saturn-x-e2)
 alien_vendetta_files=$(map_files_json alien-vendetta)
 
-doomrunner_data_dir=${XDG_DATA_HOME:-"$HOME/.local/share"}/DoomRunner
-doomrunner_options=$doomrunner_data_dir/options.json
-install -d "$doomrunner_data_dir"
-
 base_json={}
 if [[ -e $doomrunner_options ]]; then
   cp --no-clobber --preserve=timestamps \
@@ -176,8 +239,6 @@ if [[ -e $doomrunner_options ]]; then
   fi
 fi
 
-gzdoom_id=8b9019b0-6141-4e08-a5dd-helixgzdoom
-uzdoom_id=8a2b29e5-daaf-45c8-b162-helixuzdoom
 doomrunner_tmp=$(mktemp "$doomrunner_data_dir/options.json.XXXXXX")
 trap 'rm -f "$doomrunner_tmp"' EXIT
 
