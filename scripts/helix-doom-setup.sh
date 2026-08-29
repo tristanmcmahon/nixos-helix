@@ -23,11 +23,29 @@ mountpoint -q /mnt/games_nvme || {
 }
 install -d "$download_dir" "$iwad_dir" "$mod_dir"
 
+steam_libraries=(/home/tristan/.local/share/Steam)
+for library_file in \
+  /home/tristan/.local/share/Steam/steamapps/libraryfolders.vdf \
+  /home/tristan/.steam/steam/steamapps/libraryfolders.vdf \
+  /home/tristan/.steam/debian-install/steamapps/libraryfolders.vdf; do
+  [[ -r $library_file ]] || continue
+  while IFS= read -r library; do
+    [[ -n $library ]] && steam_libraries+=("$library")
+  done < <(
+    sed -n 's/^[[:space:]]*"path"[[:space:]]*"\([^"]*\)".*/\1/p' \
+      "$library_file"
+  )
+done
+
 steam_roots=()
 for candidate in \
   /home/tristan/.local/share/Steam/steamapps/common \
   /mnt/games_nvme/steamapps/common \
   /mnt/games_nvme/SteamLibrary/steamapps/common; do
+  [[ -d $candidate ]] && steam_roots+=("$candidate")
+done
+for library in "${steam_libraries[@]}"; do
+  candidate=$library/steamapps/common
   [[ -d $candidate ]] && steam_roots+=("$candidate")
 done
 
@@ -46,6 +64,8 @@ fi
 
 [[ -e $iwad_dir/DOOM2.WAD ]] || {
   printf 'Could not find DOOM2.WAD in the installed Steam libraries.\n' >&2
+  printf 'Steam libraries searched:\n' >&2
+  printf '  %s\n' "${steam_roots[@]}" >&2
   exit 1
 }
 
