@@ -17,6 +17,7 @@ let
       findutils
       gnused
       jq
+      procps
       unzip
       util-linux
     ];
