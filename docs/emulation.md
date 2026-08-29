@@ -14,85 +14,66 @@ generation. It does not delete any NAS data.
 
 The authoritative ROM library is the dedicated `//192.168.1.8/roms` share. The
 module automounts it read-only at `/mnt/infernalnexus/roms` and never renames,
-moves, or repairs files there. It recognizes PS2, PS3, PS4, SNES, and
-`MAME 0.275 ROMs (merged, inc CHDs)` directories case-insensitively. When a
-system directory contains a nested `roms` directory, that directory wins; this
-matches the tfpga layout.
+moves, repairs, extracts into, or writes files there.
 
-Writable data lives on the games NVMe below `/mnt/games_nvme/emulation`:
+Writable emulation state lives below `/mnt/games_nvme/emulation`. ROMs and DATs
+on the NAS are source material; playlists, thumbnails, saves, states, reports,
+configuration, and other generated data belong on the local games NVMe.
 
-- `state/`: isolated HOME and XDG trees for each emulator
-- `saves/`, `states/`, and `screenshots/`: user data
-- `bios/`: user-supplied firmware links or files
-- `metadata/` and `tools/downloaded_media/`: scraped ES-DE metadata and artwork
-- `tools/reports/`: discovery and DAT-audit reports
+## Codex + OpenClaw workflow
 
-Only the `Helix` desktop entries should be used. They force the emulator's
-HOME, config, cache, and data directories onto GAMES_NVME before starting
-PCSX2, RPCS3, shadPS4, MAME, or RetroArch. ROM paths remain symlinks into the
-kernel-enforced read-only share.
+OpenClaw and Codex have deliberately different jobs:
 
-## OpenClaw curation
+- **OpenClaw** inspects the real Helix machine, mounted ROM collection, supplied
+  DATs, display/audio stack, controllers, and current RetroArch state. Its
+  service sandbox makes `/mnt/infernalnexus` read-only while allowing reports
+  below `/mnt/games_nvme/emulation`.
+- **Codex** edits the `nixos-helix` repository using the evidence OpenClaw
+  collected. It is responsible for the declarative RetroArch implementation
+  and tests, not for guessing the live ROM layout.
+- OpenClaw then reviews Codex's diff against the live evidence; Codex gets one
+  focused final pass to fix concrete review findings.
 
-OpenClaw is the local operator for the MAME/RetroArch redesign. Its systemd
-sandbox permits writes only to its own state, this repository, and
-`/mnt/games_nvme/emulation`. `/mnt/infernalnexus` is read-only inside the
-service, command execution is allowlisted and always asks for approval, and
-elevated execution remains disabled.
-
-After rebuilding, give OpenClaw this exact instruction:
-
-```text
-Read /home/tristan/Projects/nixos-helix/docs/openclaw-emulation.md completely,
-then carry out the discovery phase. Preserve the NAS read-only boundary. Use
-the evidence you collect from Helix to finish the MAME library and RetroArch
-configuration; do not substitute generic defaults.
-```
-
-The discovery phase writes reports only to the SSD. OpenClaw must inspect the
-real ROM layout, DAT headers, installed core versions, display session, audio
-stack, and connected controllers before selecting a MAME core or generating a
-playlist.
-
-## First run and maintenance
-
-After activating the configuration, inspect the setup:
+Run the coordinated pass from a clean checkout on Helix:
 
 ```bash
-helix-emulation-status
-helix-emulation-discover
+cd /home/tristan/Projects/nixos-helix
+bash scripts/helix-emulation-ai.sh
 ```
 
-The graphical-session service runs preparation automatically. It creates the
-writable tree, links recognized systems without changing their sources, and
-indexes arcade DAT/XML files found anywhere in the ROM share up to four levels
-deep.
+The coordinator does **not** rebuild/switch NixOS and does not run a full
+emulation closure build. Its final gates are syntax/evaluation checks only, so
+it cannot accidentally turn a RetroArch task into a large unrelated build.
 
-Audit the MAME 0.275 collection against the best matching NAS DAT:
+After reviewing the resulting diff, activate it normally:
 
 ```bash
-helix-emulation-audit-arcade
+./scripts/rebuild.sh switch
 ```
 
-This is deliberately read-only. Igir writes a CSV report under
-`Emulation/tools/reports`; it does not rebuild or mutate the set.
+Then use the status command produced by the completed RetroArch implementation
+to perform live post-switch validation.
 
-Fetch artwork and generate ES-DE metadata for platforms supported by
-Skyscraper:
+## Agent missions
 
-```bash
-helix-emulation-scrape ps2
-helix-emulation-scrape snes
-helix-emulation-scrape arcade
-```
+`docs/openclaw-emulation.md` is the live discovery specification.
 
-Skyscraper does not expose PS3 or PS4 platform IDs, so this helper deliberately
-rejects those two systems rather than claiming scraping support that will fail.
-RPCS3 and shadPS4 themselves remain fully NAS-backed; only their automated
-metadata/artwork scraping is outside this helper.
+`docs/codex-emulation.md` is the implementation specification. It explicitly
+requires a small RetroArch-first surface and tells Codex to remove the current
+multi-emulator spread where it is no longer needed.
 
-Skyscraper uses ScreenScraper by default. An alternative supported scraper can
-be supplied as the second argument. Its cache, downloaded media, and generated
-metadata remain on GAMES_NVME. Scraping service credentials, BIOS/firmware,
-games, and console keys remain user-supplied and are not stored in this
-repository.
+`docs/openclaw-retroarch-review.md` is the read-only engineering review gate.
+OpenClaw writes review findings to the emulation SSD rather than modifying the
+repository during that turn.
+
+All three missions preserve the same hard rule: the NAS is authoritative and
+read-only; curation changes presentation metadata and local state, never the
+ROM archive.
+
+## Current profile
+
+Until the Codex + OpenClaw pass is run and its resulting change is activated,
+`profiles/emulation.nix` still describes the previous broader emulator stack.
+Do not treat that transitional implementation as the desired end state. The
+new target is a clean RetroArch-first Helix setup, beginning with a deterministic
+DAT-driven arcade library.
