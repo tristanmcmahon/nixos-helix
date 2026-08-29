@@ -75,6 +75,23 @@ in
             /mnt/games_nvme/ollama/models
         '';
       };
+
+      helix-doom-storage = {
+        description = "Create the Doom library on GAMES_NVME";
+        wantedBy = [ "multi-user.target" ];
+        wants = [ "mnt-games_nvme.mount" ];
+        after = [ "mnt-games_nvme.mount" ];
+        unitConfig.ConditionPathIsMountPoint = "/mnt/games_nvme";
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+        script = ''
+          ${pkgs.util-linux}/bin/mountpoint -q /mnt/games_nvme
+          ${pkgs.coreutils}/bin/install -d -o tristan -g users -m 0775 \
+            /mnt/games_nvme/doom
+        '';
+      };
     };
 
   # Periodically discard unused blocks on SSD/NVMe filesystems.
