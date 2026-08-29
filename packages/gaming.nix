@@ -17,7 +17,6 @@ let
       findutils
       gnused
       jq
-      p7zip
       unzip
       util-linux
     ];
