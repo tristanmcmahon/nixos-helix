@@ -97,7 +97,8 @@ fi
 printf '\n=== STATIC ASSERTIONS ===\n'
 kernel=$(readlink -f "$candidate/kernel")
 printf 'Kernel closure: %s\n' "$kernel"
-grep -Eq '/linux-6\.18\.' <<<"$kernel" || {
+kernel_store_name=$(basename "$(dirname "$kernel")")
+grep -Eq '(^|-)linux-6\.18\.' <<<"$kernel_store_name" || {
   printf 'Candidate kernel escaped the 6.18 LTS family.\n' >&2
   exit 1
 }
