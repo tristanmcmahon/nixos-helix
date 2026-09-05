@@ -23,23 +23,32 @@ shared. Select one without root:
 helix-theme list
 helix-theme current
 helix-theme petrol
+helix-theme random
 ```
 
-The choice is persisted in `~/.local/state/helix/theme` and reapplied at each
-graphical login, falling back to Fern if state is absent or invalid. Switching
-updates Plasma, Konsole, Ghostty Main, Waybar, Mako, Fuzzel, the wallpaper, and
-AdwSteamGtk custom CSS. Running Steam is never killed; restart it when convenient
-to see new CSS. `helix-apply-theme` remains a Fern compatibility command.
+At each Plasma login, Helix automatically chooses a different theme from the
+civilized pool: Fern, Petrol, Plum, Oxide, Amber, or Rosewood. The theme used by
+the previous login is excluded from the draw, so the appearance genuinely
+changes each time. Hot Dog Stand is never selected automatically; if it was
+chosen manually, the next login returns to one of the six civilized themes.
+
+The current choice is persisted in `~/.local/state/helix/theme`. Manual
+`helix-theme NAME` commands still work normally during a session, and
+`helix-theme random` performs the same non-Hot-Dog, different-from-current draw
+on demand. Switching updates Plasma, Konsole, Ghostty Main, Waybar, Mako,
+Fuzzel, the wallpaper, and AdwSteamGtk custom CSS. Running Steam is never killed;
+restart it when convenient to see new CSS. `helix-apply-theme` remains a Fern
+compatibility command.
 
 ## Desktop integration
 
 Plasma, Qt applications, Dolphin, settings, dialogs, panel surfaces, launcher,
-tray, notifications, and task states use the `Helix Graphite Fern` KDE colour
+tray, notifications, and task states use the active `Helix Graphite` KDE colour
 scheme with Breeze Dark rendering. Breeze also remains the icon, cursor, widget,
-and KWin decoration family. Active windows gain a restrained green blend/focus
-cue, inactive windows recede, and Breeze uses a small border with conservative
-outline and shadow settings. The existing Plasma panel layout remains mutable
-and is not rearranged.
+and KWin decoration family. Active windows gain the selected theme's restrained
+blend/focus cue, inactive windows recede, and Breeze uses a small border with
+conservative outline and shadow settings. The existing Plasma panel layout
+remains mutable and is not rearranged.
 
 The local scalable SVG anchors Plasma, the lock screen, SDDM, and Hyprland.
 SDDM remains packaged Breeze with the Graphite + Fern wallpaper and loading
@@ -67,7 +76,7 @@ Zen follows the system preference but retains its own profile-local extension
 state.
 
 Steam does not inherit KDE colours. NixOS therefore installs the maintained
-AdwSteamGtk wrapper and a repository-owned Graphite + Fern custom-colour file.
+AdwSteamGtk wrapper and a repository-owned Graphite custom-colour file.
 Applying it remains an explicit runtime operation because the upstream tool
 patches mutable Steam client files, requires a network connection to retrieve
 the skin, and may need to be rerun after a Steam update. Close Steam completely,
@@ -79,35 +88,37 @@ helix-apply-steam-theme
 
 The helper refuses to run while Steam is open, selects the upstream OLED base,
 disables rounded elements, uses conventional window controls, and enables the
-repository-owned colour override. Launch AdwSteamGtk from Plasma to change or
-uninstall the skin. Store, Community, and profile web pages remain controlled by
-Steam and cannot be recoloured by this mechanism.
+repository-owned colour override when the AdwSteamGtk settings schema is
+available. Launch AdwSteamGtk from Plasma to change or uninstall the skin.
+Store, Community, and profile web pages remain controlled by Steam and cannot
+be recoloured by this mechanism.
 
 ## Ownership and mutable state
 
-`desktop/theme.nix` owns packaging, SDDM, deployment, and the revision-idempotent
-`helix-graphite-fern-theme` user service. It updates selected KDE keys, merges
-only repository-owned GTK keys, and structurally merges theme keys into VS Code
-without discarding unrelated settings. `desktop/ghostty.nix` deploys Ghostty;
-`desktop/fonts.nix` remains the sole font owner.
+`desktop/theme.nix` owns packaging, SDDM, deployment, the early persisted-theme
+user service, and the KDE login autostart that rotates among civilized themes.
+It updates selected KDE keys and merges only repository-owned GTK keys.
+`desktop/ghostty.nix` deploys Ghostty; `desktop/fonts.nix` remains the sole font
+owner.
 
 Plasma panel geometry, widget order, desktop icon layout, per-monitor geometry,
 and application-specific settings remain mutable user state. This preserves the
 working layout and avoids introducing Home Manager or plasma-manager for visual
 settings the current architecture already handles cleanly.
 
-Inspect or force the current revision with:
+Inspect or force the current theme with:
 
 ```bash
 systemctl --user status helix-graphite-fern-theme.service
 journalctl --user -u helix-graphite-fern-theme.service
+helix-theme current
+helix-theme random
 helix-apply-theme --force
 ```
 
 To preview without selecting a persistent boot generation, run
-`./scripts/rebuild.sh test`, then `helix-apply-theme --force`. Apply persistently
-with `./scripts/rebuild.sh switch` and log out/in if shell components have not
-reloaded. Roll back the system generation with
+`./scripts/rebuild.sh test`, then use `helix-theme NAME`. Apply persistently with
+`./scripts/rebuild.sh switch`. Roll back the system generation with
 `sudo nixos-rebuild switch --rollback`; ordinary Breeze Dark can be selected
 temporarily with `plasma-apply-colorscheme BreezeDark` and
 `plasma-apply-desktoptheme breeze-dark`.
