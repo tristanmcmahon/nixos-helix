@@ -101,7 +101,9 @@ let
         gsettings set org.gnome.desktop.interface color-scheme prefer-dark
         gsettings set org.gnome.desktop.interface gtk-theme Breeze-Dark
         gsettings set org.gnome.desktop.interface icon-theme breeze-dark
-        gsettings set io.github.Foldex.AdwSteamGtk prefs-install-custom-css true
+        if gsettings writable io.github.Foldex.AdwSteamGtk prefs-install-custom-css >/dev/null 2>&1; then
+          gsettings set io.github.Foldex.AdwSteamGtk prefs-install-custom-css true
+        fi
         if [[ $XDG_CURRENT_DESKTOP == *KDE* ]]; then
           if [[ $selected == hotdog ]]; then
             scheme=HelixGraphiteHotDogStand
@@ -159,7 +161,11 @@ let
       current="''${XDG_CONFIG_HOME:-$HOME/.config}/helix/theme/current/steam.css"
       [[ -r $current ]] || current=/etc/helix/theme/steam.css
       install -Dm644 "$current" "''${XDG_CONFIG_HOME:-$HOME/.config}/AdwSteamGtk/custom.css"
-      gsettings set io.github.Foldex.AdwSteamGtk prefs-install-custom-css true
+      if gsettings writable io.github.Foldex.AdwSteamGtk prefs-install-custom-css >/dev/null 2>&1; then
+        gsettings set io.github.Foldex.AdwSteamGtk prefs-install-custom-css true
+      else
+        printf 'AdwSteamGtk settings schema is unavailable; continuing with CSS installation.\n' >&2
+      fi
       adwaita-steam-gtk --install --options \
         'color_theme:oled;rounded_corners:false;win_controls:windows;win_controls_layout:auto'
       printf 'Applied the current Helix Steam skin. Start Steam to inspect it.\n'
