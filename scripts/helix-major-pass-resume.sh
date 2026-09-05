@@ -69,12 +69,42 @@ PY
 nixfmt packages/openclaw.nix
 git diff --check
 
-printf '\n=== FULL REPOSITORY GATE ===\n'
-./scripts/dev-shell.sh --run './scripts/check.sh'
-
-# Use the repository's deterministic Nixpkgs selection.
+# Use the repository's deterministic Nixpkgs selection before any package build.
 # shellcheck source=/dev/null
 source "$repo/scripts/release-environment.sh"
+
+printf '\n=== FOCUSED OPENCLAW BUILD ===\n'
+# tests/system-invariants.nix is intentionally evaluated with --strict. Once the
+# OpenClaw service references a repository-owned custom derivation, strict
+# serviceConfig evaluation may validate that output path before the later full
+# system build has realised it. Build exactly the reviewed package first. This
+# also gives a direct packaging failure instead of the misleading
+# "path ...-openclaw is not valid" error.
+openclaw_output=$(nix-build --no-out-link -E "
+  let
+    packageSource = builtins.fetchTarball {
+      url = \"https://github.com/openclaw/nix-openclaw/archive/${openclaw_rev}.tar.gz\";
+      sha256 = \"${openclaw_sha256}\";
+    };
+    pkgs = import <nixpkgs> { config.allowUnfree = true; };
+    packageSet = import \"\${packageSource}/nix/packages\" {
+      inherit pkgs;
+      sourceInfo = import \"\${packageSource}/nix/sources/openclaw-source.nix\";
+      openclawToolPkgs = { };
+      qmdPackage = null;
+    };
+  in packageSet.openclaw
+")
+printf 'OpenClaw package: %s\n' "$openclaw_output"
+focused_openclaw_version=$($openclaw_output/bin/openclaw --version 2>/dev/null || true)
+printf 'OpenClaw version: %s\n' "$focused_openclaw_version"
+grep -q "$expected_openclaw" <<<"$focused_openclaw_version" || {
+  printf 'Focused OpenClaw build is not %s.\n' "$expected_openclaw" >&2
+  exit 1
+}
+
+printf '\n=== FULL REPOSITORY GATE ===\n'
+./scripts/dev-shell.sh --run './scripts/check.sh'
 
 printf '\n=== BUILD CANDIDATE ===\n'
 candidate=$(nix-build --no-out-link '<nixpkgs/nixos>' -A system \
