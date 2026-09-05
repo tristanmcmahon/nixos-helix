@@ -4,6 +4,8 @@ set -Eeuo pipefail
 
 repo=${HOME}/Projects/nixos-helix
 expected_openclaw=2026.7.1-2
+openclaw_rev=d3760a6f103642f11e24bc01ee9aec80a0153774
+openclaw_sha256=1pfzr2c94x0f77qwpnb9gvvfvvsz59fgybpjwhb9fsrhlv1zli6y
 cd "$repo"
 
 branch=$(git branch --show-current)
@@ -22,13 +24,49 @@ fi
 
 sudo -v
 
-printf '=== FIX CURRENT LINT BLOCKERS ===\n'
-# Keep Codex away from this script's stdin. This matters when the helper itself
-# is executed from process substitution or another non-interactive source.
-if ! codex exec 'Work only in /home/tristan/Projects/nixos-helix. Fix the two current Statix findings without changing semantics: (1) profiles/gaming.nix has repeated programs.* keys; consolidate them into one programs attribute set. (2) packages/openclaw.nix has a Statix "assignment instead of inherit from" warning around the openclaw binding; rewrite it idiomatically with inherit while preserving the exact pinned first-party OpenClaw package selection. Run nixfmt on touched Nix files and statix check on those files. Do not make any unrelated changes, do not commit, do not activate, do not run GC.' </dev/null; then
-  printf 'WARNING: Codex could not complete its sandbox-local validation; continuing to the authoritative host-side repository gate.\n' >&2
-fi
+printf '=== NORMALISE PINNED OPENCLAW SOURCE ===\n'
+# Importing Nix expressions from a pkgs.fetchFromGitHub derivation creates an
+# import-from-derivation boundary. The invariant evaluator needs the upstream
+# expression tree during evaluation, before that derivation is necessarily
+# realised. A hash-verified builtins.fetchTarball is the Nix-native mechanism
+# for fetching an external Nix expression tree at evaluation time. The URL is
+# pinned to the same exact revision and the hash is the existing
+# nix-prefetch-url --unpack hash from the original preflight.
+python3 - "$openclaw_rev" "$openclaw_sha256" <<'PY'
+from pathlib import Path
+import re
+import sys
 
+rev, sha256 = sys.argv[1:]
+path = Path("packages/openclaw.nix")
+text = path.read_text(encoding="utf-8")
+
+if "packageSource = builtins.fetchTarball" in text:
+    expected_url = f'https://github.com/openclaw/nix-openclaw/archive/{rev}.tar.gz'
+    if expected_url not in text or sha256 not in text:
+        raise SystemExit("existing builtins.fetchTarball pin does not match the reviewed OpenClaw revision/hash")
+    print("Pinned OpenClaw source is already evaluation-safe.")
+    raise SystemExit(0)
+
+pattern = re.compile(
+    r'^\{ pkgs, \.\.\. \}:\n\nlet\n'
+    r'  packageSource = pkgs\.fetchFromGitHub \{\n'
+    r'    owner = "openclaw";\n'
+    r'    repo = "nix-openclaw";\n'
+    r'    rev = "' + re.escape(rev) + r'";\n'
+    r'    sha256 = "' + re.escape(sha256) + r'";\n'
+    r'  \};',
+    re.MULTILINE,
+)
+replacement = f'''_:\n\nlet\n  packageSource = builtins.fetchTarball {{\n    url = "https://github.com/openclaw/nix-openclaw/archive/{rev}.tar.gz";\n    sha256 = "{sha256}";\n  }};'''
+new_text, count = pattern.subn(replacement, text, count=1)
+if count != 1:
+    raise SystemExit("packages/openclaw.nix no longer matches the reviewed pinned fetchFromGitHub form; refusing an ambiguous rewrite")
+path.write_text(new_text, encoding="utf-8")
+print("Converted the reviewed OpenClaw source pin to hash-verified builtins.fetchTarball.")
+PY
+
+nixfmt packages/openclaw.nix
 git diff --check
 
 printf '\n=== FULL REPOSITORY GATE ===\n'
