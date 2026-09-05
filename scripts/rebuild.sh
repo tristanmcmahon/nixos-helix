@@ -42,6 +42,10 @@ elif [[ $action == dry-activate ]]; then
   printf 'System closure: %s\n' "$system_closure"
   sudo env STC_DEBUG=1 "$system_closure/bin/switch-to-configuration" dry-activate
 else
-  run_build sudo nixos-rebuild "$action" \
+  # Authenticate on the real terminal before nom takes ownership of the build
+  # stream. Otherwise sudo's password prompt can be hidden or overwritten by
+  # nix-output-monitor's live display.
+  sudo -v
+  run_build sudo -n nixos-rebuild "$action" \
     -I "nixos-config=$repo_root/configuration.nix"
 fi
