@@ -195,6 +195,15 @@ in
       "helix/theme/steam.css".source = "${themeFamily}/generated/fern/steam.css";
       "helix/theme/wallpaper.svg".source = "${themeFamily}/generated/fern/wallpaper.svg";
       "helix/theme/apply-theme-settings.py".source = ../scripts/apply-theme-settings.py;
+      "xdg/autostart/helix-theme.desktop".text = ''
+        [Desktop Entry]
+        Type=Application
+        Name=Helix Theme
+        Comment=Apply the persisted Helix theme after Plasma starts
+        Exec=${helixTheme}/bin/helix-theme --apply-current
+        OnlyShowIn=KDE;
+        NoDisplay=true
+      '';
     };
   systemd.user.services.helix-graphite-fern-theme = {
     description = "Apply Tristan's persisted Helix theme";
