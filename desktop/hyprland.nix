@@ -1,6 +1,22 @@
 { pkgs, ... }:
 
 let
+  themeSessionStart = pkgs.writeShellApplication {
+    name = "helix-hyprland-theme-start";
+    runtimeInputs = [
+      pkgs.mako
+      pkgs.swaybg
+      pkgs.waybar
+    ];
+    text = ''
+      /run/current-system/sw/bin/helix-theme random || true
+      swaybg --image /home/tristan/.config/helix/theme/current/wallpaper.svg --mode fill &
+      waybar --style /home/tristan/.config/helix/theme/current/waybar.css &
+      mako --config /home/tristan/.config/helix/theme/current/mako.conf &
+      wait
+    '';
+  };
+
   baselineConfig = ''
     # Helix baseline: deliberately small and owned by this repository.
     monitor = , preferred, auto, 1
@@ -9,9 +25,7 @@ let
     $terminal = ghostty
     $menu = fuzzel --config /home/tristan/.config/helix/theme/current/fuzzel.ini
 
-    exec-once = ${pkgs.swaybg}/bin/swaybg --image /home/tristan/.config/helix/theme/current/wallpaper.svg --mode fill
-    exec-once = waybar --style /home/tristan/.config/helix/theme/current/waybar.css
-    exec-once = mako --config /home/tristan/.config/helix/theme/current/mako.conf
+    exec-once = helix-hyprland-theme-start
     exec-once = nm-applet --indicator
     exec-once = ${pkgs.kdePackages.polkit-kde-agent-1}/libexec/polkit-kde-authentication-agent-1
 
@@ -114,5 +128,6 @@ in
     swaybg
     networkmanagerapplet
     exitPrompt
+    themeSessionStart
   ];
 }
