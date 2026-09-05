@@ -75,8 +75,17 @@ let
       list) describe; exit 0 ;;
       current) printf '%s\n' "$selected"; exit 0 ;;
       fern|petrol|plum|oxide|amber|rosewood|hotdog) selected=$1 ;;
+      random)
+        pool=(fern petrol plum oxide amber rosewood)
+        eligible=()
+        for candidate in "''${pool[@]}"; do
+          [[ $candidate == "$selected" ]] || eligible+=("$candidate")
+        done
+        index=$((RANDOM % ''${#eligible[@]}))
+        selected="''${eligible[$index]}"
+        ;;
       --apply-current) ;;
-      --help|-h|"") printf 'Usage: helix-theme {list|current|fern|petrol|plum|oxide|amber|rosewood|hotdog}\n'; exit 0 ;;
+      --help|-h|"") printf 'Usage: helix-theme {list|current|random|fern|petrol|plum|oxide|amber|rosewood|hotdog}\n'; exit 0 ;;
       *) printf 'Unknown Helix theme: %s\n' "$1" >&2; exit 2 ;;
       esac
 
@@ -205,8 +214,8 @@ in
         [Desktop Entry]
         Type=Application
         Name=Helix Theme
-        Comment=Apply the persisted Helix theme after Plasma starts
-        Exec=${helixTheme}/bin/helix-theme --apply-current
+        Comment=Choose a new civilized Helix theme after Plasma starts
+        Exec=${helixTheme}/bin/helix-theme random
         OnlyShowIn=KDE;
         NoDisplay=true
       '';
