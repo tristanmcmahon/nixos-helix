@@ -71,6 +71,11 @@ in
       HOME = "/home/tristan";
       OPENCLAW_CONFIG_PATH = openclawConfig;
       OPENCLAW_STATE_DIR = stateDirectory;
+
+      # OpenClaw's current plugin boundary checks explicitly recognize immutable
+      # /nix/store package roots only in Nix mode. Without this, normal Nix store
+      # hardlinks can be rejected as unsafe bundled plugin surfaces.
+      OPENCLAW_NIX_MODE = "1";
     };
 
     serviceConfig = {
