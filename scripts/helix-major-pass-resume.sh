@@ -24,82 +24,58 @@ fi
 
 sudo -v
 
-printf '=== NORMALISE PINNED OPENCLAW SOURCE ===\n'
-# Importing Nix expressions from a pkgs.fetchFromGitHub derivation creates an
-# import-from-derivation boundary. The invariant evaluator needs the upstream
-# expression tree during evaluation, before that derivation is necessarily
-# realised. A hash-verified builtins.fetchTarball is the Nix-native mechanism
-# for fetching an external Nix expression tree at evaluation time. The URL is
-# pinned to the same exact revision and the hash is the existing
-# nix-prefetch-url --unpack hash from the original preflight.
-python3 - "$openclaw_rev" "$openclaw_sha256" <<'PY'
-from pathlib import Path
-import re
-import sys
+printf '=== NORMALISE PINNED OPENCLAW INTEGRATION ===\n'
+# Use the exact reviewed upstream overlay. Upstream intentionally constructs its
+# package set from `prev`, not `final`; doing this ourselves against `final`
+# creates a recursive fixed-point edge and can yield an invalid OpenClaw store
+# path during strict NixOS evaluation.
+cat > packages/openclaw.nix <<EOF
+_:
 
-rev, sha256 = sys.argv[1:]
-path = Path("packages/openclaw.nix")
-text = path.read_text(encoding="utf-8")
-
-if "packageSource = builtins.fetchTarball" in text:
-    expected_url = f'https://github.com/openclaw/nix-openclaw/archive/{rev}.tar.gz'
-    if expected_url not in text or sha256 not in text:
-        raise SystemExit("existing builtins.fetchTarball pin does not match the reviewed OpenClaw revision/hash")
-    print("Pinned OpenClaw source is already evaluation-safe.")
-    raise SystemExit(0)
-
-pattern = re.compile(
-    r'^\{ pkgs, \.\.\. \}:\n\nlet\n'
-    r'  packageSource = pkgs\.fetchFromGitHub \{\n'
-    r'    owner = "openclaw";\n'
-    r'    repo = "nix-openclaw";\n'
-    r'    rev = "' + re.escape(rev) + r'";\n'
-    r'    sha256 = "' + re.escape(sha256) + r'";\n'
-    r'  \};',
-    re.MULTILINE,
-)
-replacement = f'''_:\n\nlet\n  packageSource = builtins.fetchTarball {{\n    url = "https://github.com/openclaw/nix-openclaw/archive/{rev}.tar.gz";\n    sha256 = "{sha256}";\n  }};'''
-new_text, count = pattern.subn(replacement, text, count=1)
-if count != 1:
-    raise SystemExit("packages/openclaw.nix no longer matches the reviewed pinned fetchFromGitHub form; refusing an ambiguous rewrite")
-path.write_text(new_text, encoding="utf-8")
-print("Converted the reviewed OpenClaw source pin to hash-verified builtins.fetchTarball.")
-PY
+let
+  packageSource = builtins.fetchTarball {
+    url = "https://github.com/openclaw/nix-openclaw/archive/${openclaw_rev}.tar.gz";
+    sha256 = "${openclaw_sha256}";
+  };
+in
+{
+  nixpkgs.overlays = [
+    (import "\${packageSource}/nix/overlay.nix" {
+      openclawToolPkgs = { };
+      qmdPkgs = { };
+    })
+  ];
+}
+EOF
 
 nixfmt packages/openclaw.nix
 git diff --check
 
-# Use the repository's deterministic Nixpkgs selection before any package build.
+# Use the repository's deterministic Nixpkgs selection.
 # shellcheck source=/dev/null
 source "$repo/scripts/release-environment.sh"
 
-printf '\n=== FOCUSED OPENCLAW BUILD ===\n'
-# tests/system-invariants.nix is intentionally evaluated with --strict. Once the
-# OpenClaw service references a repository-owned custom derivation, strict
-# serviceConfig evaluation may validate that output path before the later full
-# system build has realised it. Build exactly the reviewed package first. This
-# also gives a direct packaging failure instead of the misleading
-# "path ...-openclaw is not valid" error.
+printf '\n=== BUILD CONFIGURED OPENCLAW PACKAGE ===\n'
+# Build the exact package selected by Helix's NixOS configuration, not a
+# separately imported approximation. This guarantees that the output realised
+# here is the same store path the strict invariant evaluator later sees.
 openclaw_output=$(nix-build --no-out-link -E "
   let
-    packageSource = builtins.fetchTarball {
-      url = \"https://github.com/openclaw/nix-openclaw/archive/${openclaw_rev}.tar.gz\";
-      sha256 = \"${openclaw_sha256}\";
+    system = import <nixpkgs/nixos> {
+      configuration = ${repo}/configuration.nix;
     };
-    pkgs = import <nixpkgs> { config.allowUnfree = true; };
-    packageSet = import \"\${packageSource}/nix/packages\" {
-      inherit pkgs;
-      sourceInfo = import \"\${packageSource}/nix/sources/openclaw-source.nix\";
-      openclawToolPkgs = { };
-      qmdPackage = null;
-    };
-  in packageSet.openclaw
+  in
+  system.pkgs.openclaw
 ")
-printf 'OpenClaw package: %s\n' "$openclaw_output"
+printf 'Configured OpenClaw package: %s\n' "$openclaw_output"
+[[ -x $openclaw_output/bin/openclaw ]] || {
+  printf 'Configured OpenClaw output is not realised correctly.\n' >&2
+  exit 1
+}
 focused_openclaw_version=$($openclaw_output/bin/openclaw --version 2>/dev/null || true)
-printf 'OpenClaw version: %s\n' "$focused_openclaw_version"
+printf 'Configured OpenClaw version: %s\n' "$focused_openclaw_version"
 grep -q "$expected_openclaw" <<<"$focused_openclaw_version" || {
-  printf 'Focused OpenClaw build is not %s.\n' "$expected_openclaw" >&2
+  printf 'Configured OpenClaw is not %s.\n' "$expected_openclaw" >&2
   exit 1
 }
 
