@@ -74,6 +74,12 @@ assert steam.count("{") == steam.count("}")
 for value in ("11, 13, 12", "24, 28, 25", "35, 40, 36", "103, 184, 122"):
     assert value in steam
 
+theme_module = (ROOT / "desktop/theme.nix").read_text(encoding="utf-8")
+assert "pool=(fern petrol plum oxide amber rosewood)" in theme_module
+assert "pool=(fern petrol plum oxide amber rosewood hotdog)" not in theme_module
+assert "Exec=${helixTheme}/bin/helix-theme random" in theme_module
+assert "Usage: helix-theme {list|current|random|" in theme_module
+
 with tempfile.TemporaryDirectory() as generated_directory:
     subprocess.run(
         [sys.executable, str(ROOT / "scripts/generate-theme-family.py"), str(ROOT / "config/theme"), str(ROOT / "config/ghostty/profiles/main.ghostty"), generated_directory],
