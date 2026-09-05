@@ -23,7 +23,9 @@ fi
 sudo -v
 
 printf '=== FIX CURRENT LINT BLOCKERS ===\n'
-codex exec 'Work only in /home/tristan/Projects/nixos-helix. Fix the two current Statix findings without changing semantics: (1) profiles/gaming.nix has repeated programs.* keys; consolidate them into one programs attribute set. (2) packages/openclaw.nix has a Statix "assignment instead of inherit from" warning around the openclaw binding; rewrite it idiomatically with inherit while preserving the exact pinned first-party OpenClaw package selection. Run nixfmt on touched Nix files and statix check on those files. Do not make any unrelated changes, do not commit, do not activate, do not run GC.'
+if ! codex exec 'Work only in /home/tristan/Projects/nixos-helix. Fix the two current Statix findings without changing semantics: (1) profiles/gaming.nix has repeated programs.* keys; consolidate them into one programs attribute set. (2) packages/openclaw.nix has a Statix "assignment instead of inherit from" warning around the openclaw binding; rewrite it idiomatically with inherit while preserving the exact pinned first-party OpenClaw package selection. Run nixfmt on touched Nix files and statix check on those files. Do not make any unrelated changes, do not commit, do not activate, do not run GC.'; then
+  printf 'WARNING: Codex could not complete its sandbox-local validation; continuing to the authoritative host-side repository gate.\n' >&2
+fi
 
 git diff --check
 
