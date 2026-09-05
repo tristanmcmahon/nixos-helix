@@ -7,11 +7,11 @@ let
 
     $mainMod = SUPER
     $terminal = ghostty
-    $menu = fuzzel --config /etc/helix/theme/fuzzel.ini
+    $menu = fuzzel --config /home/tristan/.config/helix/theme/current/fuzzel.ini
 
-    exec-once = ${pkgs.swaybg}/bin/swaybg --image /etc/helix/theme/wallpaper.svg --mode fill
-    exec-once = waybar --style /etc/helix/theme/waybar.css
-    exec-once = mako --config /etc/helix/theme/mako.conf
+    exec-once = ${pkgs.swaybg}/bin/swaybg --image /home/tristan/.config/helix/theme/current/wallpaper.svg --mode fill
+    exec-once = waybar --style /home/tristan/.config/helix/theme/current/waybar.css
+    exec-once = mako --config /home/tristan/.config/helix/theme/current/mako.conf
     exec-once = nm-applet --indicator
     exec-once = ${pkgs.kdePackages.polkit-kde-agent-1}/libexec/polkit-kde-authentication-agent-1
 

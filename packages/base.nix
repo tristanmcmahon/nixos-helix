@@ -9,6 +9,8 @@
     wget
     file
     tree
+    nix-output-monitor
+    nvd
   ];
 
   # Use the supported NixOS module so Vim is also exposed as `vi` and becomes

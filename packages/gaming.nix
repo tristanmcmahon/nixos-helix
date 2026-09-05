@@ -65,6 +65,9 @@ in
     doomSetup
     gzdoom
     mangohud
+    protonplus
+    protontricks
+    goverlay
     uzdoom
   ];
 

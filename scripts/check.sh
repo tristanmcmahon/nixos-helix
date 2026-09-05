@@ -109,7 +109,7 @@ if git grep -Il '' -- ':!.git' | xargs grep -El \
   exit 1
 fi
 
-printf 'Validating Helix Graphite + Fern assets and merge fixtures...\n'
+printf 'Validating the Helix theme family and merge fixtures...\n'
 python3 scripts/test-theme-settings.py
 python3 scripts/test-fan-commission.py
 python3 -m json.tool config/monitoring/helix-overview.json >/dev/null
@@ -172,6 +172,14 @@ for theme_command in plasma-apply-colorscheme plasma-apply-desktoptheme \
   plasma-apply-cursortheme plasma-apply-wallpaperimage kwriteconfig6 helix-apply-theme; do
   [[ -x $system_closure/sw/bin/$theme_command ]]
 done
+for theme in fern petrol plum oxide amber rosewood hotdog; do
+  [[ -d $system_closure/etc/helix/themes/$theme ]]
+done
+for scheme in Fern Petrol Plum Oxide Amber Rosewood HotDogStand; do
+  [[ -r $system_closure/sw/share/color-schemes/HelixGraphite$scheme.colors ]]
+done
+[[ -x $system_closure/sw/bin/helix-theme ]]
+"$system_closure/sw/bin/helix-theme" list | grep -qF 'regrettably available.'
 "$system_closure/sw/bin/helix-apply-theme" --help | grep -qF -- '--force'
 if "$system_closure/sw/bin/helix-apply-theme" --invalid >/dev/null 2>&1; then
   printf 'helix-apply-theme accepted an invalid argument.\n' >&2
@@ -211,10 +219,10 @@ done
 grep -qF -- '--adw-accent-rgb: 103, 184, 122' config/theme/steam.css
 [[ -r $system_closure/sw/share/themes/Breeze-Dark/settings.ini ]]
 [[ -r $system_closure/sw/share/icons/breeze-dark/index.theme ]]
-grep -qF 'swaybg --image /etc/helix/theme/wallpaper.svg' "$hyprland_config"
-grep -qF 'waybar --style /etc/helix/theme/waybar.css' "$hyprland_config"
-grep -qF 'mako --config /etc/helix/theme/mako.conf' "$hyprland_config"
-grep -qF 'fuzzel --config /etc/helix/theme/fuzzel.ini' "$hyprland_config"
+grep -qF 'swaybg --image /home/tristan/.config/helix/theme/current/wallpaper.svg' "$hyprland_config"
+grep -qF 'waybar --style /home/tristan/.config/helix/theme/current/waybar.css' "$hyprland_config"
+grep -qF 'mako --config /home/tristan/.config/helix/theme/current/mako.conf' "$hyprland_config"
+grep -qF 'fuzzel --config /home/tristan/.config/helix/theme/current/fuzzel.ini' "$hyprland_config"
 ghostty_config=config/ghostty/config.ghostty
 ghostty_appearance=$ghostty_config
 ghostty_validation_config=$ghostty_config

@@ -1,4 +1,4 @@
-# Graphite + Fern appearance
+# Helix Graphite theme family
 
 Graphite + Fern is Helix's repository-owned dark appearance policy: layered
 graphite surfaces, restrained fern-green interaction states, readable neutral
@@ -6,12 +6,30 @@ text, and distinct amber/red warning states. It uses maintained Breeze
 components rather than a theme-store stack, excessive transparency, or a new
 theme engine.
 
-The canonical palette is `config/theme/palette.nix`: `#0B0D0C` deep canvas,
+Fern remains the exact default and canonical source palette in
+`config/theme/palette.nix`: `#0B0D0C` deep canvas,
 `#181C19` primary surface, `#232824` raised surface, `#303832` hover surface,
 `#3A443C` border,
 `#E4E8E5` primary text, `#AEB8B1` secondary text, `#7E8981` muted text,
 `#67B87A` primary green, `#81C995` active green, `#3E7650` deep green,
 `#315E3E` accessible selection green, `#D6AD63` warning, and `#D77A78` error.
+
+The generated family adds restrained Petrol, Plum, Oxide, Amber, and Rosewood
+siblings plus an intentionally violent yellow/red/black/white Hot Dog Stand
+variant. Geometry, fonts, Breeze widgets/decorations, borders, and shadows are
+shared. Select one without root:
+
+```bash
+helix-theme list
+helix-theme current
+helix-theme petrol
+```
+
+The choice is persisted in `~/.local/state/helix/theme` and reapplied at each
+graphical login, falling back to Fern if state is absent or invalid. Switching
+updates Plasma, Konsole, Ghostty Main, Waybar, Mako, Fuzzel, the wallpaper, and
+AdwSteamGtk custom CSS. Running Steam is never killed; restart it when convenient
+to see new CSS. `helix-apply-theme` remains a Fern compatibility command.
 
 ## Desktop integration
 

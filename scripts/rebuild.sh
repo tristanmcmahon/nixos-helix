@@ -25,8 +25,16 @@ printf 'Configuration: %s/configuration.nix\n' "$repo_root"
 printf 'NixOS release: %s\n' "$HELIX_SELECTED_RELEASE"
 printf 'Action: %s\n' "$action"
 
+run_build() {
+  if command -v nom >/dev/null 2>&1; then
+    "$@" 2>&1 | nom
+  else
+    "$@"
+  fi
+}
+
 if [[ $action == dry-build || $action == build ]]; then
-  nixos-rebuild "$action" \
+  run_build nixos-rebuild "$action" \
     -I "nixos-config=$repo_root/configuration.nix"
 elif [[ $action == dry-activate ]]; then
   system_closure=$(nix-build --no-out-link '<nixpkgs/nixos>' -A system \
@@ -34,6 +42,6 @@ elif [[ $action == dry-activate ]]; then
   printf 'System closure: %s\n' "$system_closure"
   sudo env STC_DEBUG=1 "$system_closure/bin/switch-to-configuration" dry-activate
 else
-  sudo nixos-rebuild "$action" \
+  run_build sudo nixos-rebuild "$action" \
     -I "nixos-config=$repo_root/configuration.nix"
 fi

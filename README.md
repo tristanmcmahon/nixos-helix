@@ -3,7 +3,8 @@
 This is the canonical configuration for Helix, a NixOS 26.05 workstation with
 Plasma 6, an optional Hyprland/UWSM session, and an NVIDIA RTX 5080. It uses
 ordinary NixOS modules and the root Nix channel: no flakes, Home Manager,
-overlays, or host framework.
+flakes, Home Manager, or a host framework. A narrow repository-owned overlay
+selects the immutably pinned first-party OpenClaw package.
 
 The active configuration includes workstation, development, gaming, emulation,
 and local LLM profiles, plus a local-only hardware-monitoring stack. Ollama runs
@@ -51,8 +52,13 @@ After reviewing a change, temporary and persistent activation remain explicit:
 boot generation. If a generation fails, choose an older one from systemd-boot
 or use `sudo nixos-rebuild switch --rollback` from a working generation.
 
-Native weekly garbage collection deletes generations older than 30 days, and
+Native weekly garbage collection deletes generations older than 14 days, and
 weekly store optimisation hard-links identical store files.
+
+For normal maintenance, `helix-health` prints a compact workstation report and
+`helix-update` performs a clean-tree, validate, build, diff, test, and switch
+sequence. `helix-update` never runs garbage collection. Use `helix-theme list`,
+`helix-theme current`, or `helix-theme NAME` to inspect and switch appearance.
 
 ## Installed-system compatibility
 
@@ -73,6 +79,7 @@ for disaster recovery and any deliberately planned future reinstall; see
 - [Profiles and package boundaries](docs/profiles.md)
 - [Local development](docs/local-development.md)
 - [Graphite + Fern appearance](docs/theme.md)
+- [Health, updates, GC, memory pressure, and OpenClaw pin](docs/operations.md)
 - [Media applications](docs/media.md)
 - [Custom package pins](docs/custom-packages.md)
 - [1Password integration](docs/onepassword.md)

@@ -6,6 +6,7 @@ import json
 import pathlib
 import sys
 import tempfile
+import subprocess
 import xml.etree.ElementTree as element_tree
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -72,6 +73,33 @@ steam = (ROOT / "config/theme/steam.css").read_text(encoding="utf-8")
 assert steam.count("{") == steam.count("}")
 for value in ("11, 13, 12", "24, 28, 25", "35, 40, 36", "103, 184, 122"):
     assert value in steam
+
+with tempfile.TemporaryDirectory() as generated_directory:
+    subprocess.run(
+        [sys.executable, str(ROOT / "scripts/generate-theme-family.py"), str(ROOT / "config/theme"), str(ROOT / "config/ghostty/profiles/main.ghostty"), generated_directory],
+        check=True,
+    )
+    generated = pathlib.Path(generated_directory)
+    names = ("fern", "petrol", "plum", "oxide", "amber", "rosewood", "hotdog")
+    for name in names:
+        assets = generated / name
+        assert assets.is_dir()
+        assert (assets / "wallpaper.svg").is_file()
+        assert (assets / "waybar.css").is_file()
+        assert (assets / "mako.conf").is_file()
+        assert (assets / "fuzzel.ini").is_file()
+        assert (assets / "steam.css").is_file()
+        assert (assets / "ghostty.ghostty").is_file()
+        element_tree.parse(assets / "wallpaper.svg")
+        schemes = list(assets.glob("*.colors"))
+        assert len(schemes) == 1
+        parsed = configparser.ConfigParser()
+        parsed.optionxform = str
+        parsed.read(schemes[0])
+        assert required_groups.issubset(parsed.sections())
+    assert (generated / "fern/HelixGraphiteFern.colors").read_bytes() == colors_path.read_bytes()
+    assert "95, 168, 163" in (generated / "petrol/steam.css").read_text(encoding="utf-8")
+    assert "255, 0, 0" in (generated / "hotdog/steam.css").read_text(encoding="utf-8")
 
 
 with tempfile.TemporaryDirectory() as temporary_directory:

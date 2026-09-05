@@ -71,8 +71,8 @@ sudo nix-env -p /nix/var/nix/profiles/system --list-generations \
   | tee "$STATE_DIR/generations-before.txt"
 
 printf '\n=== CURRENT 30-DAY GC DRY RUN ===\n'
-sudo nix-collect-garbage --delete-older-than 30d --dry-run \
-  |& tee "$STATE_DIR/gc-30d-dry-run.txt"
+sudo nix-collect-garbage --delete-older-than 14d --dry-run \
+  |& tee "$STATE_DIR/gc-14d-dry-run.txt"
 
 # Use the repository's deterministic Nixpkgs selection for all evaluation below.
 # shellcheck source=/dev/null
@@ -310,7 +310,8 @@ printf '\n=== NVD SYSTEM DIFF ===\n'
 printf '\n=== STATIC CANDIDATE ASSERTIONS ===\n'
 NEW_KERNEL="$(readlink -f "$NEW_SYSTEM/kernel")"
 printf 'Candidate kernel: %s\n' "$NEW_KERNEL"
-grep -Eq '/linux-6\.18\.' <<<"$NEW_KERNEL" \
+KERNEL_STORE_NAME="$(basename "$(dirname "$NEW_KERNEL")")"
+grep -Eq '(^|-)linux-6\.18\.' <<<"$KERNEL_STORE_NAME" \
   || die "candidate kernel is not in the 6.18 LTS family"
 
 CANDIDATE_OPENCLAW="$("$NEW_SYSTEM/sw/bin/openclaw" --version 2>/dev/null || true)"

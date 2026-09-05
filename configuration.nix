@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, pkgs, ... }:
 
 let
   release = import ./release.nix;
@@ -37,6 +37,8 @@ in
     ./system/storage.nix
     ./system/users.nix
     ./system/locale.nix
+    ./system/memory-pressure.nix
+    ./system/commands.nix
     ./services/maintenance.nix
     ./services/monitoring.nix
     ./services/hamsteam.nix
@@ -54,6 +56,7 @@ in
 
     # The deliberately small package set needed on every Helix installation.
     ./packages/base.nix
+    ./packages/openclaw.nix
   ];
 
   helix.emulation.enable = true;
@@ -63,10 +66,6 @@ in
   # Nixpkgs will refuse to evaluate it unless unfree packages are permitted.
   # This does not install CUDA or any other compute/development stack.
   nixpkgs.config.allowUnfree = true;
-
-  # Nixpkgs marks OpenClaw insecure because agents can act on untrusted model
-  # input; this exception is intentionally limited to the reviewed version.
-  nixpkgs.config.permittedInsecurePackages = [ "openclaw-2026.5.7" ];
 
   # This is the compatibility floor from Helix's 26.05 fresh installation,
   # not the currently selected channel. Keep it unchanged across upgrades.
@@ -79,6 +78,10 @@ in
         Helix requires NixOS ${release.nixosRelease}.
         The selected Nixpkgs reports NixOS ${config.system.nixos.release}.
       '';
+    }
+    {
+      assertion = builtins.compareVersions pkgs.openclaw.version "2026.6.9" >= 0;
+      message = "Helix requires the reviewed stable OpenClaw pin at 2026.6.9 or newer.";
     }
   ];
 }

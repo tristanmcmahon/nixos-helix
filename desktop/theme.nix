@@ -1,44 +1,30 @@
-{
-  lib,
-  pkgs,
-  ...
-}:
+{ pkgs, ... }:
 
 let
   themeDirectory = ../config/theme;
   palette = import ../config/theme/palette.nix;
-  wallpaper = "${themePackage}/share/wallpapers/HelixGraphiteFern/contents/images/wallpaper.svg";
-  themeRevision = builtins.hashString "sha256" (
-    builtins.concatStringsSep "" (
-      map builtins.readFile [
-        ../config/theme/palette.nix
-        ../config/theme/HelixGraphiteFern.colors
-        ../config/theme/HelixGraphiteFern.colorscheme
-        ../config/theme/HelixGraphiteFern.profile
-        ../config/theme/wallpaper.svg
-        ../config/theme/gtk-3.0-settings.ini
-        ../config/theme/gtk-4.0-settings.ini
-        ../config/theme/waybar.css
-        ../config/theme/mako.conf
-        ../config/theme/fuzzel.ini
-        ../config/theme/steam.css
-        ../scripts/apply-theme-settings.py
-        ./theme.nix
-      ]
-    )
-  );
-
-  themePackage = pkgs.runCommand "helix-graphite-fern-theme" { } ''
-    install -Dm444 ${themeDirectory}/HelixGraphiteFern.colors \
-      $out/share/color-schemes/HelixGraphiteFern.colors
-    install -Dm444 ${themeDirectory}/wallpaper.svg \
-      $out/share/wallpapers/HelixGraphiteFern/contents/images/wallpaper.svg
-    install -Dm444 ${themeDirectory}/HelixGraphiteFern.colorscheme \
-      $out/share/konsole/HelixGraphiteFern.colorscheme
-    install -Dm444 ${themeDirectory}/HelixGraphiteFern.profile \
-      $out/share/konsole/HelixGraphiteFern.profile
+  themes = [
+    "fern"
+    "petrol"
+    "plum"
+    "oxide"
+    "amber"
+    "rosewood"
+    "hotdog"
+  ];
+  themeFamily = pkgs.runCommand "helix-theme-family" { nativeBuildInputs = [ pkgs.python3 ]; } ''
+    python3 ${../scripts/generate-theme-family.py} ${themeDirectory} ${../config/ghostty/profiles/main.ghostty} $out/generated
+    for theme in ${builtins.concatStringsSep " " themes}; do
+      colors=$(find "$out/generated/$theme" -maxdepth 1 -name '*.colors')
+      scheme_name=$(basename "$colors" .colors)
+      install -Dm444 "$colors" "$out/share/color-schemes/$scheme_name.colors"
+      install -Dm444 "$out/generated/$theme/$scheme_name.colorscheme" "$out/share/konsole/$scheme_name.colorscheme"
+      install -Dm444 "$out/generated/$theme/$scheme_name.profile" "$out/share/konsole/$scheme_name.profile"
+      install -Dm444 "$out/generated/$theme/wallpaper.svg" \
+        "$out/share/wallpapers/$scheme_name/contents/images/wallpaper.svg"
+    done
   '';
-
+  fernWallpaper = "${themeFamily}/share/wallpapers/HelixGraphiteFern/contents/images/wallpaper.svg";
   sddmTheme = pkgs.runCommand "sddm-theme-helix-graphite-fern" { } ''
     mkdir -p $out/share/sddm/themes/helix-graphite-fern
     cp -r ${pkgs.kdePackages.plasma-desktop}/share/sddm/themes/breeze/. \
@@ -51,87 +37,107 @@ let
     type=image
     color=${palette.background}
     fontSize=10
-    background=${wallpaper}
+    background=${fernWallpaper}
     needsFullUserModel=false
     EOF
   '';
-
-  applyTheme = pkgs.writeShellApplication {
-    name = "helix-apply-theme";
-    runtimeInputs = [
-      pkgs.coreutils
-      pkgs.dconf
-      pkgs.glib
-      pkgs.kdePackages.kconfig
-      pkgs.kdePackages.plasma-workspace
-      pkgs.python3
+  helixTheme = pkgs.writeShellApplication {
+    name = "helix-theme";
+    runtimeInputs = with pkgs; [
+      coreutils
+      dconf
+      glib
+      kdePackages.kconfig
+      kdePackages.plasma-workspace
+      procps
+      python3
+      systemd
     ];
     text = ''
-      export HOME=/home/tristan
       export XDG_CONFIG_HOME="''${XDG_CONFIG_HOME:-$HOME/.config}"
-      marker="$XDG_CONFIG_HOME/helix/theme-revision"
-      revision=${lib.escapeShellArg themeRevision}
-      force=0
+      state_dir="''${XDG_STATE_HOME:-$HOME/.local/state}/helix"
+      selection_file="$state_dir/theme"
+
+      describe() {
+        printf '%-10s %s\n' fern 'graphite with restrained fern green (default)'
+        printf '%-10s %s\n' petrol 'muted deep petrol and teal'
+        printf '%-10s %s\n' plum 'dusty aubergine and plum'
+        printf '%-10s %s\n' oxide 'muted rust and copper'
+        printf '%-10s %s\n' amber 'desaturated ochre and gold'
+        printf '%-10s %s\n' rosewood 'dark wine and rosewood'
+        printf '%-10s %s\n' hotdog 'regrettably available.'
+      }
+      selected=fern
+      [[ -r $selection_file ]] && read -r selected < "$selection_file"
+      case $selected in fern|petrol|plum|oxide|amber|rosewood|hotdog) ;; *) selected=fern ;; esac
 
       case ''${1:-} in
-      "") ;;
-      --force) force=1 ;;
-      --help)
-        printf 'Usage: helix-apply-theme [--force|--help]\n'
-        exit 0
-        ;;
-      *)
-        printf 'Usage: helix-apply-theme [--force|--help]\n' >&2
-        exit 2
-        ;;
+      list) describe; exit 0 ;;
+      current) printf '%s\n' "$selected"; exit 0 ;;
+      fern|petrol|plum|oxide|amber|rosewood|hotdog) selected=$1 ;;
+      --apply-current) ;;
+      --help|-h|"") printf 'Usage: helix-theme {list|current|fern|petrol|plum|oxide|amber|rosewood|hotdog}\n'; exit 0 ;;
+      *) printf 'Unknown Helix theme: %s\n' "$1" >&2; exit 2 ;;
       esac
 
-      if [[ $force == 0 && -r $marker ]] && [[ $(<"$marker") == "$revision" ]]; then
-        printf 'Helix Graphite + Fern is already current.\n'
-        exit 0
-      fi
-      if [[ -z ''${DBUS_SESSION_BUS_ADDRESS:-} || -z ''${XDG_CURRENT_DESKTOP:-} ]]; then
-        printf 'Helix Graphite + Fern requires an active graphical session and session D-Bus.\n' >&2
-        exit 1
-      fi
-
+      source=/etc/helix/themes/$selected
+      [[ -d $source ]] || { printf 'Theme assets unavailable: %s\n' "$source" >&2; exit 1; }
+      mkdir -p "$state_dir" "$XDG_CONFIG_HOME/helix/theme" "$XDG_CONFIG_HOME/waybar" \
+        "$XDG_CONFIG_HOME/mako" "$XDG_CONFIG_HOME/fuzzel" "$XDG_CONFIG_HOME/ghostty" \
+        "$XDG_CONFIG_HOME/AdwSteamGtk"
+      printf '%s\n' "$selected" > "$selection_file"
+      ln -sfn "$source" "$XDG_CONFIG_HOME/helix/theme/current"
+      install -m 0644 "$source/waybar.css" "$XDG_CONFIG_HOME/waybar/helix.css"
+      install -m 0644 "$source/mako.conf" "$XDG_CONFIG_HOME/mako/helix.conf"
+      install -m 0644 "$source/fuzzel.ini" "$XDG_CONFIG_HOME/fuzzel/helix.ini"
+      install -m 0644 "$source/steam.css" "$XDG_CONFIG_HOME/AdwSteamGtk/custom.css"
+      install -m 0644 "$source/ghostty.ghostty" "$XDG_CONFIG_HOME/ghostty/profile.ghostty"
       python3 /etc/helix/theme/apply-theme-settings.py merge-ini \
         /etc/helix/theme/gtk-3.0-settings.ini "$XDG_CONFIG_HOME/gtk-3.0/settings.ini"
       python3 /etc/helix/theme/apply-theme-settings.py merge-ini \
         /etc/helix/theme/gtk-4.0-settings.ini "$XDG_CONFIG_HOME/gtk-4.0/settings.ini"
-      python3 /etc/helix/theme/apply-theme-settings.py merge-vscode \
-        "$XDG_CONFIG_HOME/Code/User/settings.json"
 
-      gsettings set org.gnome.desktop.interface color-scheme prefer-dark
-      gsettings set org.gnome.desktop.interface gtk-theme Breeze-Dark
-      gsettings set org.gnome.desktop.interface icon-theme breeze-dark
-      gsettings set io.github.Foldex.AdwSteamGtk prefs-install-custom-css true
-
-      if [[ $XDG_CURRENT_DESKTOP == *KDE* ]]; then
-        plasma-apply-desktoptheme breeze-dark
-        kwriteconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage org.kde.breezedark.desktop
-        kwriteconfig6 --file kdeglobals --group KDE --key widgetStyle Breeze
-        kwriteconfig6 --file kdeglobals --group Icons --key Theme breeze-dark
-        kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key library org.kde.breeze
-        kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key theme Breeze
-        kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key BorderSize Tiny
-        kwriteconfig6 --file breezerc --group Common --key OutlineIntensity 35
-        kwriteconfig6 --file breezerc --group Common --key ShadowStrength 180
-        kwriteconfig6 --file plasmarc --group Theme --key name breeze-dark
-        plasma-apply-cursortheme breeze_cursors
-        plasma-apply-colorscheme HelixGraphiteFern
-        plasma-apply-wallpaperimage ${lib.escapeShellArg wallpaper}
-        kwriteconfig6 --file konsolerc --group "Desktop Entry" --key DefaultProfile HelixGraphiteFern.profile
-        kwriteconfig6 --file kscreenlockerrc --group Greeter --group Wallpaper \
-          --group org.kde.image --group General --key Image "file://${wallpaper}"
+      if [[ -n ''${DBUS_SESSION_BUS_ADDRESS:-} && -n ''${XDG_CURRENT_DESKTOP:-} ]]; then
+        gsettings set org.gnome.desktop.interface color-scheme prefer-dark
+        gsettings set org.gnome.desktop.interface gtk-theme Breeze-Dark
+        gsettings set org.gnome.desktop.interface icon-theme breeze-dark
+        gsettings set io.github.Foldex.AdwSteamGtk prefs-install-custom-css true
+        if [[ $XDG_CURRENT_DESKTOP == *KDE* ]]; then
+          if [[ $selected == hotdog ]]; then
+            scheme=HelixGraphiteHotDogStand
+          else
+            pretty="$(tr '[:lower:]' '[:upper:]' <<<"''${selected:0:1}")''${selected:1}"
+            scheme="HelixGraphite$pretty"
+          fi
+          plasma-apply-desktoptheme breeze-dark
+          kwriteconfig6 --file kdeglobals --group KDE --key widgetStyle Breeze
+          kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key library org.kde.breeze
+          kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key theme Breeze
+          kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key BorderSize Tiny
+          kwriteconfig6 --file breezerc --group Common --key OutlineIntensity 35
+          kwriteconfig6 --file breezerc --group Common --key ShadowStrength 180
+          plasma-apply-colorscheme "$scheme"
+          plasma-apply-wallpaperimage "$source/wallpaper.svg"
+          kwriteconfig6 --file konsolerc --group "Desktop Entry" --key DefaultProfile "$scheme.profile"
+        fi
+        systemctl --user reload app-com.mitchellh.ghostty.service 2>/dev/null || pkill -USR2 -x ghostty 2>/dev/null || true
+        pkill -USR2 -x waybar 2>/dev/null || true
+        makoctl reload 2>/dev/null || true
       fi
-
-      install -Dm644 /dev/null "$marker"
-      printf '%s\n' "$revision" > "$marker"
-      printf 'Applied Helix Graphite + Fern revision %s. Restart applications if needed.\n' "$revision"
+      printf 'Applied Helix Graphite + %s. Restart Steam for its custom CSS to take effect.\n' "$selected"
     '';
   };
-
+  applyTheme = pkgs.writeShellApplication {
+    name = "helix-apply-theme";
+    runtimeInputs = [ helixTheme ];
+    text = ''
+      case ''${1:-} in
+      ""|--force) exec helix-theme fern ;;
+      --help|-h) printf 'Usage: helix-apply-theme [--force|--help]\n' ;;
+      *) printf 'Usage: helix-apply-theme [--force|--help]\n' >&2; exit 2 ;;
+      esac
+    '';
+  };
   applySteamTheme = pkgs.writeShellApplication {
     name = "helix-apply-steam-theme";
     runtimeInputs = [
@@ -142,65 +148,62 @@ let
     ];
     text = ''
       if [[ ''${1:-} == --help ]]; then
-        printf 'Usage: helix-apply-steam-theme\n'
-        printf 'Close Steam first. The command installs Adwaita-for-Steam with Graphite + Fern colours.\n'
+        printf 'Usage: helix-apply-steam-theme\nClose Steam first; the current Helix palette will be installed.\n'
         exit 0
       fi
-      if [[ $# -ne 0 ]]; then
-        printf 'Usage: helix-apply-steam-theme\n' >&2
-        exit 2
-      fi
+      [[ $# -eq 0 ]] || { printf 'Usage: helix-apply-steam-theme\n' >&2; exit 2; }
       if pgrep -x steam >/dev/null || pgrep -x steamwebhelper >/dev/null; then
         printf 'Close Steam completely before applying its theme.\n' >&2
         exit 1
       fi
-
-      export XDG_CONFIG_HOME="''${XDG_CONFIG_HOME:-$HOME/.config}"
-      install -Dm644 /etc/helix/theme/steam.css \
-        "$XDG_CONFIG_HOME/AdwSteamGtk/custom.css"
+      current="''${XDG_CONFIG_HOME:-$HOME/.config}/helix/theme/current/steam.css"
+      [[ -r $current ]] || current=/etc/helix/theme/steam.css
+      install -Dm644 "$current" "''${XDG_CONFIG_HOME:-$HOME/.config}/AdwSteamGtk/custom.css"
       gsettings set io.github.Foldex.AdwSteamGtk prefs-install-custom-css true
       adwaita-steam-gtk --install --options \
         'color_theme:oled;rounded_corners:false;win_controls:windows;win_controls_layout:auto'
-      printf 'Applied the Graphite + Fern Steam skin. Start Steam to inspect it.\n'
+      printf 'Applied the current Helix Steam skin. Start Steam to inspect it.\n'
     '';
   };
 in
 {
   programs.dconf.enable = true;
-
-  services.displayManager.sddm = {
-    theme = "helix-graphite-fern";
-  };
-
+  services.displayManager.sddm.theme = "helix-graphite-fern";
   environment.systemPackages = [
-    themePackage
+    themeFamily
     pkgs.kdePackages.breeze-gtk
     pkgs.kdePackages.breeze-icons
     pkgs.kdePackages.kconfig
+    helixTheme
     applyTheme
     applySteamTheme
     sddmTheme
   ];
-
-  environment.etc = {
-    "helix/theme/gtk-3.0-settings.ini".source = ../config/theme/gtk-3.0-settings.ini;
-    "helix/theme/gtk-4.0-settings.ini".source = ../config/theme/gtk-4.0-settings.ini;
-    "helix/theme/waybar.css".source = ../config/theme/waybar.css;
-    "helix/theme/mako.conf".source = ../config/theme/mako.conf;
-    "helix/theme/fuzzel.ini".source = ../config/theme/fuzzel.ini;
-    "helix/theme/steam.css".source = ../config/theme/steam.css;
-    "helix/theme/wallpaper.svg".source = ../config/theme/wallpaper.svg;
-    "helix/theme/apply-theme-settings.py".source = ../scripts/apply-theme-settings.py;
-  };
-
+  environment.etc =
+    builtins.listToAttrs (
+      map (theme: {
+        name = "helix/themes/${theme}";
+        value.source = "${themeFamily}/generated/${theme}";
+      }) themes
+    )
+    // {
+      "helix/theme/gtk-3.0-settings.ini".source = ../config/theme/gtk-3.0-settings.ini;
+      "helix/theme/gtk-4.0-settings.ini".source = ../config/theme/gtk-4.0-settings.ini;
+      "helix/theme/waybar.css".source = "${themeFamily}/generated/fern/waybar.css";
+      "helix/theme/mako.conf".source = "${themeFamily}/generated/fern/mako.conf";
+      "helix/theme/fuzzel.ini".source = "${themeFamily}/generated/fern/fuzzel.ini";
+      "helix/theme/steam.css".source = "${themeFamily}/generated/fern/steam.css";
+      "helix/theme/wallpaper.svg".source = "${themeFamily}/generated/fern/wallpaper.svg";
+      "helix/theme/apply-theme-settings.py".source = ../scripts/apply-theme-settings.py;
+    };
   systemd.user.services.helix-graphite-fern-theme = {
-    description = "Apply the Helix Graphite + Fern appearance policy for Tristan";
+    description = "Apply Tristan's persisted Helix theme";
     wantedBy = [ "graphical-session.target" ];
     after = [ "graphical-session-pre.target" ];
     unitConfig.ConditionUser = "tristan";
     serviceConfig = {
       Type = "oneshot";
-      ExecStart = "${applyTheme}/bin/helix-apply-theme";
+      ExecStart = "${helixTheme}/bin/helix-theme --apply-current";
       Environment = [
         "HOME=/home/tristan"
         "XDG_CONFIG_HOME=/home/tristan/.config"
