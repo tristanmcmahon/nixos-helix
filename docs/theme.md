@@ -26,11 +26,13 @@ helix-theme petrol
 helix-theme random
 ```
 
-At each Plasma login, Helix automatically chooses a different theme from the
+At each graphical login, Helix automatically chooses a different theme from the
 civilized pool: Fern, Petrol, Plum, Oxide, Amber, or Rosewood. The theme used by
 the previous login is excluded from the draw, so the appearance genuinely
 changes each time. Hot Dog Stand is never selected automatically; if it was
 chosen manually, the next login returns to one of the six civilized themes.
+Plasma performs the draw from its session autostart; Hyprland performs it before
+starting its wallpaper, Waybar, and Mako surfaces.
 
 The current choice is persisted in `~/.local/state/helix/theme`. Manual
 `helix-theme NAME` commands still work normally during a session, and
@@ -69,11 +71,12 @@ colours. Browser chrome uses the graphite base where policy supports it. Dark
 Reader remains available without fragile per-site CSS.
 
 The optional Hyprland session shares the wallpaper and palette through its
-existing Waybar, Mako, and Fuzzel files. Its workspaces and normal session
-behaviour are unchanged; the Ghostty surface chooser is now shared with Plasma.
-Obsidian remains per-vault: select its Dark base colour scheme when necessary.
-Zen follows the system preference but retains its own profile-local extension
-state.
+Waybar, Mako, and Fuzzel files. A repository-owned startup helper performs the
+login theme draw before launching those surfaces so they all see the same
+selection. Its workspaces and normal session behaviour are unchanged; the
+Ghostty surface chooser is shared with Plasma. Obsidian remains per-vault:
+select its Dark base colour scheme when necessary. Zen follows the system
+preference but retains its own profile-local extension state.
 
 Steam does not inherit KDE colours. NixOS therefore installs the maintained
 AdwSteamGtk wrapper and a repository-owned Graphite custom-colour file.
@@ -97,9 +100,10 @@ be recoloured by this mechanism.
 
 `desktop/theme.nix` owns packaging, SDDM, deployment, the early persisted-theme
 user service, and the KDE login autostart that rotates among civilized themes.
-It updates selected KDE keys and merges only repository-owned GTK keys.
-`desktop/ghostty.nix` deploys Ghostty; `desktop/fonts.nix` remains the sole font
-owner.
+`desktop/hyprland.nix` owns the matching ordered Hyprland login rotation and
+surface startup. Theme application updates selected KDE keys and merges only
+repository-owned GTK keys. `desktop/ghostty.nix` deploys Ghostty;
+`desktop/fonts.nix` remains the sole font owner.
 
 Plasma panel geometry, widget order, desktop icon layout, per-monitor geometry,
 and application-specific settings remain mutable user state. This preserves the
