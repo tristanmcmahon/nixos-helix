@@ -80,6 +80,10 @@ assert "pool=(fern petrol plum oxide amber rosewood hotdog)" not in theme_module
 assert "Exec=${helixTheme}/bin/helix-theme random" in theme_module
 assert "Usage: helix-theme {list|current|random|" in theme_module
 
+hyprland_module = (ROOT / "desktop/hyprland.nix").read_text(encoding="utf-8")
+assert "helix-hyprland-theme-start" in hyprland_module
+assert "/run/current-system/sw/bin/helix-theme random" in hyprland_module
+
 with tempfile.TemporaryDirectory() as generated_directory:
     subprocess.run(
         [sys.executable, str(ROOT / "scripts/generate-theme-family.py"), str(ROOT / "config/theme"), str(ROOT / "config/ghostty/profiles/main.ghostty"), generated_directory],
