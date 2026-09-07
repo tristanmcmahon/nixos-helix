@@ -51,6 +51,7 @@ in
     ./profiles/workstation.nix
     ./profiles/development.nix
     ./profiles/gaming.nix
+    ./profiles/hamcade.nix
     ./profiles/emulation.nix
     ./profiles/local-llm.nix
 
