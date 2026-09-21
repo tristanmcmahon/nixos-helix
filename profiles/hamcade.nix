@@ -59,22 +59,22 @@ in
 
   config = lib.mkIf cfg.enable {
     environment.systemPackages = [
-    launcher
-    frontend
-    arcadePkgs.libretro.mame
-    arcadePkgs.mame
-    pkgs.retroarch-bare
-    pkgs.libretro-shaders-slang
-    pkgs.retroarch-joypad-autoconfig
-    pkgs.p7zip
-    pkgs.mame.tools
-    (pkgs.makeDesktopItem {
-      name = "hamcade";
-      desktopName = "hamCade";
-      comment = "Arcade games from your read-only NAS library";
-      exec = "hamcade launch";
-      icon = "applications-games";
-      categories = [ "Game" ];
+      launcher
+      frontend
+      arcadePkgs.libretro.mame
+      arcadePkgs.mame
+      pkgs.retroarch-bare
+      pkgs.libretro-shaders-slang
+      pkgs.retroarch-joypad-autoconfig
+      pkgs.p7zip
+      pkgs.mame.tools
+      (pkgs.makeDesktopItem {
+        name = "hamcade";
+        desktopName = "hamCade";
+        comment = "Arcade games from your read-only NAS library";
+        exec = "hamcade launch";
+        icon = "applications-games";
+        categories = [ "Game" ];
       })
     ];
   };
