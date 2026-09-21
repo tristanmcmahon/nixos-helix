@@ -1,5 +1,8 @@
-{
+let
   host = "192.168.1.8";
+in
+{
+  inherit host;
   credentialsFile = "/etc/nixos/secrets/infernalnexus-smb";
   user = "tristan";
   group = "users";
@@ -10,11 +13,11 @@
 
   shares = {
     nas1 = {
-      source = "//192.168.1.8/nas1";
+      source = "//${host}/nas1";
       mountPoint = "/mnt/infernalnexus/nas1";
     };
     roms = {
-      source = "//192.168.1.8/roms";
+      source = "//${host}/roms";
       mountPoint = "/mnt/infernalnexus/roms";
     };
   };
