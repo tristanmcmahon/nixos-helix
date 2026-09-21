@@ -14,7 +14,7 @@ run_build() {
   if command -v nom >/dev/null 2>&1; then "$@" 2>&1 | nom; else "$@"; fi
 }
 
-printf 'Updating the root Nix channels...\n'
+printf 'Updating the root NixOS channel...\n'
 sudo nix-channel --update nixos
 printf 'Running repository validation...\n'
 ./scripts/check.sh
