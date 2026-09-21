@@ -1,3 +1,13 @@
+
+printf 'Checking OpenClaw sandbox in the built default system...\n'
+openclaw_unit=$system_closure/etc/systemd/user/openclaw-gateway.service
+[[ -r $openclaw_unit ]]
+grep -qF '/home/tristan/Projects/nixos-helix' "$openclaw_unit"
+grep -qF '/mnt/games_nvme/emulation' "$openclaw_unit"
+grep -qF '/mnt/infernalnexus' "$openclaw_unit"
+grep -qF 'ProtectSystem=strict' "$openclaw_unit"
+grep -qF 'IPAddressDeny=any' "$openclaw_unit"
+
 #!/usr/bin/env bash
 
 # Sourced by scripts/check.sh; shares its strict mode and validation context.
