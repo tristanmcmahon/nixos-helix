@@ -1,6 +1,11 @@
 context:
 let
-  inherit (context) config system release packageNames;
+  inherit (context)
+    config
+    system
+    release
+    packageNames
+    ;
 in
 assert config.system.nixos.release == release.nixosRelease;
 assert config.system.stateVersion == release.stateVersion;
