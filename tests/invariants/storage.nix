@@ -1,6 +1,13 @@
 context:
 let
-  inherit (context) config mountOptions localSsds localSsdIsValid configuredLocalSsdServiceNames localSsdServiceNames;
+  inherit (context)
+    config
+    mountOptions
+    localSsds
+    localSsdIsValid
+    configuredLocalSsdServiceNames
+    localSsdServiceNames
+    ;
 in
 assert
   config.fileSystems."/mnt/games_nvme".device
