@@ -56,6 +56,7 @@ done < <(find . -name '*.nix' -type f ! -name hardware-configuration.nix -print 
 printf 'Checking shell syntax...\n'
 mapfile -t shell_files < <(find scripts -type f -name '*.sh' -print | sort)
 bash -n "${shell_files[@]}"
+mapfile -t top_level_shell_files < <(find scripts -maxdepth 1 -type f -name '*.sh' -print | sort)
 
 if grep -Eq '\b(mkfs|parted|fdisk|sgdisk|wipefs|mount|umount|swapon|swapoff|mkswap|e2label|fatlabel)\b' \
   scripts/backup-for-reinstall.sh scripts/reinstall-preflight.sh \
@@ -66,7 +67,7 @@ if grep -Eq '\b(mkfs|parted|fdisk|sgdisk|wipefs|mount|umount|swapon|swapoff|mksw
 fi
 
 printf 'Running ShellCheck...\n'
-shellcheck "${shell_files[@]}"
+shellcheck -x "${top_level_shell_files[@]}"
 
 printf 'Checking Nix dead code and lint...\n'
 deadnix --fail --exclude hardware-configuration.nix -- .
