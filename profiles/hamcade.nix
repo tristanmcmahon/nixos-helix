@@ -1,6 +1,13 @@
-{ pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
+  cfg = config.helix.hamCade;
+
   # hamCade remains a separately developed mutable checkout. Helix owns the
   # NixOS integration so evaluating this repository never depends on a sibling
   # checkout being present.
@@ -48,7 +55,10 @@ let
   };
 in
 {
-  environment.systemPackages = [
+  options.helix.hamCade.enable = lib.mkEnableOption "hamCade arcade library";
+
+  config = lib.mkIf cfg.enable {
+    environment.systemPackages = [
     launcher
     frontend
     arcadePkgs.libretro.mame
@@ -65,6 +75,7 @@ in
       exec = "hamcade launch";
       icon = "applications-games";
       categories = [ "Game" ];
-    })
-  ];
+      })
+    ];
+  };
 }
