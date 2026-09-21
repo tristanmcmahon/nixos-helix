@@ -1,6 +1,13 @@
 context:
 let
-  inherit (context) config infernalnexusMounts infernalnexusAutomounts infernalnexusMount infernalnexusAutomount infernalnexusOptions;
+  inherit (context)
+    config
+    infernalnexusMounts
+    infernalnexusAutomounts
+    infernalnexusMount
+    infernalnexusAutomount
+    infernalnexusOptions
+    ;
 in
 assert config.hardware.ckb-next.enable;
 assert config.services.openssh.enable;
