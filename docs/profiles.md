@@ -38,6 +38,11 @@ access; it is not duplicated in the system package list. The upstream
 ProtonPlus, Protontricks, MangoHud, GOverlay, and the repository-owned Doom
 tooling are present; Heroic, Lutris, and a general Wine package remain absent.
 
+hamCade remains a separately developed checkout at
+`/home/tristan/Projects/hamCade`. The Helix profile owns its NixOS packages and
+launcher, so evaluation and CI do not depend on that sibling checkout; the
+checkout is required only when the `hamcade` command actually runs.
+
 The normal default dry build validates this active profile. Disabling the single
 `./profiles/gaming.nix` import returns the evaluated configuration to the
 non-gaming workstation layer.
@@ -90,6 +95,6 @@ ollama ps
 After the current downloads finish and the configuration is activated, run a
 representative model and use `ollama ps` plus `nvidia-smi` in another terminal
 to verify actual GPU use. Successful evaluation alone does not prove that
-inference is GPU-accelerated. Helix sets `OLLAMA_CONTEXT_LENGTH=32768` for the service. Quantisation and
-keep-alive policy remain at Ollama defaults until measurements demonstrate a
-problem.
+inference is GPU-accelerated. Helix sets `OLLAMA_CONTEXT_LENGTH=32768` for the
+service. Quantisation and keep-alive policy remain at Ollama defaults until
+measurements demonstrate a problem.
