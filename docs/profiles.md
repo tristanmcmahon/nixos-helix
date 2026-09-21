@@ -34,8 +34,9 @@ The enabled conservative gaming profile provides Steam, GameMode, MangoHud,
 package and maintained controller udev rules, including DualSense raw-device
 access; it is not duplicated in the system package list. The upstream
 `hid_playstation` driver and explicit absence of xpadneo are hardware policy in
-`hardware/controllers.nix`. Emulation remains outside this profile. Heroic,
-Lutris, Wine, Gamescope, and custom Proton tooling have not been added.
+`hardware/controllers.nix`. Emulation remains outside this profile. Gamescope,
+ProtonPlus, Protontricks, MangoHud, GOverlay, and the repository-owned Doom
+tooling are present; Heroic, Lutris, and a general Wine package remain absent.
 
 The normal default dry build validates this active profile. Disabling the single
 `./profiles/gaming.nix` import returns the evaluated configuration to the
@@ -72,7 +73,7 @@ Update ownership remains deliberately simple:
 - Model tag updates come from `ollama pull`, including the native loader.
 - Experimental models remain untouched because model syncing is disabled.
 
-To deliberately refresh all four declared tags without waiting for the model
+To deliberately refresh all five declared tags without waiting for the model
 loader lifecycle, run the helper generated from the same canonical Nix list:
 
 ```bash
