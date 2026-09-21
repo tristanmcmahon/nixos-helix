@@ -44,230 +44,32 @@ let
     && lib.hasInfix "mountpoint -q" service.script
     && lib.hasInfix ssd.mountPoint service.script
     && lib.hasInfix "${ssd.mountPoint}/data" service.script;
+  context = {
+    inherit
+    config
+    lib
+    system
+    release
+    mountOptions
+    localSsds
+    localSsdIsValid
+    configuredLocalSsdServiceNames
+    localSsdServiceNames
+    packageNames
+    infernalnexusMounts
+    infernalnexusAutomounts
+    infernalnexusMount
+    infernalnexusAutomount
+    infernalnexusOptions
+    themePalette
+    ;
+  };
 in
-assert config.system.nixos.release == release.nixosRelease;
-assert config.system.stateVersion == release.stateVersion;
-assert config.nix.gc.automatic;
-assert config.nix.gc.options == "--delete-older-than 14d";
-assert config.nix.optimise.automatic;
-assert config.zramSwap.enable;
-assert config.zramSwap.algorithm == "zstd";
-assert config.zramSwap.memoryPercent == 50;
-assert config.zramSwap.priority == 100;
-assert config.systemd.oomd.enable;
-assert config.systemd.oomd.enableRootSlice;
-assert config.systemd.oomd.enableUserSlices;
-assert !config.systemd.oomd.enableSystemSlice;
-assert builtins.elem "nct6775" config.boot.kernelModules;
-assert config.helix.monitoring.enable;
-assert config.helix.monitoring.retentionTime == "400d";
-assert config.helix.monitoring.scrapeInterval == "15s";
-assert config.services.prometheus.enable;
-assert config.services.prometheus.listenAddress == "127.0.0.1";
-assert config.services.prometheus.retentionTime == "400d";
-assert config.services.prometheus.exporters.node.enable;
-assert config.services.prometheus.exporters.node.listenAddress == "127.0.0.1";
-assert builtins.elem "systemd" config.services.prometheus.exporters.node.enabledCollectors;
-assert config.services.prometheus.exporters.nvidia-gpu.enable;
-assert config.services.prometheus.exporters.nvidia-gpu.listenAddress == "127.0.0.1";
-assert config.services.prometheus.exporters.smartctl.enable;
-assert config.services.prometheus.exporters.smartctl.listenAddress == "127.0.0.1";
-assert config.services.prometheus.exporters.smartctl.maxInterval == "2m";
-assert config.services.grafana.enable;
-assert config.services.grafana.settings.server.http_addr == "127.0.0.1";
-assert config.services.grafana.settings.server.http_port == 3000;
-assert config.services.grafana.settings."auth.anonymous".org_role == "Viewer";
-assert config.services.grafana.settings.auth.disable_login_form;
-assert lib.hasPrefix "$__file{" config.services.grafana.settings.security.secret_key;
-assert config.programs.coolercontrol.enable;
-assert !(builtins.elem 3000 config.networking.firewall.allowedTCPPorts);
-assert !(builtins.elem 9090 config.networking.firewall.allowedTCPPorts);
-assert !(builtins.elem 9100 config.networking.firewall.allowedTCPPorts);
-assert !(builtins.elem 9633 config.networking.firewall.allowedTCPPorts);
-assert !(builtins.elem 9835 config.networking.firewall.allowedTCPPorts);
-assert
-  config.fileSystems."/mnt/games_nvme".device
-  == "/dev/disk/by-uuid/d07ac88e-34f6-4d56-9941-5ceaf52fd6bb";
-assert config.fileSystems."/mnt/games_nvme".fsType == "ext4";
-assert config.fileSystems."/mnt/games_nvme".options == mountOptions;
-assert builtins.length localSsds == 3;
-assert builtins.all localSsdIsValid localSsds;
-assert
-  builtins.sort builtins.lessThan configuredLocalSsdServiceNames
-  == builtins.sort builtins.lessThan localSsdServiceNames;
-assert config.services.fstrim.enable;
-assert config.services.desktopManager.plasma6.enable;
-assert config.services.displayManager.sddm.enable;
-assert config.programs.hyprland.enable;
-assert config.programs.hyprland.withUWSM;
-assert config.services.xserver.videoDrivers == [ "nvidia" ];
-assert config.hardware.graphics.enable;
-assert config.hardware.graphics.enable32Bit;
-assert config.hardware.nvidia.modesetting.enable;
-assert config.hardware.nvidia.open;
-assert config.hardware.nvidia.powerManagement.enable;
-assert config.programs.steam.enable;
-assert config.programs.gamemode.enable;
-assert config.programs.gamescope.enable;
-assert !config.programs.gamescope.capSysNice;
-assert config.hardware.steam-hardware.enable;
-assert config.hardware.bluetooth.enable;
-assert !config.hardware.xpadneo.enable;
-assert builtins.elem "hid_playstation" config.boot.kernelModules;
-assert builtins.elem "hid_xpadneo" config.boot.blacklistedKernelModules;
-assert config.helix.emulation.enable;
-assert builtins.hasAttr "helix-emulation-prepare" config.systemd.user.services;
-assert builtins.elem "helix-retroarch" packageNames;
-assert builtins.elem "helix-emulation-status" packageNames;
-assert builtins.any (
-  mount:
-  mount.where == "/mnt/infernalnexus/roms"
-  && mount.what == "//192.168.1.8/roms"
-  && lib.hasInfix ",ro" mount.options
-) config.systemd.mounts;
-assert
-  config.systemd.services."helix-emulation-storage".unitConfig.ConditionPathIsMountPoint
-  == "/mnt/games_nvme";
-assert lib.hasInfix "/mnt/games_nvme/emulation"
-  config.systemd.services."helix-emulation-storage".script;
-assert builtins.elem "/home/tristan/Projects/nixos-helix"
-  config.systemd.user.services."openclaw-gateway".serviceConfig.BindPaths;
-assert builtins.elem "/mnt/games_nvme/emulation"
-  config.systemd.user.services."openclaw-gateway".serviceConfig.BindPaths;
-assert builtins.elem "-/mnt/infernalnexus"
-  config.systemd.user.services."openclaw-gateway".serviceConfig.ReadOnlyPaths;
-assert !(builtins.elem "chatgpt" packageNames);
-assert builtins.elem "adwsteamgtk" packageNames;
-assert builtins.elem "doomrunner" packageNames;
-assert builtins.elem "gzdoom" packageNames;
-assert builtins.elem "uzdoom" packageNames;
-assert builtins.elem "protonplus" packageNames;
-assert builtins.elem "protontricks" packageNames;
-assert builtins.elem "goverlay" packageNames;
-assert builtins.elem "nix-output-monitor" packageNames;
-assert builtins.elem "nvd" packageNames;
-assert builtins.elem "helix-health" packageNames;
-assert builtins.elem "helix-update" packageNames;
-assert builtins.elem "helix-theme" packageNames;
-assert builtins.compareVersions system.pkgs.openclaw.version "2026.6.9" >= 0;
-assert system.pkgs.openclaw.version == "2026.7.1-2";
-assert (config.nixpkgs.config.permittedInsecurePackages or [ ]) == [ ];
-assert builtins.elem "evtest" packageNames;
-assert config.services.ollama.enable;
-assert config.services.ollama.host == "127.0.0.1";
-assert !config.services.ollama.openFirewall;
-assert config.services.ollama.package == system.pkgs.ollama-cuda;
-assert config.services.ollama.user == "ollama";
-assert config.services.ollama.group == "ollama";
-assert config.services.ollama.models == "/mnt/games_nvme/ollama/models";
-assert
-  config.services.ollama.loadModels == [
-    "deepseek-r1:8b"
-    "gemma4:12b"
-    "gpt-oss:20b"
-    "qwen3.6:27b"
-    "qwen3-embedding:4b"
-  ];
-assert !config.services.ollama.syncModels;
-assert builtins.hasAttr "ollama" config.systemd.services;
-assert builtins.hasAttr "ollama-model-loader" config.systemd.services;
-assert builtins.elem "ollama.service" config.systemd.services.ollama-model-loader.after;
-assert builtins.elem "ollama.service" config.systemd.services.ollama-model-loader.bindsTo;
-assert builtins.all (
-  model: lib.hasInfix model config.systemd.services.ollama-model-loader.script
-) config.services.ollama.loadModels;
-assert builtins.elem "helix-ollama-model-storage.service" config.systemd.services.ollama.requires;
-assert builtins.elem "helix-ollama-model-storage.service" config.systemd.services.ollama.after;
-assert
-  config.systemd.services.helix-ollama-model-storage.unitConfig.ConditionPathIsMountPoint
-  == "/mnt/games_nvme";
-assert config.hardware.ckb-next.enable;
-assert config.services.openssh.enable;
-assert config.services.openssh.openFirewall;
-assert config.services.openssh.ports == [ 22 ];
-assert config.services.openssh.settings.PermitRootLogin == "no";
-assert config.services.openssh.settings.PubkeyAuthentication;
-assert !config.services.openssh.settings.PasswordAuthentication;
-assert !config.services.openssh.settings.KbdInteractiveAuthentication;
-assert config.networking.hosts."192.168.1.2" == [ "mister" ];
-assert config.networking.hosts."192.168.1.8" == [ "infernalnexus" ];
-assert !(builtins.hasAttr "/mnt/infernalnexus/nas1" config.fileSystems);
-assert builtins.length infernalnexusMounts == 1;
-assert infernalnexusMount.what == "//192.168.1.8/nas1";
-assert infernalnexusMount.type == "cifs";
-assert builtins.all (option: builtins.elem option infernalnexusOptions) [
-  "credentials=/etc/nixos/secrets/infernalnexus-smb"
-  "uid=tristan"
-  "gid=users"
-  "dir_mode=0775"
-  "file_mode=0664"
-];
-assert builtins.elem "vers=2.0" infernalnexusOptions;
-assert builtins.elem "sec=ntlmssp" infernalnexusOptions;
-assert !(builtins.elem "vers=1.0" infernalnexusOptions);
-assert !(builtins.elem "x-systemd.automount" infernalnexusOptions);
-assert builtins.all (
-  option: builtins.match "x-systemd\\.(mount-timeout|idle-timeout).*" option == null
-) infernalnexusOptions;
-assert builtins.elem "network-online.target" infernalnexusMount.wants;
-assert builtins.elem "network-online.target" infernalnexusMount.after;
-assert infernalnexusMount.mountConfig.TimeoutSec == "15s";
-assert builtins.length infernalnexusAutomounts == 1;
-assert builtins.elem "multi-user.target" infernalnexusAutomount.wantedBy;
-assert infernalnexusAutomount.automountConfig.TimeoutIdleSec == "10min";
-assert config.networking.firewall.enable;
-assert builtins.elem 22 config.networking.firewall.allowedTCPPorts;
-assert builtins.hasAttr "sshd" config.systemd.services;
-assert config.programs._1password.enable;
-assert config.programs._1password-gui.enable;
-assert config.programs._1password-gui.polkitPolicyOwners == [ "tristan" ];
-assert config.programs.chromium.enable;
-assert
-  config.programs.chromium.extensions == [
-    "aeblfdkhhhdcdjpifhhbdiojplfjncoa"
-    "eimadpbcbfnmbkopoojfekhnkhdbieeh"
-  ];
-assert config.programs.chromium.extraOpts.BrowserThemeColor == themePalette.background;
-assert !config.programs.chromium.extraOpts.PasswordManagerEnabled;
-assert config.programs.firefox.enable;
-assert !config.programs.firefox.policies.OfferToSaveLogins;
-assert builtins.hasAttr "addon@darkreader.org" config.programs.firefox.policies.ExtensionSettings;
-assert config.programs.firefox.preferences."ui.systemUsesDarkTheme" == 1;
-assert config.services.displayManager.sddm.theme == "helix-graphite-fern";
-assert config.programs.dconf.enable;
-assert config.systemd.user.services.helix-graphite-fern-theme.unitConfig.ConditionUser == "tristan";
-assert config.systemd.user.services.helix-ghostty-config.unitConfig.ConditionUser == "tristan";
-assert builtins.elem "HOME=/home/tristan"
-  config.systemd.user.services.helix-ghostty-config.serviceConfig.Environment;
-assert builtins.elem "XDG_CONFIG_HOME=/home/tristan/.config"
-  config.systemd.user.services.helix-ghostty-config.serviceConfig.Environment;
-assert builtins.all (name: builtins.elem name packageNames) [
-  "ghostty-profile"
-  "ghostty-surface-profile"
-  "ghostty-surface-shell"
-];
-assert !(builtins.elem "ghostty-split-profile" packageNames);
-assert !(builtins.hasAttr "GTK_THEME" config.environment.variables);
-assert !(builtins.hasAttr "QT_STYLE_OVERRIDE" config.environment.variables);
-assert !(builtins.hasAttr "QT_QPA_PLATFORMTHEME" config.environment.variables);
-assert builtins.all (name: builtins.elem name packageNames) [
-  "spotify"
-  "vlc"
-  "haruna"
-  "strawberry"
-  "plex-desktop"
-  "gridplayer"
-];
-assert builtins.all (name: builtins.elem name packageNames) [
-  "signal-desktop"
-  "pidgin"
-  "ollama"
-  "helix-ollama-update-models"
-];
-assert builtins.any (name: builtins.match "mpv.*" name != null) packageNames;
-assert !(builtins.elem "plexmediaserver" packageNames);
-assert builtins.hasAttr "ckb-next" config.systemd.services;
-assert config.environment.variables.EDITOR == "vim";
-assert config.environment.variables.VISUAL == "vim";
-assert builtins.any (name: builtins.match "vim.*" name != null) packageNames;
+assert import ./invariants/core.nix context;
+assert import ./invariants/monitoring.nix context;
+assert import ./invariants/storage.nix context;
+assert import ./invariants/desktop.nix context;
+assert import ./invariants/emulation.nix context;
+assert import ./invariants/llm.nix context;
+assert import ./invariants/network-security.nix context;
 true
