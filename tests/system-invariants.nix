@@ -46,23 +46,23 @@ let
     && lib.hasInfix "${ssd.mountPoint}/data" service.script;
   context = {
     inherit
-    config
-    lib
-    system
-    release
-    mountOptions
-    localSsds
-    localSsdIsValid
-    configuredLocalSsdServiceNames
-    localSsdServiceNames
-    packageNames
-    infernalnexusMounts
-    infernalnexusAutomounts
-    infernalnexusMount
-    infernalnexusAutomount
-    infernalnexusOptions
-    themePalette
-    ;
+      config
+      lib
+      system
+      release
+      mountOptions
+      localSsds
+      localSsdIsValid
+      configuredLocalSsdServiceNames
+      localSsdServiceNames
+      packageNames
+      infernalnexusMounts
+      infernalnexusAutomounts
+      infernalnexusMount
+      infernalnexusAutomount
+      infernalnexusOptions
+      themePalette
+      ;
   };
 in
 assert import ./invariants/core.nix context;
