@@ -90,5 +90,6 @@ ollama ps
 After the current downloads finish and the configuration is activated, run a
 representative model and use `ollama ps` plus `nvidia-smi` in another terminal
 to verify actual GPU use. Successful evaluation alone does not prove that
-inference is GPU-accelerated. Helix sets `OLLAMA_CONTEXT_LENGTH=32768` for the service. Quantisation and keep-alive
-policy remain at Ollama defaults until measurements demonstrate a problem.
+inference is GPU-accelerated. Helix sets `OLLAMA_CONTEXT_LENGTH=32768` for the service. Quantisation and
+keep-alive policy remain at Ollama defaults until measurements demonstrate a
+problem.
