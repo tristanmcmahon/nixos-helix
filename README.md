@@ -2,8 +2,7 @@
 
 This is the canonical configuration for Helix, a NixOS 26.05 workstation with
 Plasma 6, an optional Hyprland/UWSM session, and an NVIDIA RTX 5080. It uses
-ordinary NixOS modules and the root Nix channel: no flakes, Home Manager,
-flakes, Home Manager, or a host framework. A narrow repository-owned overlay
+ordinary NixOS modules and the root Nix channel: no flakes, Home Manager, or a host framework. A narrow repository-owned overlay
 selects the immutably pinned first-party OpenClaw package.
 
 The active configuration includes workstation, development, gaming, emulation,
@@ -70,6 +69,7 @@ for disaster recovery and any deliberately planned future reinstall; see
 
 ## Focused guides
 
+- [Architecture and ownership](docs/architecture.md)
 - [Normal installation and recovery](docs/installation.md)
 - [Reinstall and recovery](docs/reinstall.md)
 - [Hardware validation](docs/hardware-validation.md)
