@@ -21,7 +21,15 @@ let
   );
 
   emulationTools = import ./emulation/tools.nix {
-    inherit lib pkgs romRoot romSource emulationRoot arcadeRoot stateRoot;
+    inherit
+      lib
+      pkgs
+      romRoot
+      romSource
+      emulationRoot
+      arcadeRoot
+      stateRoot
+      ;
   };
   inherit (emulationTools)
     requireNas
@@ -34,7 +42,15 @@ let
     ;
 
   emulationLaunchers = import ./emulation/launchers.nix {
-    inherit lib pkgs prepare retroarch emulationRoot arcadeRoot stateRoot;
+    inherit
+      lib
+      pkgs
+      prepare
+      retroarch
+      emulationRoot
+      arcadeRoot
+      stateRoot
+      ;
   };
   inherit (emulationLaunchers)
     pcsx2Launcher
