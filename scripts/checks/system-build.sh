@@ -10,6 +10,11 @@ printf 'Building the complete default system closure...\n'
 system_closure=$(nix-build --no-out-link '<nixpkgs/nixos>' -A system \
   -I "nixos-config=$repo_root/tests/build-configuration.nix")
 
+printf 'Checking Helix health and update command surfaces...\n'
+"$system_closure/sw/bin/helix-health" --help | grep -qF -- '--check'
+grep -qF 'helix-health' "$system_closure/sw/bin/helix-update"
+grep -qF '/home/tristan/Projects/hamCade' "$system_closure/sw/bin/hamcade"
+
 printf 'Checking Vim and modern-bash in the built default system...\n'
 ./scripts/test-modern-bash.sh "$system_closure"
 
