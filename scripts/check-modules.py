@@ -30,6 +30,7 @@ def imports(path: pathlib.Path) -> list[pathlib.Path]:
 
 reachable: set[pathlib.Path] = set()
 edges: list[tuple[pathlib.Path, pathlib.Path]] = []
+external_imports: list[tuple[pathlib.Path, pathlib.Path]] = []
 pending = [entry.resolve(), *sorted(dormant_roots)]
 while pending:
     parent = pending.pop()
@@ -39,11 +40,17 @@ while pending:
     for child in imports(parent):
         if child == parent:
             continue
+        if root not in child.parents and child != root:
+            external_imports.append((parent, child))
         if child in maintained or child == (root / "hardware-configuration.nix").resolve():
             edges.append((parent, child))
             pending.append(child)
 
 failures: list[str] = []
+for parent, child in external_imports:
+    failures.append(
+        f"relative Nix import escapes repository: {parent.relative_to(root)} -> {child}"
+    )
 for module in sorted(maintained - reachable):
     failures.append(f"unreachable maintained module: {module.relative_to(root)}")
 
