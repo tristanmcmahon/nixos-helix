@@ -61,6 +61,7 @@ in
   ];
 
   helix.emulation.enable = true;
+  helix.hamCade.enable = true;
   helix.monitoring.enable = true;
 
   # NVIDIA's user-space driver is redistributable but not free software, so
