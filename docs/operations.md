@@ -4,13 +4,21 @@
 current generation, NVIDIA status, RAM/zram/swap, local disk space, failed system
 and user units, OpenClaw gateway/version, monitoring services, and the selected
 root NixOS channel and its age where available. Missing optional session data is
-shown as a warning rather than aborting the report.
+shown as a warning rather than aborting the report. `helix-health --check` is
+the non-interactive runtime gate: it verifies the NVIDIA driver, GAMES_NVME, and
+the critical SSH, Ollama, monitoring, cooling, and available user-session
+OpenClaw services, returning nonzero on failure. Infernalnexus is deliberately
+not part of this gate because NAS availability must not determine workstation
+boot health.
 
 `helix-update` is the deliberate attended update path. It only operates on
 `/home/tristan/Projects/nixos-helix`, refuses any dirty or untracked work tree,
-updates the root channel, runs `scripts/check.sh`, builds a candidate, displays
-`nvd diff`, test-activates, then switches. It uses `nom` when present and retains
-raw build output during bootstrap. It does not schedule updates or run GC.
+updates only the root `nixos` channel, runs `scripts/check.sh`, builds a
+candidate, displays `nvd diff`, and test-activates it. The candidate's own
+`helix-health --check` must pass before it is selected for boot; a failed health
+gate test-activates the previous running generation again and aborts the update.
+It uses `nom` when present and retains raw build output during bootstrap. It
+does not schedule or autonomously activate updates, and it does not run GC.
 
 Helix uses native persistent weekly Nix GC with the existing one-hour randomized
 delay and deletes generations older than 14 days. Store optimisation stays
@@ -22,3 +30,6 @@ OpenClaw comes from `openclaw/nix-openclaw` revision
 Its first-party `nix/packages` definition pins stable OpenClaw 2026.7.1-2. The
 configuration asserts a minimum of 2026.6.9, and retains Nix mode, loopback-only
 network access, Ollama, secret-file handling, and the existing systemd sandbox.
+
+GitHub CI also runs weekly against the moving NixOS 26.05 channel. This is an
+early-warning build/compatibility check only; it does not modify Helix.
