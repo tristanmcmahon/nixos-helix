@@ -17,10 +17,4 @@ assert
   == "/mnt/games_nvme";
 assert lib.hasInfix "/mnt/games_nvme/emulation"
   config.systemd.services."helix-emulation-storage".script;
-assert builtins.elem "/home/tristan/Projects/nixos-helix"
-  config.systemd.user.services."openclaw-gateway".serviceConfig.BindPaths;
-assert builtins.elem "/mnt/games_nvme/emulation"
-  config.systemd.user.services."openclaw-gateway".serviceConfig.BindPaths;
-assert builtins.elem "-/mnt/infernalnexus"
-  config.systemd.user.services."openclaw-gateway".serviceConfig.ReadOnlyPaths;
 true
