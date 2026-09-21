@@ -15,12 +15,13 @@ run_build() {
 }
 
 printf 'Updating the root Nix channels...\n'
-sudo nix-channel --update
+sudo nix-channel --update nixos
 printf 'Running repository validation...\n'
 ./scripts/check.sh
 printf 'Building candidate system...\n'
-out_link=$(mktemp -u /tmp/helix-update-system.XXXXXX)
-trap 'rm -f -- "$out_link"' EXIT
+temporary_directory=$(mktemp -d)
+out_link="$temporary_directory/system"
+trap 'rm -rf -- "$temporary_directory"' EXIT
 run_build nix-build --out-link "$out_link" '<nixpkgs/nixos>' -A system \
   -I "nixos-config=$repo/configuration.nix"
 candidate=$(readlink -f "$out_link")
