@@ -60,9 +60,11 @@ in
     ./packages/openclaw.nix
   ];
 
-  helix.emulation.enable = true;
-  helix.hamCade.enable = true;
-  helix.monitoring.enable = true;
+  helix = {
+    emulation.enable = true;
+    hamCade.enable = true;
+    monitoring.enable = true;
+  };
 
   # NVIDIA's user-space driver is redistributable but not free software, so
   # Nixpkgs will refuse to evaluate it unless unfree packages are permitted.
