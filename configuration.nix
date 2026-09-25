@@ -62,6 +62,7 @@ in
 
   helix = {
     emulation.enable = true;
+    hamCade.enable = true;
     monitoring.enable = true;
 
     # Helix is the first client of the Pi-hole on infernalnexus. This is a
