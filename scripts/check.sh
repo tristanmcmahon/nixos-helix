@@ -88,6 +88,13 @@ printf 'Checking Nix dead code and lint...\n'
 deadnix --fail --exclude hardware-configuration.nix -- .
 statix check . -i hardware-configuration.nix
 
+printf 'Checking repository-local module boundaries...\n'
+if grep -Rqs '../../hamCade' profiles; then
+  printf 'A NixOS profile still imports the sibling private hamCade checkout.\n' >&2
+  exit 1
+fi
+grep -qF 'b64dc3c90c66b46c8e4e35ba5f590706ece8d8f1' vendor/hamcade/dependencies.nix
+
 printf 'Checking Git whitespace...\n'
 git diff --check
 
