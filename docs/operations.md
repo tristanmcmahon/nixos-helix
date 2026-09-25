@@ -31,5 +31,10 @@ Its first-party `nix/packages` definition pins stable OpenClaw 2026.7.1-2. The
 configuration asserts a minimum of 2026.6.9, and retains Nix mode, loopback-only
 network access, Ollama, secret-file handling, and the existing systemd sandbox.
 
-GitHub CI also runs weekly against the moving NixOS 26.05 channel. This is an
-early-warning build/compatibility check only; it does not modify Helix.
+Routine GitHub CI runs static checks and Nix evaluation/invariants against the
+NixOS 26.05 channel. It deliberately does not build the complete CUDA-enabled
+workstation closure or compile MAME on every pull request.
+
+The expensive closure checks live behind `scripts/check.sh --full` and the
+`Release CI` workflow. That workflow runs only for `release/**` branches or
+an explicit manual dispatch. It does not modify Helix.
