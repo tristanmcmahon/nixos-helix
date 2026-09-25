@@ -135,8 +135,9 @@ mismatch. Do not use SMB1 as a fallback.
 
 ## Helix DNS via Pi-hole
 
-Helix intentionally uses the Pi-hole service on infernalnexus as its sole
-system DNS resolver:
+Helix controls Pi-hole DNS declaratively through the `helix-nixos` option
+`helix.networking.pihole`. The normal Helix configuration enables it and uses
+the Pi-hole service on infernalnexus as its sole system DNS resolver:
 
 ```text
 DNS: 192.168.1.8
@@ -147,6 +148,19 @@ processing is disabled so DHCP-provided router DNS cannot bypass Pi-hole.
 NixOS owns `/etc/resolv.conf` through `networking.nameservers`.
 
 This is deliberately Helix-only; no router or LAN-wide DNS setting is changed.
+
+The control lives in `configuration.nix`:
+
+```nix
+helix.networking.pihole = {
+  enable = true;
+  address = "192.168.1.8";
+};
+```
+
+To disable Pi-hole DNS for Helix, set `enable = false` and rebuild. NetworkManager
+then resumes its normal DHCP-provided DNS behaviour. Do not hand-edit
+`/etc/resolv.conf` or mutate a NetworkManager connection profile for this policy.
 
 After temporary activation, verify:
 
