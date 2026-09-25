@@ -34,8 +34,10 @@ The enabled conservative gaming profile provides Steam, GameMode, MangoHud,
 package and maintained controller udev rules, including DualSense raw-device
 access; it is not duplicated in the system package list. The upstream
 `hid_playstation` driver and explicit absence of xpadneo are hardware policy in
-`hardware/controllers.nix`. Emulation remains outside this profile. Heroic,
-Lutris, Wine, Gamescope, and custom Proton tooling have not been added.
+`hardware/controllers.nix`. Gamescope is enabled without CAP_SYS_NICE, and
+ProtonPlus, Protontricks, MangoHud, GOverlay and the curated Doom tooling are
+installed. Heroic, Lutris and a general Wine layer have not been added.
+Emulation remains outside this profile.
 
 The normal default dry build validates this active profile. Disabling the single
 `./profiles/gaming.nix` import returns the evaluated configuration to the
@@ -86,9 +88,8 @@ ollama list
 ollama ps
 ```
 
-After the current downloads finish and the configuration is activated, run a
-representative model and use `ollama ps` plus `nvidia-smi` in another terminal
-to verify actual GPU use. Successful evaluation alone does not prove that
-inference is GPU-accelerated. Context length is explicitly set to 32768 for the Ollama service. Quantisation
-and keep-alive policy remain at Ollama defaults until measurements demonstrate
-a problem.
+After activation, run a representative model and use `ollama ps` plus
+`nvidia-smi` in another terminal to verify actual GPU use. Successful evaluation
+alone does not prove that inference is GPU-accelerated. Context length is
+explicitly set to 32768 for the Ollama service. Quantisation and keep-alive
+policy remain at Ollama defaults until measurements demonstrate a problem.
