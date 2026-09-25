@@ -59,7 +59,10 @@ Since Alpha 4, Helix has also gained:
   configuration/invariant tests;
 - a repository architecture cleanup that splits the validation suite and system
   invariants by domain, decomposes the emulation profile, centralizes
-  Infernalnexus host/SMB facts, and hardens `helix-health` / `helix-update`.
+  Infernalnexus host/SMB facts, and hardens `helix-health` / `helix-update`;
+- tiered CI: routine PR checks evaluate configuration and invariants without
+  rebuilding CUDA/MAME, while `scripts/check.sh --full` remains the explicit
+  release gate for the complete workstation closure.
 
 ## Pi-hole ownership boundary
 
@@ -84,6 +87,14 @@ Before switching Alpha 5:
 ./scripts/rebuild.sh dry-build
 ./scripts/rebuild.sh test
 ```
+
+The release branch additionally runs:
+
+```bash
+./scripts/dev-shell.sh --run './scripts/check.sh --full'
+```
+
+That expensive gate is intentionally not part of routine pull-request CI.
 
 Resolver checks on the activated generation:
 
