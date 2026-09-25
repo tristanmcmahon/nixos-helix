@@ -162,20 +162,21 @@ To disable Pi-hole DNS for Helix, set `enable = false` and rebuild. NetworkManag
 then resumes its normal DHCP-provided DNS behaviour. Do not hand-edit
 `/etc/resolv.conf` or mutate a NetworkManager connection profile for this policy.
 
-After temporary activation, verify:
+Runtime qualification completed on 2026-09-26. Helix resolved ordinary public
+names through `192.168.1.8`, resolved hamFence private names through Pi-hole,
+and successfully reached the trusted `https://home.alienrobot.org/` ingress
+path using normal system DNS.
+
+Useful re-checks are:
 
 ```bash
 cat /etc/resolv.conf
-dig example.com
-dig doubleclick.net
+getent ahostsv4 home.alienrobot.org
+curl -fsS -o /dev/null https://home.alienrobot.org/
 ```
 
-The `SERVER` line from `dig` should show `192.168.1.8#53`, and the queries
-should appear in Pi-hole's Query Log.
-
-There is intentionally no public fallback resolver during this qualification.
-If Pi-hole is unavailable, DNS failure on Helix makes that failure obvious
-instead of bypassing filtering.
+There is intentionally no public fallback resolver. If Pi-hole is unavailable,
+DNS failure on Helix makes that failure obvious instead of bypassing filtering.
 
 Rollback immediately with the previous NixOS generation:
 

@@ -34,8 +34,10 @@ The enabled conservative gaming profile provides Steam, GameMode, MangoHud,
 package and maintained controller udev rules, including DualSense raw-device
 access; it is not duplicated in the system package list. The upstream
 `hid_playstation` driver and explicit absence of xpadneo are hardware policy in
-`hardware/controllers.nix`. Emulation remains outside this profile. Heroic,
-Lutris, Wine, Gamescope, and custom Proton tooling have not been added.
+`hardware/controllers.nix`. Gamescope is enabled without CAP_SYS_NICE, and
+ProtonPlus, Protontricks, MangoHud, GOverlay and the curated Doom tooling are
+installed. Heroic, Lutris and a general Wine layer have not been added.
+Emulation remains outside this profile.
 
 The normal default dry build validates this active profile. Disabling the single
 `./profiles/gaming.nix` import returns the evaluated configuration to the
@@ -53,6 +55,7 @@ The service will not start unless GAMES_NVME is mounted and its narrowly scoped
 initializer has created the model directory for the `ollama` service account.
 Nix declares this baseline model set:
 
+- `deepseek-r1:8b` — compact reasoning model
 - `gemma4:12b` — fast/general local model
 - `gpt-oss:20b` — stronger reasoning, agentic, and general work
 - `qwen3.6:27b` — larger coding and reasoning model
@@ -71,7 +74,7 @@ Update ownership remains deliberately simple:
 - Model tag updates come from `ollama pull`, including the native loader.
 - Experimental models remain untouched because model syncing is disabled.
 
-To deliberately refresh all four declared tags without waiting for the model
+To deliberately refresh all five declared tags without waiting for the model
 loader lifecycle, run the helper generated from the same canonical Nix list:
 
 ```bash
@@ -85,8 +88,8 @@ ollama list
 ollama ps
 ```
 
-After the current downloads finish and the configuration is activated, run a
-representative model and use `ollama ps` plus `nvidia-smi` in another terminal
-to verify actual GPU use. Successful evaluation alone does not prove that
-inference is GPU-accelerated. Context length, quantisation, and keep-alive
+After activation, run a representative model and use `ollama ps` plus
+`nvidia-smi` in another terminal to verify actual GPU use. Successful evaluation
+alone does not prove that inference is GPU-accelerated. Context length is
+explicitly set to 32768 for the Ollama service. Quantisation and keep-alive
 policy remain at Ollama defaults until measurements demonstrate a problem.
