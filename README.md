@@ -1,5 +1,11 @@
 # Helix NixOS configuration
 
+Current alpha: `v0.3.0-alpha.5`.
+
+Alpha 5 moves Helix's normal system DNS to the Pi-hole on `infernalnexus`
+(`192.168.1.8`) through declarative `helix-nixos` configuration. The router
+and other LAN clients remain unchanged.
+
 This is the canonical configuration for Helix, a NixOS 26.05 workstation with
 Plasma 6, an optional Hyprland/UWSM session, and an NVIDIA RTX 5080. It uses
 ordinary NixOS modules and the root Nix channel: no flakes, Home Manager,
@@ -70,6 +76,7 @@ for disaster recovery and any deliberately planned future reinstall; see
 
 ## Focused guides
 
+- [Alpha 5 release notes](docs/alpha-5.md)
 - [Normal installation and recovery](docs/installation.md)
 - [Reinstall and recovery](docs/reinstall.md)
 - [Hardware validation](docs/hardware-validation.md)
