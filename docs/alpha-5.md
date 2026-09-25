@@ -1,14 +1,14 @@
 # Alpha 5
 
-Alpha 5 marks the first release where Helix deliberately uses the Pi-hole
-running on `infernalnexus` as its system DNS resolver.
+Release target: `v0.3.0-alpha.5`
 
-The Pi-hole service itself is owned and deployed by `hamology` on
-`192.168.1.8`. This repository owns only Helix's client-side DNS policy.
+Alpha 5 is a substantial workstation checkpoint after Alpha 4. The most
+important operational change is that **Helix now uses the Pi-hole on
+`infernalnexus` as its normal system DNS resolver**.
 
-## DNS and Pi-hole integration
+## Important DNS behaviour change
 
-Helix now enables:
+Helix enables:
 
 ```nix
 helix.networking.pihole = {
@@ -17,44 +17,89 @@ helix.networking.pihole = {
 };
 ```
 
-When enabled:
+NetworkManager still owns DHCP addresses and routes, but DHCP-provided DNS is
+ignored while this option is enabled. `192.168.1.8` is the sole configured
+system resolver and there is deliberately no public fallback resolver that can
+silently bypass Pi-hole.
 
-- NetworkManager still manages DHCP addresses and routes.
-- DHCP-provided DNS is ignored so Helix cannot silently bypass Pi-hole.
-- `192.168.1.8` is Helix's sole system resolver.
-- No public fallback resolver is configured during this qualification period.
-- Router and LAN-wide DNS settings are unchanged; this affects Helix only.
+This is a Helix-only change. Router and LAN-wide DHCP DNS remain unchanged.
 
-If the Pi-hole is unavailable, DNS on Helix fails visibly rather than falling
-back around the filter. Set `helix.networking.pihole.enable = false` and rebuild
-to return Helix to normal NetworkManager/DHCP-provided DNS.
+Runtime qualification completed on 2026-09-26:
 
-The Pi-hole deployment on `infernalnexus` has passed hamology's infrastructure
-acceptance checks and direct DNS queries from Helix have succeeded. Alpha 5
-therefore makes the integration part of Helix's declarative system state rather
-than a manual resolver edit.
+- Pi-hole on `infernalnexus` passed its hamology deployment/acceptance checks.
+- Direct DNS queries from Helix to `192.168.1.8:53` succeeded.
+- hamFence private records for `home.alienrobot.org` and
+  `sonarr.home.alienrobot.org` resolved correctly through Pi-hole.
+- ordinary Helix system DNS resolved `home.alienrobot.org`.
+- trusted HTTPS to `https://home.alienrobot.org/` passed through DSM ingress
+  to the loopback landing-page backend.
+
+Rollback is explicit: set `helix.networking.pihole.enable = false` and rebuild,
+or switch to the previous NixOS generation.
+
+## Other Alpha 5 highlights
+
+Since Alpha 4, Helix has also gained:
+
+- a local-only Prometheus/Grafana hardware-monitoring stack with long retention,
+  NVIDIA/SMART/node exporters, CoolerControl integration, and guarded fan
+  commissioning;
+- a substantially expanded repository-owned Graphite theme family, per-session
+  theme rotation, and Ghostty profile/surface selection;
+- declarative local Ollama operation on the games NVMe with a five-model
+  baseline, a 32K context setting, and an explicit model refresh helper;
+- NAS-first emulation and hamCade integration, including read-only NAS ROM
+  policy, local writable state, Doom/GZDoom tooling, and OpenClaw/Codex
+  orchestration for the RetroArch path;
+- repository-owned OpenClaw integration and a pinned first-party package;
+- workstation lifecycle tooling including `helix-health`, `helix-update`,
+  improved rebuild output, memory-pressure policy, storage helpers, and stronger
+  system invariants;
+- broader automated validation, including dedicated emulation CI and additional
+  configuration/invariant tests.
+
+## Pi-hole ownership boundary
+
+Pi-hole container lifecycle remains owned by `hamology`. Private DNS and
+ingress policy live in `hamFence`. This repository owns only Helix's client-side
+resolver selection.
+
+That separation is intentional:
+
+```text
+hamology     -> deploys/runs Pi-hole
+hamFence     -> private DNS names + DSM ingress policy
+nixos-helix  -> chooses Pi-hole as Helix's system resolver
+```
 
 ## Validation
 
-After activating Alpha 5:
+Before switching Alpha 5:
+
+```bash
+./scripts/dev-shell.sh --run './scripts/check.sh'
+./scripts/rebuild.sh dry-build
+./scripts/rebuild.sh test
+```
+
+Resolver checks on the activated generation:
 
 ```bash
 cat /etc/resolv.conf
-dig example.com
-dig openai.com
-dig doubleclick.net
+getent ahostsv4 home.alienrobot.org
+curl -fsS -o /dev/null https://home.alienrobot.org/
 ```
 
-The `SERVER` line from `dig` should show:
+The configured resolver should be `192.168.1.8`, and
+`home.alienrobot.org` should resolve to `192.168.1.8`.
 
-```text
-192.168.1.8#53
+After real-hardware validation:
+
+```bash
+./scripts/rebuild.sh switch
 ```
 
-Queries should also appear in Pi-hole's Query Log.
-
-Release tag:
-
-```text
-v0.3.0-alpha.5
-```
+Alpha 5 remains an alpha: the repository deliberately keeps some subsystem
+qualification work open, notably sustained NAS SMB testing and the evolving
+emulation workflow. Those are documented operational limits rather than hidden
+release blockers.
