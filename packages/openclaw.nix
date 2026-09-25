@@ -13,9 +13,11 @@ in
       let
         sourceInfo = import "${packageSource}/nix/sources/openclaw-source.nix";
         runtimePluginLocks = import "${packageSource}/nix/generated/openclaw-runtime-plugins";
-        buildBundledRuntimePlugin = prev.callPackage "${packageSource}/nix/lib/openclaw-runtime-plugin.nix" {
-          linkOpenClawPeer = false;
-        };
+        buildBundledRuntimePlugin =
+          prev.callPackage "${packageSource}/nix/lib/openclaw-runtime-plugin.nix"
+            {
+              linkOpenClawPeer = false;
+            };
         bundledAcpx = buildBundledRuntimePlugin runtimePluginLocks.acpx;
 
         # The upstream flake reads its npm wrapper lock through a stringified
