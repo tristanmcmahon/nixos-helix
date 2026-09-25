@@ -9,7 +9,7 @@ in
 {
   nixpkgs.overlays = [
     (
-      final: prev:
+      _final: prev:
       let
         sourceInfo = import "${packageSource}/nix/sources/openclaw-source.nix";
         runtimePluginLocks = import "${packageSource}/nix/generated/openclaw-runtime-plugins";
