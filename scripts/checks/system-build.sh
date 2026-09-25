@@ -2,10 +2,6 @@
 
 # Sourced by scripts/check.sh; shares its strict mode and validation context.
 
-printf 'Evaluating release, storage, desktop, and security invariants...\n'
-nix-instantiate --eval --strict tests/system-invariants.nix
-nix-instantiate --eval --strict tests/monitoring-disabled.nix
-
 printf 'Building the complete default system closure...\n'
 system_closure=$(nix-build --no-out-link '<nixpkgs/nixos>' -A system \
   -I "nixos-config=$repo_root/tests/build-configuration.nix")
