@@ -40,12 +40,25 @@ reformat it during ordinary changes.
 
 ## Routine operation
 
-Run validation without activating anything:
+Run fast validation without activating or building the complete workstation:
 
 ```bash
 ./scripts/dev-shell.sh --run './scripts/check.sh'
+```
+
+Build the complete candidate separately when the change warrants it:
+
+```bash
 ./scripts/rebuild.sh dry-build
 ```
+
+Release qualification uses the explicit expensive gate:
+
+```bash
+./scripts/dev-shell.sh --run './scripts/check.sh --full'
+```
+
+Normal pull-request CI does not rebuild the CUDA-enabled Ollama or MAME closures.
 
 After reviewing a change, temporary and persistent activation remain explicit:
 
