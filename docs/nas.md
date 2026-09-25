@@ -131,3 +131,54 @@ mismatch. Do not use SMB1 as a fallback.
 - A failed `ls` is expected when the NAS is offline. Only the automount is
   pulled into boot; explicit network ordering and on-demand isolation keep an
   absent NAS from destabilising boot or the desktop.
+
+
+## Helix DNS via Pi-hole
+
+Helix controls Pi-hole DNS declaratively through the `helix-nixos` option
+`helix.networking.pihole`. The normal Helix configuration enables it and uses
+the Pi-hole service on infernalnexus as its sole system DNS resolver:
+
+```text
+DNS: 192.168.1.8
+```
+
+NetworkManager still owns DHCP address and route configuration, but its DNS
+processing is disabled so DHCP-provided router DNS cannot bypass Pi-hole.
+NixOS owns `/etc/resolv.conf` through `networking.nameservers`.
+
+This is deliberately Helix-only; no router or LAN-wide DNS setting is changed.
+
+The control lives in `configuration.nix`:
+
+```nix
+helix.networking.pihole = {
+  enable = true;
+  address = "192.168.1.8";
+};
+```
+
+To disable Pi-hole DNS for Helix, set `enable = false` and rebuild. NetworkManager
+then resumes its normal DHCP-provided DNS behaviour. Do not hand-edit
+`/etc/resolv.conf` or mutate a NetworkManager connection profile for this policy.
+
+After temporary activation, verify:
+
+```bash
+cat /etc/resolv.conf
+dig example.com
+dig doubleclick.net
+```
+
+The `SERVER` line from `dig` should show `192.168.1.8#53`, and the queries
+should appear in Pi-hole's Query Log.
+
+There is intentionally no public fallback resolver during this qualification.
+If Pi-hole is unavailable, DNS failure on Helix makes that failure obvious
+instead of bypassing filtering.
+
+Rollback immediately with the previous NixOS generation:
+
+```bash
+sudo nixos-rebuild switch --rollback
+```
