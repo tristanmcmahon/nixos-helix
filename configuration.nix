@@ -60,14 +60,16 @@ in
     ./packages/openclaw.nix
   ];
 
-  helix.emulation.enable = true;
-  helix.monitoring.enable = true;
+  helix = {
+    emulation.enable = true;
+    monitoring.enable = true;
 
-  # Helix is the first client of the Pi-hole on infernalnexus. This is a
-  # workstation-local DNS policy only; it does not alter router or LAN DNS.
-  helix.networking.pihole = {
-    enable = true;
-    address = "192.168.1.8";
+    # Helix is the first client of the Pi-hole on infernalnexus. This is a
+    # workstation-local DNS policy only; it does not alter router or LAN DNS.
+    networking.pihole = {
+      enable = true;
+      address = "192.168.1.8";
+    };
   };
 
   # NVIDIA's user-space driver is redistributable but not free software, so
