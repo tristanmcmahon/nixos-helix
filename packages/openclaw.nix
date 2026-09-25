@@ -11,22 +11,39 @@ in
     (
       final: prev:
       let
-        # nix-openclaw normally consumes this tree as a flake input. Helix
-        # imports the overlay from a pinned tarball instead, which exposes an
-        # evaluation issue when the wrapper directory is coerced to a store
-        # string before builtins.readFile. Patch with the unmodified previous
-        # package set so defining this overlay cannot recurse through pkgs.
-        patchedPackageSource = prev.applyPatches {
-          name = "nix-openclaw-d3760a6-helix";
-          src = packageSource;
-          patches = [ ../patches/nix-openclaw-wrapper-readfile.patch ];
+        sourceInfo = import "${packageSource}/nix/sources/openclaw-source.nix";
+        runtimePluginLocks = import "${packageSource}/nix/generated/openclaw-runtime-plugins";
+        buildBundledRuntimePlugin = prev.callPackage "${packageSource}/nix/lib/openclaw-runtime-plugin.nix" {
+          linkOpenClawPeer = false;
         };
-        upstreamOverlay = import "${patchedPackageSource}/nix/overlay.nix" {
+        bundledAcpx = buildBundledRuntimePlugin runtimePluginLocks.acpx;
+
+        # The upstream flake reads its npm wrapper lock through a stringified
+        # subdirectory path. Helix consumes the same immutable source as a
+        # tarball overlay, where that coercion can produce an unrealised store
+        # path during evaluation. Keep the upstream package logic but make the
+        # wrapper source an explicit path in the local compatibility definition.
+        openclawGateway = prev.callPackage ./openclaw-gateway-npm.nix {
+          upstreamSource = packageSource;
+          inherit sourceInfo bundledAcpx;
+        };
+
+        toolSets = import "${packageSource}/nix/tools/extended.nix" {
+          pkgs = prev;
           openclawToolPkgs = { };
-          qmdPkgs = { };
+        };
+
+        openclawBundle = prev.callPackage "${packageSource}/nix/packages/openclaw-batteries.nix" {
+          openclaw-gateway = openclawGateway;
+          openclaw-app = null;
+          extendedTools = toolSets.tools;
+          version = sourceInfo.releaseVersion;
         };
       in
-      upstreamOverlay final prev
+      {
+        openclaw-gateway = openclawGateway;
+        openclaw = openclawBundle;
+      }
     )
   ];
 }
