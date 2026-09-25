@@ -14,8 +14,16 @@ package at a time, build it against the maintained NixOS release, run
   Python build backend and dependency constraints; retain the tested pin until
   a replacement is packaged and fully built.
 - modern-bash is pinned to commit
-  `55b1c4de6bc47e14285d55f6a1dfdf9fb494e806`; its immutable runtime and
-  lifecycle-command blocking remain intentional.
+  `55b1c4de6bc47e14285d55f6a1dfdf9fb494e806`. Its small runtime snapshot
+  deliberately remains vendored so Helix builds do not depend on sibling-repo
+  visibility, GitHub availability, or credentials; lifecycle-command blocking
+  remains intentional.
+- nix-openclaw is pinned to commit
+  `d3760a6f103642f11e24bc01ee9aec80a0153774` / OpenClaw `2026.7.1-2`.
+  Helix carries a narrow local definition of the upstream npm gateway package
+  so the wrapper lock is read as a path during non-flake evaluation. ACPX,
+  extended tools, the batteries bundle, source/version pins and dependency
+  hashes still come from that immutable upstream revision.
 
 ## Manual update procedure
 

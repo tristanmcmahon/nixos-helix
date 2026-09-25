@@ -19,6 +19,7 @@ let
   helixUpdate = pkgs.writeShellApplication {
     name = "helix-update";
     runtimeInputs = with pkgs; [
+      coreutils
       gawk
       git
       nix
