@@ -18,9 +18,10 @@ package at a time, build it against the maintained NixOS release, run
   lifecycle-command blocking remain intentional.
 - nix-openclaw is pinned to commit
   `d3760a6f103642f11e24bc01ee9aec80a0153774` / OpenClaw `2026.7.1-2`.
-  Helix applies one repository-owned compatibility patch so the pinned npm
-  wrapper lock is read as a path during non-flake evaluation. The patch does
-  not change the OpenClaw source, version, dependencies or runtime behavior.
+  Helix carries a narrow local definition of the upstream npm gateway package
+  so the wrapper lock is read as a path during non-flake evaluation. ACPX,
+  extended tools, the batteries bundle, source/version pins and dependency
+  hashes still come from that immutable upstream revision.
 
 ## Manual update procedure
 
