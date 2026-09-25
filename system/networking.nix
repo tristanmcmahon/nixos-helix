@@ -5,6 +5,7 @@
 }:
 
 let
+  infernalnexus = import ../config/infernalnexus.nix;
   cfg = config.helix.networking.pihole;
 in
 {
@@ -13,7 +14,7 @@ in
 
     address = lib.mkOption {
       type = lib.types.str;
-      default = "192.168.1.8";
+      default = infernalnexus.host;
       description = "DNS server address for the Pi-hole used by Helix.";
     };
   };

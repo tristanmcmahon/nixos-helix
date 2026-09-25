@@ -2,6 +2,7 @@
 
 let
   release = import ./release.nix;
+  infernalnexus = import ./config/infernalnexus.nix;
 in
 {
   # A NixOS configuration is assembled by importing modules. Each module below
@@ -69,7 +70,7 @@ in
     # workstation-local DNS policy only; it does not alter router or LAN DNS.
     networking.pihole = {
       enable = true;
-      address = "192.168.1.8";
+      address = infernalnexus.host;
     };
   };
 

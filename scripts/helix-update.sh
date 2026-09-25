@@ -14,21 +14,29 @@ run_build() {
   if command -v nom >/dev/null 2>&1; then "$@" 2>&1 | nom; else "$@"; fi
 }
 
-printf 'Updating the root Nix channels...\n'
-sudo nix-channel --update
+printf 'Updating the root NixOS channel...\n'
+sudo nix-channel --update nixos
 printf 'Running repository validation...\n'
 ./scripts/check.sh
 printf 'Building candidate system...\n'
-out_link=$(mktemp -u /tmp/helix-update-system.XXXXXX)
-trap 'rm -f -- "$out_link"' EXIT
+temporary_directory=$(mktemp -d)
+out_link="$temporary_directory/system"
+trap 'rm -rf -- "$temporary_directory"' EXIT
 run_build nix-build --out-link "$out_link" '<nixpkgs/nixos>' -A system \
   -I "nixos-config=$repo/configuration.nix"
 candidate=$(readlink -f "$out_link")
 printf 'Candidate package changes:\n'
 nvd diff /run/current-system "$candidate"
+previous=$(readlink -f /run/current-system)
 printf 'Test-activating candidate...\n'
 sudo "$candidate/bin/switch-to-configuration" test
-printf 'Test activation succeeded; selecting it for boot...\n'
+printf 'Running candidate runtime health gate...\n'
+if ! "$candidate/sw/bin/helix-health" --check; then
+  printf 'Candidate health check failed; restoring previous running configuration...\n' >&2
+  sudo "$previous/bin/switch-to-configuration" test
+  exit 1
+fi
+printf 'Candidate health check passed; selecting it for boot...\n'
 sudo "$candidate/bin/switch-to-configuration" switch
 profile=$(readlink -f /nix/var/nix/profiles/system)
 generation=$(nix-env --profile /nix/var/nix/profiles/system --list-generations |

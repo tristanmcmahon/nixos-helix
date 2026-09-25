@@ -77,6 +77,7 @@ for disaster recovery and any deliberately planned future reinstall; see
 ## Focused guides
 
 - [Alpha 5 release notes](docs/alpha-5.md)
+- [Architecture and ownership](docs/architecture.md)
 - [Normal installation and recovery](docs/installation.md)
 - [Reinstall and recovery](docs/reinstall.md)
 - [Hardware validation](docs/hardware-validation.md)

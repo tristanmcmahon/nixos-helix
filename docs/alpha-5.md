@@ -56,7 +56,10 @@ Since Alpha 4, Helix has also gained:
   improved rebuild output, memory-pressure policy, storage helpers, and stronger
   system invariants;
 - broader automated validation, including dedicated emulation CI and additional
-  configuration/invariant tests.
+  configuration/invariant tests;
+- a repository architecture cleanup that splits the validation suite and system
+  invariants by domain, decomposes the emulation profile, centralizes
+  Infernalnexus host/SMB facts, and hardens `helix-health` / `helix-update`.
 
 ## Pi-hole ownership boundary
 

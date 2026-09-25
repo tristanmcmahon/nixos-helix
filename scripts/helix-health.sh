@@ -2,6 +2,71 @@
 
 set -uo pipefail
 
+usage() {
+  printf 'Usage: helix-health [--check|--help]\n'
+}
+
+runtime_check() {
+  local failed=0
+
+  fail() {
+    printf 'FAIL: %s\n' "$*" >&2
+    failed=1
+  }
+
+  if ! command -v nvidia-smi >/dev/null 2>&1 || ! nvidia-smi -L >/dev/null 2>&1; then
+    fail 'NVIDIA driver is not responding'
+  fi
+
+  if ! mountpoint -q /mnt/games_nvme; then
+    fail 'GAMES_NVME is not mounted at /mnt/games_nvme'
+  fi
+
+  local service
+  for service in \
+    sshd.service \
+    ollama.service \
+    grafana.service \
+    prometheus.service \
+    prometheus-node-exporter.service \
+    prometheus-nvidia-gpu-exporter.service \
+    prometheus-smartctl-exporter.service \
+    coolercontrold.service; do
+    systemctl is-active --quiet "$service" 2>/dev/null ||
+      fail "$service is not active"
+  done
+
+  if systemctl --user show-environment >/dev/null 2>&1; then
+    systemctl --user is-active --quiet openclaw-gateway.service 2>/dev/null ||
+      fail 'openclaw-gateway.service is not active'
+  fi
+
+  if ((failed)); then
+    printf 'Helix runtime health: FAIL\n' >&2
+    return 1
+  fi
+
+  printf 'Helix runtime health: PASS\n'
+}
+
+case ${1:-} in
+  --check)
+    [[ $# -eq 1 ]] || { usage >&2; exit 2; }
+    runtime_check
+    exit $?
+    ;;
+  --help|-h)
+    usage
+    exit 0
+    ;;
+  "")
+    ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac
+
 heading() { printf '\n%s\n' "$1"; }
 status_word() {
   if systemctl is-active --quiet "$1" 2>/dev/null; then printf 'up'; else printf 'DOWN'; fi
