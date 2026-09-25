@@ -116,6 +116,8 @@ assert !config.hardware.xpadneo.enable;
 assert builtins.elem "hid_playstation" config.boot.kernelModules;
 assert builtins.elem "hid_xpadneo" config.boot.blacklistedKernelModules;
 assert config.helix.emulation.enable;
+assert config.helix.hamCade.enable;
+assert builtins.elem "hamcade" packageNames;
 assert builtins.hasAttr "helix-emulation-prepare" config.systemd.user.services;
 assert builtins.elem "helix-retroarch" packageNames;
 assert builtins.elem "helix-emulation-status" packageNames;
