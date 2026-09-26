@@ -32,7 +32,8 @@ assert builtins.hasAttr "go.d/smartctl.conf" config.services.netdata.configDir;
 assert builtins.hasAttr "go.d/systemdunits.conf" config.services.netdata.configDir;
 assert builtins.elem "netdata-stream-config.service" config.systemd.services.netdata.requires;
 assert builtins.elem "netdata-stream-config.service" config.systemd.services.netdata.after;
-assert builtins.elem "/run/netdata-stream.conf:/etc/netdata/stream.conf" config.systemd.services.netdata.serviceConfig.BindReadOnlyPaths;
+assert builtins.elem "/run/netdata-stream.conf:/etc/netdata/stream.conf"
+  config.systemd.services.netdata.serviceConfig.BindReadOnlyPaths;
 assert !(builtins.elem 19999 config.networking.firewall.allowedTCPPorts);
 assert config.services.grafana.enable;
 assert config.services.grafana.settings.server.http_addr == "127.0.0.1";
