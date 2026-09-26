@@ -59,10 +59,10 @@ let
           coolercontrold.service
         ;;
       --help|-h)
-        printf 'Usage: helix-monitor [dashboard|fans|commission|inventory|restore|status]\n'
+        printf 'Usage: helix-monitor [dashboard|netdata|fans|commission|inventory|restore|status]\n'
         ;;
       *)
-        printf 'Usage: helix-monitor [dashboard|fans|commission|inventory|restore|status]\n' >&2
+        printf 'Usage: helix-monitor [dashboard|netdata|fans|commission|inventory|restore|status]\n' >&2
         exit 2
         ;;
       esac
@@ -86,6 +86,7 @@ let
       "gpu"
       "history"
     ];
+  };
 
   homeMonitorLauncher = pkgs.makeDesktopItem {
     name = "home-monitor";
@@ -106,7 +107,6 @@ let
     ];
   };
 
-  };
 in
 {
   options.helix.monitoring = {
