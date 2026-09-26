@@ -81,10 +81,10 @@ in
       };
 
       configDir = {
-        "stream.conf" = pkgs.writeText "netdata-stream.conf" ''
-          [stream]
-              enabled = no
-        '';
+        # The NixOS Netdata module symlinks configDir entries into
+        # /etc/netdata/conf.d. Keep stream.conf pointed at mutable runtime state
+        # so the pairing UUID never enters the Nix store.
+        "stream.conf" = "/run/netdata-stream.conf";
         "go.d/nvidia_smi.conf" = nvidiaCollector;
         "go.d/smartctl.conf" = smartCollector;
         "go.d/systemdunits.conf" = systemdCollector;
@@ -93,10 +93,8 @@ in
       extraNdsudoPackages = [ pkgs.smartmontools ];
     };
 
-    # configDir creates the real /etc/netdata/conf.d/stream.conf target in the
-    # Netdata module-owned configuration tree. Overlay that path inside
-    # Netdata's private service mount namespace with a runtime file generated
-    # from mutable root-only state. The API UUID never enters the Nix store.
+    # netdata-stream-config renders the mutable target used by the configDir
+    # symlink above. The API UUID never enters the Nix store.
 
     systemd.services.netdata-stream-config = {
       description = "Render Helix Netdata parent stream configuration";
@@ -136,6 +134,9 @@ in
             enabled = no
         EOF
                 fi
+
+                chown root:netdata "$output"
+                chmod 0640 "$output"
       '';
     };
 
@@ -146,7 +147,6 @@ in
         config.hardware.nvidia.package
         pkgs.smartmontools
       ];
-      serviceConfig.BindReadOnlyPaths = [ "/run/netdata-stream.conf:/etc/netdata/conf.d/stream.conf" ];
     };
 
     users.users.netdata.extraGroups = lib.mkAfter [
