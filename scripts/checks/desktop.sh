@@ -13,10 +13,10 @@ grep -qF 'ColorScheme=Helix Graphite Fern' "$fern_scheme"
 [[ -r $system_closure/sw/share/sddm/themes/helix-graphite-fern/theme.conf ]]
 grep -qF 'HelixGraphiteFern/contents/images/wallpaper.svg' \
   "$system_closure/sw/share/sddm/themes/helix-graphite-fern/theme.conf"
-for theme_command in plasma-apply-colorscheme plasma-apply-desktoptheme \
-  plasma-apply-cursortheme plasma-apply-wallpaperimage kwriteconfig6 helix-apply-theme; do
-  [[ -x $system_closure/sw/bin/$theme_command ]]
-done
+[[ -x $system_closure/sw/bin/helix-apply-theme ]]
+# Plasma/KDE helper commands are private runtime dependencies of
+# helix-apply-theme; they need not all be exposed as global system commands.
+# Their presence in the helper closure is verified below.
 for theme in fern petrol plum oxide amber rosewood hotdog; do
   [[ -d $system_closure/etc/helix/themes/$theme ]]
 done
