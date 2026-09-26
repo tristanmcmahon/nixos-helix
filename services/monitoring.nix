@@ -10,6 +10,7 @@ let
   dashboard = ../config/monitoring/helix-overview.json;
   grafanaSecretFile = "${config.services.grafana.dataDir}/secret_key";
   grafanaUrl = "http://localhost:${toString cfg.grafanaPort}/d/helix-overview";
+  netdataUrl = "http://192.168.1.8:19999/";
 
   fanCommissionCommand = pkgs.writeShellApplication {
     name = "helix-fan-commission";
@@ -32,6 +33,9 @@ let
       dashboard)
         exec xdg-open ${lib.escapeShellArg grafanaUrl}
         ;;
+      netdata)
+        exec xdg-open ${lib.escapeShellArg netdataUrl}
+        ;;
       fans)
         exec coolercontrol
         ;;
@@ -47,6 +51,7 @@ let
       status)
         exec systemctl --no-pager --full status \
           grafana.service \
+          netdata.service \
           prometheus.service \
           prometheus-node-exporter.service \
           prometheus-nvidia-gpu-exporter.service \
@@ -54,10 +59,10 @@ let
           coolercontrold.service
         ;;
       --help|-h)
-        printf 'Usage: helix-monitor [dashboard|fans|commission|inventory|restore|status]\n'
+        printf 'Usage: helix-monitor [dashboard|netdata|fans|commission|inventory|restore|status]\n'
         ;;
       *)
-        printf 'Usage: helix-monitor [dashboard|fans|commission|inventory|restore|status]\n' >&2
+        printf 'Usage: helix-monitor [dashboard|netdata|fans|commission|inventory|restore|status]\n' >&2
         exit 2
         ;;
       esac
@@ -81,7 +86,25 @@ let
       "gpu"
       "history"
     ];
+  };  homeMonitorLauncher = pkgs.makeDesktopItem {
+    name = "home-monitor";
+    desktopName = "Home Monitor";
+    genericName = "NAS and workstation monitoring";
+    comment = "Open the central Netdata parent on infernalnexus";
+    exec = "${monitorCommand}/bin/helix-monitor netdata";
+    icon = "utilities-system-monitor";
+    categories = [
+      "System"
+      "Monitor"
+    ];
+    keywords = [
+      "netdata"
+      "nas"
+      "docker"
+      "monitor"
+    ];
   };
+
 in
 {
   options.helix.monitoring = {
@@ -250,6 +273,7 @@ in
       fanCommissionCommand
       monitorCommand
       monitorLauncher
+      homeMonitorLauncher
     ];
 
     # Grafana 12 requires a stable database-encryption key. Generate it once
