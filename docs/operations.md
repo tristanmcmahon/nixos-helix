@@ -40,3 +40,31 @@ The expensive closure checks live behind `scripts/check.sh --full` and the
 `Release CI` workflow. Hosted Release CI is manual-dispatch only so release
 branch maintenance cannot accidentally start a large workstation closure build.
 It does not modify Helix.
+
+
+## Git and repository hygiene
+
+Helix keeps GitHub HTTPS authentication independent of Nix store generations.
+The `helix-git-credential-helper` user service rewrites only the GitHub and Gist
+host-specific credential helpers to:
+
+```text
+!gh auth git-credential
+```
+
+The command is PATH-resolved deliberately. Absolute helpers under
+`/nix/store/.../gh.../.gh-wrapped` become invalid after those generations are
+garbage-collected. Run `helix-git-credential-repair` manually at any time to
+repair the same entries immediately; other Git configuration is left untouched.
+
+Remote branch cleanup is explicit and safe-by-construction:
+
+```bash
+./scripts/prune-merged-branches.sh
+./scripts/prune-merged-branches.sh --delete
+```
+
+The first command is a dry run. Deletion is limited to remote branches Git proves
+are ancestors of `origin/main`; `main`, `release/*`, `rollback/*`, and open
+pull-request heads are preserved. Diverged branches are never deleted by this
+tool and require deliberate review.
