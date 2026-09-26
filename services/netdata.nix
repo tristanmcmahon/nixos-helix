@@ -44,6 +44,10 @@ in
   config = lib.mkIf config.helix.monitoring.enable {
     services.netdata = {
       enable = true;
+      package = pkgs.netdata.override {
+        withCloudUi = true;
+        withNdsudo = true;
+      };
       enableAnalyticsReporting = false;
 
       config = {
@@ -131,6 +135,11 @@ EOF
     systemd.services.netdata.path = lib.mkAfter [
       config.hardware.nvidia.package
       pkgs.smartmontools
+    ];
+
+    users.users.netdata.extraGroups = lib.mkAfter [
+      "video"
+      "render"
     ];
   };
 }
