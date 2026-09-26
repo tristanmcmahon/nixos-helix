@@ -89,11 +89,11 @@ in
       extraNdsudoPackages = [ pkgs.smartmontools ];
     };
 
-    # Keep a real /etc/netdata/stream.conf target in the declarative tree, then
+    # Keep a real /etc/netdata/conf.d/stream.conf target in the declarative tree, then
     # overlay it inside Netdata's private service mount namespace with a runtime
     # file generated from mutable root-only state. The API UUID never enters the
     # Nix store.
-    environment.etc."netdata/stream.conf".text = ''
+    environment.etc."netdata/conf.d/stream.conf".text = ''
       [stream]
           enabled = no
     '';
@@ -146,7 +146,7 @@ in
         config.hardware.nvidia.package
         pkgs.smartmontools
       ];
-      serviceConfig.BindReadOnlyPaths = [ "/run/netdata-stream.conf:/etc/netdata/stream.conf" ];
+      serviceConfig.BindReadOnlyPaths = [ "/run/netdata-stream.conf:/etc/netdata/conf.d/stream.conf" ];
     };
 
     users.users.netdata.extraGroups = lib.mkAfter [
