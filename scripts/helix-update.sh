@@ -39,7 +39,7 @@ fi
 printf 'Candidate health check passed; selecting it for boot...\n'
 sudo "$candidate/bin/switch-to-configuration" switch
 profile=$(readlink -f /nix/var/nix/profiles/system)
-generation=$(nix-env --profile /nix/var/nix/profiles/system --list-generations |
+generation=$(sudo nix-env --profile /nix/var/nix/profiles/system --list-generations |
   awk '$0 ~ /current/ { print $1 }')
 printf 'Active system generation: %s (%s)\n' "$generation" "$profile"
 printf 'Rollback: sudo nixos-rebuild switch --rollback\n'
