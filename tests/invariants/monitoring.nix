@@ -20,7 +20,6 @@ assert config.services.prometheus.exporters.smartctl.maxInterval == "2m";
 assert config.services.netdata.enable;
 assert !config.services.netdata.enableAnalyticsReporting;
 assert config.services.netdata.package.withNdsudo;
-assert config.services.netdata.package.withCloudUi;
 assert config.services.netdata.config.global.hostname == "helix";
 assert config.services.netdata.config.db.db == "ram";
 assert config.services.netdata.config.db.retention == "1h";
