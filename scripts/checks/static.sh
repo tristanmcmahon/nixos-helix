@@ -78,6 +78,10 @@ if grep -Rqs '../../hamCade' profiles; then
   printf 'A NixOS profile still imports the sibling private hamCade checkout.\n' >&2
   exit 1
 fi
+if grep -RqiE '\\b(arcade|mame)\\b' profiles/emulation.nix profiles/emulation; then
+  printf 'Generic Helix emulation regained arcade/MAME ownership; arcade belongs to hamCade.\n' >&2
+  exit 1
+fi
 grep -qF '1d5a2bbc315e617b3062641cbbde1f549f78d065' vendor/hamcade/dependencies.nix
 
 printf 'Checking Git whitespace...\n'
