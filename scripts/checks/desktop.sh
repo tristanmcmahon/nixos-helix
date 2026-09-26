@@ -2,18 +2,43 @@
 
 # Sourced by scripts/check.sh; shares its strict mode and validation context.
 
+require_readable() {
+  local path=$1
+  [[ -r $path ]] || {
+    printf 'Desktop release check: missing readable artifact: %s\n' "$path" >&2
+    exit 1
+  }
+}
+
+require_executable() {
+  local path=$1
+  [[ -x $path ]] || {
+    printf 'Desktop release check: missing executable: %s\n' "$path" >&2
+    exit 1
+  }
+}
+
+require_contains() {
+  local path=$1
+  local expected=$2
+  grep -qF -- "$expected" "$path" || {
+    printf 'Desktop release check: %s lacks expected text: %s\n' "$path" "$expected" >&2
+    exit 1
+  }
+}
+
 printf 'Checking Helix Graphite + Fern in the built default system...\n'
 fern_scheme=$system_closure/sw/share/color-schemes/HelixGraphiteFern.colors
-[[ -r $fern_scheme ]]
-grep -qF 'Name=Helix Graphite Fern' "$fern_scheme"
-grep -qF 'ColorScheme=Helix Graphite Fern' "$fern_scheme"
-[[ -r $system_closure/sw/share/wallpapers/HelixGraphiteFern/contents/images/wallpaper.svg ]]
-[[ -r $system_closure/sw/share/konsole/HelixGraphiteFern.colorscheme ]]
-[[ -r $system_closure/sw/share/konsole/HelixGraphiteFern.profile ]]
-[[ -r $system_closure/sw/share/sddm/themes/helix-graphite-fern/theme.conf ]]
-grep -qF 'HelixGraphiteFern/contents/images/wallpaper.svg' \
-  "$system_closure/sw/share/sddm/themes/helix-graphite-fern/theme.conf"
-[[ -x $system_closure/sw/bin/helix-apply-theme ]]
+require_readable "$fern_scheme"
+require_contains "$fern_scheme" 'Name=Helix Graphite Fern'
+require_contains "$fern_scheme" 'ColorScheme=Helix Graphite Fern'
+require_readable "$system_closure/sw/share/wallpapers/HelixGraphiteFern/contents/images/wallpaper.svg"
+require_readable "$system_closure/sw/share/konsole/HelixGraphiteFern.colorscheme"
+require_readable "$system_closure/sw/share/konsole/HelixGraphiteFern.profile"
+sddm_theme=$system_closure/sw/share/sddm/themes/helix-graphite-fern/theme.conf
+require_readable "$sddm_theme"
+require_contains "$sddm_theme" 'HelixGraphiteFern/contents/images/wallpaper.svg'
+require_executable "$system_closure/sw/bin/helix-apply-theme"
 # Plasma/KDE helper commands are private runtime dependencies of
 # helix-apply-theme; they need not all be exposed as global system commands.
 # Their presence in the helper closure is verified below.
