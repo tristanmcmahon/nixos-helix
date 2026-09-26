@@ -8,6 +8,9 @@ assert builtins.elem "hamcade" packageNames;
 assert builtins.hasAttr "helix-emulation-prepare" config.systemd.user.services;
 assert builtins.elem "helix-retroarch" packageNames;
 assert builtins.elem "helix-emulation-status" packageNames;
+assert !(builtins.elem "helix-mame" packageNames);
+assert !(builtins.elem "helix-emulation-index-dats" packageNames);
+assert !(builtins.elem "helix-emulation-audit-arcade" packageNames);
 assert builtins.any (
   mount:
   mount.where == "/mnt/infernalnexus/roms"

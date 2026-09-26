@@ -23,6 +23,32 @@ them, and tests that encode the behaviour the workstation must preserve.
 - `docs/` explains operating procedures and decisions that cannot be inferred
   safely from the module graph alone.
 
+## Sibling-project boundaries
+
+`nixos-helix` owns the Helix machine: packages, mounts, service lifecycle,
+client-side network choices and thin adapters that make separately developed
+projects available on this host. It must not become a second implementation of
+those projects' application policy.
+
+The current boundaries are:
+
+- `hamCade` owns arcade/MAME runtime policy, ES-DE, curation, DAT/audit logic,
+  media and arcade mutable state. `nixos-helix` owns only the thin Helix
+  package/launcher integration and a vendored dependency snapshot for
+  credential-free evaluation/CI.
+- `hamSteam` owns Steam-library policy and program behaviour.
+  `nixos-helix` owns the Helix systemd user service/timer that runs it.
+- `hamology` owns application/container lifecycle on `infernalnexus`,
+  including the Pi-hole container.
+- `hamFence` owns NAS networking, TLS, ingress, private DNS records, firewall
+  and remote-access policy.
+- `hamKeyDist` owns SSH identities, authorized-key distribution and managed
+  SSH aliases. `nixos-helix` owns Helix's SSH server and firewall settings.
+
+Host facts may be repeated where a client genuinely needs them, but authority
+must not be duplicated. For example, Helix may choose `192.168.1.8` as its DNS
+resolver; it must not deploy or configure the Pi-hole service itself.
+
 ## State model
 
 Helix distinguishes four kinds of state:

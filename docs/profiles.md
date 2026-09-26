@@ -38,14 +38,22 @@ access; it is not duplicated in the system package list. The upstream
 ProtonPlus, Protontricks, MangoHud, GOverlay, and the repository-owned Doom
 tooling are present; Heroic, Lutris, and a general Wine package remain absent.
 
-hamCade remains a separately developed checkout at
-`/home/tristan/Projects/hamCade`. The Helix profile owns its NixOS packages and
-launcher, so evaluation and CI do not depend on that sibling checkout; the
-checkout is required only when the `hamcade` command actually runs.
-
 The normal default dry build validates this active profile. Disabling the single
 `./profiles/gaming.nix` import returns the evaluated configuration to the
 non-gaming workstation layer.
+
+### Emulation and hamCade
+
+`profiles/emulation.nix` owns console emulation only: PS2, PS3, PS4 and SNES
+integration, the read-only console ROM automount and mutable console state below
+`/mnt/games_nvme/emulation`.
+
+Arcade is intentionally excluded. `hamCade` is the sole owner of MAME/libretro
+arcade policy, ES-DE, DAT/audit logic, curation, artwork and arcade state. The
+separately developed checkout remains at `/home/tristan/Projects/hamCade`.
+`profiles/hamcade.nix` is only a thin Helix adapter that supplies the launcher
+and pinned runtime packages. Its vendored dependency snapshot exists so NixOS
+evaluation and CI do not require credentials for the private sibling checkout.
 
 ### Local LLM
 

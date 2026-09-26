@@ -11,7 +11,6 @@ let
   romRoot = infernalnexus.shares.roms.mountPoint;
   romSource = infernalnexus.shares.roms.source;
   emulationRoot = "/mnt/games_nvme/emulation";
-  arcadeRoot = "${emulationRoot}/roms/arcade";
   stateRoot = "${emulationRoot}/state";
 
   retroarch = pkgs.retroarch.withCores (
@@ -27,7 +26,6 @@ let
       romRoot
       romSource
       emulationRoot
-      arcadeRoot
       stateRoot
       ;
   };
@@ -35,8 +33,6 @@ let
     requireNas
     discover
     prepare
-    datIndex
-    auditArcade
     scrape
     status
     ;
@@ -48,7 +44,6 @@ let
       prepare
       retroarch
       emulationRoot
-      arcadeRoot
       stateRoot
       ;
   };
@@ -56,7 +51,6 @@ let
     pcsx2Launcher
     rpcs3Launcher
     shadps4Launcher
-    mameLauncher
     retroarchLauncher
     desktopItems
     ;
@@ -64,7 +58,7 @@ in
 {
   imports = [ ./emulation/storage.nix ];
 
-  options.helix.emulation.enable = lib.mkEnableOption "NAS-first emulator stack";
+  options.helix.emulation.enable = lib.mkEnableOption "NAS-first console emulator stack";
 
   config = lib.mkIf cfg.enable {
     systemd = {
@@ -81,19 +75,15 @@ in
     };
 
     environment.systemPackages = [
-      pkgs.igir
       pkgs.skyscraper
       requireNas
       discover
       prepare
-      datIndex
-      auditArcade
       scrape
       status
       pcsx2Launcher
       rpcs3Launcher
       shadps4Launcher
-      mameLauncher
       retroarchLauncher
     ]
     ++ desktopItems;
