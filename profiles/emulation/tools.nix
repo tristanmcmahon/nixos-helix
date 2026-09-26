@@ -4,7 +4,6 @@
   romRoot,
   romSource,
   emulationRoot,
-  arcadeRoot,
   stateRoot,
 }:
 
@@ -173,7 +172,6 @@ let
       link_system ps3 PS3 'PlayStation 3' 'Playstation 3' 'Sony PlayStation 3'
       link_system ps4 PS4 'PlayStation 4' 'Playstation 4' 'Sony PlayStation 4'
       link_system snes SNES 'Super Nintendo' 'Super Nintendo Entertainment System'
-      link_system arcade 'MAME 0.275 ROMs (merged, inc CHDs)' 'MAME 0.275' MAME arcade
 
       find "$root/bios/sources" -mindepth 1 -maxdepth 1 -type l -delete
       bios_index=0
@@ -193,83 +191,6 @@ let
     '';
   };
 
-  datIndex = pkgs.writeShellApplication {
-    name = "helix-emulation-index-dats";
-    runtimeInputs = [
-      pkgs.coreutils
-      pkgs.findutils
-    ];
-    text = ''
-      set -eu
-
-      ${requireNas}/bin/helix-emulation-require-nas
-
-      source_root=${lib.escapeShellArg romRoot}
-      output=${lib.escapeShellArg "${emulationRoot}/tools/dat-index/arcade-dats.txt"}
-
-      mkdir -p "$(dirname "$output")"
-      find "$source_root" -mindepth 1 -maxdepth 4 -type f \
-        \( -iname '*.dat' -o -iname '*.xml' \) \
-        -print | sort > "$output"
-
-      count=$(wc -l < "$output")
-      printf 'Indexed %s DAT/XML files into %s\n' "$count" "$output"
-    '';
-  };
-
-  auditArcade = pkgs.writeShellApplication {
-    name = "helix-emulation-audit-arcade";
-    runtimeInputs = [
-      pkgs.coreutils
-      pkgs.gnugrep
-      pkgs.igir
-      datIndex
-    ];
-    text = ''
-      set -eu
-
-      ${prepare}/bin/helix-emulation-prepare >/dev/null
-
-      roms=${lib.escapeShellArg arcadeRoot}
-      dat_index=${lib.escapeShellArg "${emulationRoot}/tools/dat-index/arcade-dats.txt"}
-      report=${lib.escapeShellArg "${emulationRoot}/tools/reports/arcade-0.275.csv"}
-
-      if [ ! -d "$roms" ]; then
-        printf 'Arcade ROM tree not found: %s\n' "$roms" >&2
-        exit 1
-      fi
-
-      if [ ! -s "$dat_index" ]; then
-        helix-emulation-index-dats >/dev/null
-      fi
-
-      mapfile -t dats < <(grep -Ei 'mame[^/]*0[._ -]?275|0[._ -]?275[^/]*mame' "$dat_index" || true)
-      if [ "''${#dats[@]}" -eq 0 ]; then
-        mapfile -t dats < <(grep -Ei '/MAME 0[.]275 ROMs .*\.(dat|xml)$' "$dat_index" || true)
-      fi
-
-      if [ "''${#dats[@]}" -eq 0 ]; then
-        printf 'No MAME 0.275 DAT/XML was found on the NAS.\n' >&2
-        printf 'Indexed definitions are in %s\n' "$dat_index" >&2
-        exit 1
-      fi
-
-      dat_args=()
-      for dat in "''${dats[@]}"; do
-        dat_args+=(--dat "$dat")
-      done
-
-      mkdir -p "$(dirname "$report")"
-      printf 'Read-only Igir audit of the MAME 0.275 collection using %s DAT file(s).\n' "''${#dats[@]}"
-      igir report \
-        "''${dat_args[@]}" \
-        --input "$roms" \
-        --input-checksum-quick \
-        --report-output "$report"
-      printf 'Report: %s\n' "$report"
-    '';
-  };
-
   scrape = pkgs.writeShellApplication {
     name = "helix-emulation-scrape";
     runtimeInputs = [ pkgs.skyscraper ];
@@ -281,7 +202,7 @@ let
       platform=''${1:-}
       source=''${2:-screenscraper}
       case "$platform" in
-        ps2|snes|arcade) ;;
+        ps2|snes) ;;
         ps3|ps4)
           printf 'Skyscraper does not support %s; automated scraping is available for ps2, snes, and arcade only.\n' \
             "$platform" >&2
@@ -327,7 +248,7 @@ let
       printf 'SSD emulation root: %s\n' ${lib.escapeShellArg emulationRoot}
       printf 'Managed emulator state: %s\n' ${lib.escapeShellArg stateRoot}
       printf '\nResolved systems:\n'
-      for system in ps2 ps3 ps4 snes arcade; do
+      for system in ps2 ps3 ps4 snes; do
         path=${lib.escapeShellArg "${emulationRoot}/roms"}/"$system"
         if [ -e "$path" ]; then
           printf '  %-7s %s\n' "$system" "$(readlink -f "$path")"
@@ -346,8 +267,6 @@ in
     requireNas
     discover
     prepare
-    datIndex
-    auditArcade
     scrape
     status
     ;
