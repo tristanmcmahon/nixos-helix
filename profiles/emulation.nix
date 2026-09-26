@@ -58,7 +58,7 @@ in
 {
   imports = [ ./emulation/storage.nix ];
 
-  options.helix.emulation.enable = lib.mkEnableOption "NAS-first emulator stack";
+  options.helix.emulation.enable = lib.mkEnableOption "NAS-first console emulator stack";
 
   config = lib.mkIf cfg.enable {
     systemd = {
