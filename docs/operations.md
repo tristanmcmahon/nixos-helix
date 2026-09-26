@@ -66,5 +66,7 @@ Remote branch cleanup is explicit and safe-by-construction:
 
 The first command is a dry run. Deletion is limited to remote branches Git proves
 are ancestors of `origin/main`; `main`, `release/*`, `rollback/*`, and open
-pull-request heads are preserved. Diverged branches are never deleted by this
-tool and require deliberate review.
+pull-request heads are preserved. The delete path also enables GitHub's automatic
+deletion of merged pull-request branches so the same clutter does not immediately
+return. Diverged branches are never deleted by this tool and require deliberate
+review.
