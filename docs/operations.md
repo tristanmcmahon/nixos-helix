@@ -15,8 +15,9 @@ boot health.
 `/home/tristan/Projects/nixos-helix`, refuses any dirty or untracked work tree,
 updates only the root `nixos` channel, runs `scripts/check.sh`, builds a
 candidate, displays `nvd diff`, and test-activates it. The candidate's own
-`helix-health --check` must pass before it is selected for boot; a failed health
-gate test-activates the previous running generation again and aborts the update.
+`helix-health --check` must pass before it is registered in the system profile and
+selected for boot; a failed health gate restores the previous running generation
+and aborts the update.
 It uses `nom` when present and retains raw build output during bootstrap. It
 does not schedule or autonomously activate updates, and it does not run GC.
 
