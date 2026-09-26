@@ -27,6 +27,7 @@ runtime_check() {
     sshd.service \
     ollama.service \
     grafana.service \
+    netdata.service \
     prometheus.service \
     prometheus-node-exporter.service \
     prometheus-nvidia-gpu-exporter.service \
@@ -107,7 +108,7 @@ else
 fi
 printf 'OpenClaw %s | gateway: %s\n' "$(openclaw --version 2>/dev/null || printf unknown)" \
   "$(systemctl --user is-active openclaw-gateway.service 2>/dev/null || printf unavailable)"
-for service in grafana prometheus prometheus-node-exporter prometheus-nvidia-gpu-exporter \
+for service in grafana netdata prometheus prometheus-node-exporter prometheus-nvidia-gpu-exporter \
   prometheus-smartctl-exporter coolercontrold; do
   printf '%-39s %s\n' "$service" "$(status_word "$service.service")"
 done
