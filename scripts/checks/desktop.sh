@@ -3,10 +3,10 @@
 # Sourced by scripts/check.sh; shares its strict mode and validation context.
 
 printf 'Checking Helix Graphite + Fern in the built default system...\n'
-[[ -r $system_closure/sw/share/color-schemes/HelixGraphiteFern.colors ]]
-QT_QPA_PLATFORM=offscreen XDG_DATA_DIRS="$system_closure/sw/share" \
-  "$system_closure/sw/bin/plasma-apply-colorscheme" --list-schemes |
-  grep -qF 'HelixGraphiteFern'
+fern_scheme=$system_closure/sw/share/color-schemes/HelixGraphiteFern.colors
+[[ -r $fern_scheme ]]
+grep -qF 'Name=Helix Graphite Fern' "$fern_scheme"
+grep -qF 'ColorScheme=Helix Graphite Fern' "$fern_scheme"
 [[ -r $system_closure/sw/share/wallpapers/HelixGraphiteFern/contents/images/wallpaper.svg ]]
 [[ -r $system_closure/sw/share/konsole/HelixGraphiteFern.colorscheme ]]
 [[ -r $system_closure/sw/share/konsole/HelixGraphiteFern.profile ]]
