@@ -4,7 +4,6 @@
   prepare,
   retroarch,
   emulationRoot,
-  arcadeRoot,
   stateRoot,
 }:
 
@@ -58,16 +57,6 @@ let
     name = "helix-shadps4";
     emulator = "shadps4";
     package = pkgs.shadps4;
-  };
-
-  mameLauncher = mkHelixLauncher {
-    name = "helix-mame";
-    emulator = "mame";
-    package = pkgs.mame;
-    extraArgs = [
-      "-rompath"
-      arcadeRoot
-    ];
   };
 
   retroarchLauncher = pkgs.writeShellApplication {
@@ -133,13 +122,6 @@ let
       categories = [ "Game" ];
     })
     (pkgs.makeDesktopItem {
-      name = "helix-mame";
-      desktopName = "MAME (Helix)";
-      exec = "helix-mame";
-      icon = "applications-games";
-      categories = [ "Game" ];
-    })
-    (pkgs.makeDesktopItem {
       name = "helix-retroarch";
       desktopName = "RetroArch (Helix)";
       exec = "helix-retroarch";
@@ -154,7 +136,6 @@ in
     pcsx2Launcher
     rpcs3Launcher
     shadps4Launcher
-    mameLauncher
     retroarchLauncher
     desktopItems
     ;
