@@ -81,6 +81,10 @@ in
       };
 
       configDir = {
+        "stream.conf" = pkgs.writeText "netdata-stream.conf" ''
+          [stream]
+              enabled = no
+        '';
         "go.d/nvidia_smi.conf" = nvidiaCollector;
         "go.d/smartctl.conf" = smartCollector;
         "go.d/systemdunits.conf" = systemdCollector;
@@ -89,14 +93,10 @@ in
       extraNdsudoPackages = [ pkgs.smartmontools ];
     };
 
-    # Keep a real /etc/netdata/conf.d/stream.conf target in the declarative tree, then
-    # overlay it inside Netdata's private service mount namespace with a runtime
-    # file generated from mutable root-only state. The API UUID never enters the
-    # Nix store.
-    environment.etc."netdata/conf.d/stream.conf".text = ''
-      [stream]
-          enabled = no
-    '';
+    # configDir creates the real /etc/netdata/conf.d/stream.conf target in the
+    # Netdata module-owned configuration tree. Overlay that path inside
+    # Netdata's private service mount namespace with a runtime file generated
+    # from mutable root-only state. The API UUID never enters the Nix store.
 
     systemd.services.netdata-stream-config = {
       description = "Render Helix Netdata parent stream configuration";
