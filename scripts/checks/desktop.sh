@@ -87,6 +87,7 @@ grep -qF 'palette = 2=#67B87A' "$ghostty_appearance"
 grep -qF 'initial-command = direct:/run/current-system/sw/bin/bash' "$ghostty_config"
 grep -qF 'command = direct:/run/current-system/sw/bin/ghostty-surface-shell' "$ghostty_config"
 grep -qF 'shell-integration = bash' "$ghostty_config"
+grep -qF 'shell-integration-features = ssh-env' "$ghostty_config"
 for ghostty_helper in ghostty-profile ghostty-surface-profile ghostty-surface-shell; do
   [[ -x $system_closure/sw/bin/$ghostty_helper ]]
 done

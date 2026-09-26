@@ -30,6 +30,9 @@ clipboard-read = allow
 clipboard-write = allow
 
 shell-integration = bash
+# Keep Ghostty's native TERM locally, but use xterm-256color for interactive
+# SSH sessions so hosts without xterm-ghostty terminfo retain correct key handling.
+shell-integration-features = ssh-env
 
 # Ghostty 1.3 replaced audible-bell with feature flags; disable every bell UI.
 bell-features = no-system,no-audio,no-attention,no-title,no-border
