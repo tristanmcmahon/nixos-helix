@@ -94,42 +94,42 @@ in
     # configuration. Before the pairing tool installs it, Netdata still runs as
     # a useful loopback-only local agent with outbound streaming disabled.
     systemd.services.netdata.preStart = lib.mkBefore ''
-      runtime_config=/run/netdata/conf.d
-      static_config=/etc/netdata/conf.d
-      key_file=${lib.escapeShellArg streamKeyFile}
+            runtime_config=/run/netdata/conf.d
+            static_config=/etc/netdata/conf.d
+            key_file=${lib.escapeShellArg streamKeyFile}
 
-      rm -rf "$runtime_config"
-      install -d -m 0750 "$runtime_config"
+            rm -rf "$runtime_config"
+            install -d -m 0750 "$runtime_config"
 
-      if [[ -d "$static_config/go.d" ]]; then
-        ln -s "$static_config/go.d" "$runtime_config/go.d"
-      fi
+            if [[ -d "$static_config/go.d" ]]; then
+              ln -s "$static_config/go.d" "$runtime_config/go.d"
+            fi
 
-      if [[ -s "$key_file" ]]; then
-        key=$(tr -d '\r\n' < "$key_file")
-        if [[ ! "$key" =~ ^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$ ]]; then
-          echo "Netdata parent stream key is malformed: $key_file" >&2
-          exit 1
-        fi
+            if [[ -s "$key_file" ]]; then
+              key=$(tr -d '\r\n' < "$key_file")
+              if [[ ! "$key" =~ ^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$ ]]; then
+                echo "Netdata parent stream key is malformed: $key_file" >&2
+                exit 1
+              fi
 
-        cat > "$runtime_config/stream.conf" <<EOF
-[stream]
-    enabled = yes
-    destination = ${parentAddress}:19999
-    api key = $key
-    enable compression = yes
-    send charts matching = *
-    buffer size bytes = 10485760
-    reconnect delay = 5s
-EOF
-      else
-        cat > "$runtime_config/stream.conf" <<'EOF'
-[stream]
-    enabled = no
-EOF
-      fi
+              cat > "$runtime_config/stream.conf" <<EOF
+      [stream]
+          enabled = yes
+          destination = ${parentAddress}:19999
+          api key = $key
+          enable compression = yes
+          send charts matching = *
+          buffer size bytes = 10485760
+          reconnect delay = 5s
+      EOF
+            else
+              cat > "$runtime_config/stream.conf" <<'EOF'
+      [stream]
+          enabled = no
+      EOF
+            fi
 
-      chmod 0600 "$runtime_config/stream.conf"
+            chmod 0600 "$runtime_config/stream.conf"
     '';
 
     systemd.services.netdata.path = lib.mkAfter [
