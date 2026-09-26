@@ -12,8 +12,8 @@ ordinary NixOS modules and the root Nix channel: no flakes, Home Manager, or a
 host framework. A narrow repository-owned overlay
 selects the immutably pinned first-party OpenClaw package.
 
-The active configuration includes workstation, development, gaming, emulation,
-and local LLM profiles, plus a local-only hardware-monitoring stack. Ollama runs
+The active configuration includes workstation, development, gaming, console emulation,
+a separate hamCade arcade integration, and local LLM profiles, plus a local-only hardware-monitoring stack. Ollama runs
 on `127.0.0.1:11434`; SSH is the only service intentionally exposed through the
 firewall. Hardware support includes PipeWire, Bluetooth, native DualSense
 support, redistributable firmware, NVIDIA open kernel modules, ckb-next for the
