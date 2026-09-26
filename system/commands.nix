@@ -20,11 +20,15 @@ let
     name = "helix-update";
     runtimeInputs = with pkgs; [
       coreutils
+      deadnix
       gawk
       git
       nix
       nix-output-monitor
+      nixfmt
       nvd
+      shellcheck
+      statix
     ];
     text = builtins.readFile ../scripts/helix-update.sh;
   };
