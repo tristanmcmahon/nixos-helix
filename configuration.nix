@@ -43,6 +43,7 @@ in
     ./system/commands.nix
     ./services/maintenance.nix
     ./services/monitoring.nix
+    ./services/netdata.nix
     ./services/hamsteam.nix
     ./services/openclaw.nix
     ./services/openssh.nix
