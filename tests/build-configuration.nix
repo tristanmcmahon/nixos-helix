@@ -15,4 +15,5 @@
   # invariants and the dedicated emulation CI.
   services.ollama.package = lib.mkForce pkgs.ollama-cpu;
   helix.hamCade.enable = lib.mkForce false;
+  helix.emulation.enable = lib.mkForce false;
 }
