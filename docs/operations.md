@@ -37,5 +37,6 @@ NixOS 26.05 channel. It deliberately does not build the complete CUDA-enabled
 workstation closure or compile MAME on every pull request.
 
 The expensive closure checks live behind `scripts/check.sh --full` and the
-`Release CI` workflow. That workflow runs only for `release/**` branches or
-an explicit manual dispatch. It does not modify Helix.
+`Release CI` workflow. Hosted Release CI is manual-dispatch only so release
+branch maintenance cannot accidentally start a large workstation closure build.
+It does not modify Helix.
