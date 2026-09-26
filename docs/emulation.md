@@ -1,79 +1,88 @@
-# NAS-first emulation
+# NAS-first console emulation
 
-The entire emulator subsystem is controlled by one option:
+Helix's generic emulation profile is deliberately **console-only**. Arcade/MAME
+belongs to the separate `hamCade` project and must not be reimplemented here.
+
+The console subsystem is controlled by:
 
 ```nix
 helix.emulation.enable = true;
 ```
 
-Setting it to `false` removes the ROM automount, emulator packages, desktop
-entries, helper commands, and preparation service from the next NixOS
-generation. It does not delete any NAS data.
+Setting it to `false` removes the console ROM automount, emulator launchers,
+helper commands and preparation service from the next NixOS generation. It does
+not delete NAS data or local emulator state.
+
+## Ownership boundary
+
+`nixos-helix` owns the Helix host integration for console emulation:
+
+- the read-only `//192.168.1.8/roms` automount at `/mnt/infernalnexus/roms`;
+- console launchers and packages;
+- console saves, states, screenshots, metadata and emulator state below
+  `/mnt/games_nvme/emulation`;
+- bounded discovery of the mounted console library;
+- optional metadata scraping for supported console systems.
+
+`hamCade` exclusively owns arcade:
+
+- MAME/libretro-MAME runtime policy;
+- ES-DE arcade presentation;
+- MAME DAT/XML interpretation and ROM auditing;
+- arcade curation, playlists, artwork and descriptions;
+- arcade saves, favourites, history and other application state.
+
+The generic Helix emulation profile therefore exposes no standalone MAME
+launcher, arcade DAT indexer, arcade audit command, arcade scraper target or
+arcade state tree. The `helix.hamCade.enable` integration is separate.
+
+Existing arcade-shaped directories left below `/mnt/games_nvme/emulation` by
+older generations are not deleted automatically. They are historical mutable
+state and require an explicit cleanup decision.
 
 ## Storage contract
 
-The authoritative ROM library is the dedicated `//192.168.1.8/roms` share. The
-module automounts it read-only at `/mnt/infernalnexus/roms` and never renames,
-moves, repairs, extracts into, or writes files there.
+The authoritative console ROM library is the dedicated
+`//192.168.1.8/roms` share. It is automounted read-only at
+`/mnt/infernalnexus/roms`.
 
-Writable emulation state lives below `/mnt/games_nvme/emulation`. ROMs and DATs
-on the NAS are source material; playlists, thumbnails, saves, states, reports,
-configuration, and other generated data belong on the local games NVMe.
+Writable console state lives below `/mnt/games_nvme/emulation`. The
+preparation helper resolves available PS2, PS3, PS4 and SNES directories from
+the NAS into stable local symlinks while keeping the source collection
+read-only.
 
-## Codex + OpenClaw workflow
+## Public commands
 
-OpenClaw and Codex have deliberately different jobs:
+The generic profile currently provides:
 
-- **OpenClaw** inspects the real Helix machine, mounted ROM collection, supplied
-  DATs, display/audio stack, controllers, and current RetroArch state. Its
-  service sandbox makes `/mnt/infernalnexus` read-only while allowing reports
-  below `/mnt/games_nvme/emulation`.
-- **Codex** edits the `nixos-helix` repository using the evidence OpenClaw
-  collected. It is responsible for the declarative RetroArch implementation
-  and tests, not for guessing the live ROM layout.
-- OpenClaw then reviews Codex's diff against the live evidence; Codex gets one
-  focused final pass to fix concrete review findings.
-
-Run the coordinated pass from a clean checkout on Helix:
-
-```bash
-cd /home/tristan/Projects/nixos-helix
-bash scripts/helix-emulation-ai.sh
+```text
+helix-emulation-discover
+helix-emulation-prepare
+helix-emulation-scrape
+helix-emulation-status
+helix-pcsx2
+helix-rpcs3
+helix-shadps4
+helix-retroarch
 ```
 
-The coordinator does **not** rebuild/switch NixOS and does not run a full
-emulation closure build. Its final gates are syntax/evaluation checks only, so
-it cannot accidentally turn a RetroArch task into a large unrelated build.
+`helix-emulation-scrape` supports PS2 and SNES metadata generation. PS3 and
+PS4 remain launcher-managed without an automated Skyscraper path.
 
-After reviewing the resulting diff, activate it normally:
+Arcade is launched and maintained through the separate `hamcade` command.
+
+## Activation
+
+After changing the console profile, activate it through the normal Helix
+workflow:
 
 ```bash
+./scripts/dev-shell.sh --run './scripts/check.sh'
+./scripts/rebuild.sh test
+# After runtime validation:
 ./scripts/rebuild.sh switch
 ```
 
-Then use the status command produced by the completed RetroArch implementation
-to perform live post-switch validation.
-
-## Agent missions
-
-`docs/openclaw-emulation.md` is the live discovery specification.
-
-`docs/codex-emulation.md` is the implementation specification. It explicitly
-requires a small RetroArch-first surface and tells Codex to remove the current
-multi-emulator spread where it is no longer needed.
-
-`docs/openclaw-retroarch-review.md` is the read-only engineering review gate.
-OpenClaw writes review findings to the emulation SSD rather than modifying the
-repository during that turn.
-
-All three missions preserve the same hard rule: the NAS is authoritative and
-read-only; curation changes presentation metadata and local state, never the
-ROM archive.
-
-## Current profile
-
-Until the Codex + OpenClaw pass is run and its resulting change is activated,
-`profiles/emulation.nix` still describes the previous broader emulator stack.
-Do not treat that transitional implementation as the desired end state. The
-new target is a clean RetroArch-first Helix setup, beginning with a deterministic
-DAT-driven arcade library.
+A successful evaluation proves configuration consistency, not that every
+physical controller, ROM or emulator behaves correctly. Keep live validation
+separate from repository checks.
