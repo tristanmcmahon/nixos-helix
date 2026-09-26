@@ -54,7 +54,6 @@ in
         global = {
           hostname = "helix";
           "update every" = 5;
-          "config directory" = "/run/netdata/conf.d";
         };
 
         db = {
@@ -90,52 +89,65 @@ in
       extraNdsudoPackages = [ pkgs.smartmontools ];
     };
 
-    # The streaming UUID is deliberately mutable state rather than Nix-store
-    # configuration. Before the pairing tool installs it, Netdata still runs as
-    # a useful loopback-only local agent with outbound streaming disabled.
-    systemd.services.netdata.preStart = lib.mkBefore ''
-            runtime_config=/run/netdata/conf.d
-            static_config=/etc/netdata/conf.d
-            key_file=${lib.escapeShellArg streamKeyFile}
-
-            rm -rf "$runtime_config"
-            install -d -m 0750 "$runtime_config"
-
-            if [[ -d "$static_config/go.d" ]]; then
-              ln -s "$static_config/go.d" "$runtime_config/go.d"
-            fi
-
-            if [[ -s "$key_file" ]]; then
-              key=$(tr -d '\r\n' < "$key_file")
-              if [[ ! "$key" =~ ^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$ ]]; then
-                echo "Netdata parent stream key is malformed: $key_file" >&2
-                exit 1
-              fi
-
-              cat > "$runtime_config/stream.conf" <<EOF
-      [stream]
-          enabled = yes
-          destination = ${parentAddress}:19999
-          api key = $key
-          enable compression = yes
-          send charts matching = *
-          buffer size bytes = 10485760
-          reconnect delay = 5s
-      EOF
-            else
-              cat > "$runtime_config/stream.conf" <<'EOF'
+    # Keep a real /etc/netdata/stream.conf target in the declarative tree, then
+    # overlay it inside Netdata's private service mount namespace with a runtime
+    # file generated from mutable root-only state. The API UUID never enters the
+    # Nix store.
+    environment.etc."netdata/stream.conf".text = ''
       [stream]
           enabled = no
-      EOF
-            fi
-
-            chmod 0600 "$runtime_config/stream.conf"
     '';
 
-    systemd.services.netdata.path = lib.mkAfter [
-      config.hardware.nvidia.package
-      pkgs.smartmontools
-    ];
+    systemd.services.netdata-stream-config = {
+      description = "Render Helix Netdata parent stream configuration";
+      before = [ "netdata.service" ];
+      requiredBy = [ "netdata.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        User = "root";
+        Group = "root";
+      };
+      script = ''
+        key_file=${lib.escapeShellArg streamKeyFile}
+        output=/run/netdata-stream.conf
+
+        if [[ -s "$key_file" ]]; then
+          key=$(tr -d '\r\n' < "$key_file")
+          if [[ ! "$key" =~ ^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$ ]]; then
+            echo "Netdata parent stream key is malformed: $key_file" >&2
+            exit 1
+          fi
+
+          umask 077
+          cat > "$output" <<EOF
+[stream]
+    enabled = yes
+    destination = ${parentAddress}:19999
+    api key = $key
+    enable compression = yes
+    send charts matching = *
+    buffer size bytes = 10485760
+    reconnect delay = 5s
+EOF
+        else
+          umask 077
+          cat > "$output" <<'EOF'
+[stream]
+    enabled = no
+EOF
+        fi
+      '';
+    };
+
+    systemd.services.netdata = {
+      requires = lib.mkAfter [ "netdata-stream-config.service" ];
+      after = lib.mkAfter [ "netdata-stream-config.service" ];
+      path = lib.mkAfter [
+        config.hardware.nvidia.package
+        pkgs.smartmontools
+      ];
+      serviceConfig.BindReadOnlyPaths = [ "/run/netdata-stream.conf:/etc/netdata/stream.conf" ];
+    };
 
     users.users.netdata.extraGroups = lib.mkAfter [
       "video"
