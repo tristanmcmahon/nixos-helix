@@ -62,6 +62,12 @@ elif ((delete)); then
   exit 1
 fi
 
+if ((delete)); then
+  repo_name=$(gh repo view --json nameWithOwner --jq '.nameWithOwner')
+  gh api --method PATCH "repos/$repo_name" -F delete_branch_on_merge=true >/dev/null
+  printf 'Enabled automatic deletion of merged pull-request branches on GitHub.\n'
+fi
+
 mapfile -t merged_branches < <(
   git for-each-ref     --format='%(refname:strip=3)'     --merged=refs/remotes/origin/main     refs/remotes/origin/ |
     sort -u
