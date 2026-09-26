@@ -86,7 +86,9 @@ let
       "gpu"
       "history"
     ];
-  };  homeMonitorLauncher = pkgs.makeDesktopItem {
+  };
+
+  homeMonitorLauncher = pkgs.makeDesktopItem {
     name = "home-monitor";
     desktopName = "Home Monitor";
     genericName = "NAS and workstation monitoring";
