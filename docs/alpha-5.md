@@ -88,13 +88,15 @@ Before switching Alpha 5:
 ./scripts/rebuild.sh test
 ```
 
-The release branch additionally runs:
+Full closure validation remains available explicitly:
 
 ```bash
 ./scripts/dev-shell.sh --run './scripts/check.sh --full'
 ```
 
-That expensive gate is intentionally not part of routine pull-request CI.
+Hosted Release CI is manual-dispatch only; release branch maintenance does not
+automatically start the expensive closure build. Routine pull-request CI stays
+on the quick validation/evaluation gate.
 
 Resolver checks on the activated generation:
 
