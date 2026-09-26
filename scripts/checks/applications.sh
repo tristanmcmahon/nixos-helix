@@ -2,6 +2,23 @@
 
 # Sourced by scripts/check.sh; shares its strict mode and validation context.
 
+printf 'Checking helix-update runtime validation tools...\n'
+helix_update=$(readlink -f "$system_closure/sw/bin/helix-update")
+mapfile -t helix_update_closure < <(nix-store -qR "$helix_update")
+for validation_tool in deadnix nixfmt shellcheck statix; do
+  found_validation_tool=0
+  for closure_path in "${helix_update_closure[@]}"; do
+    if [[ -x $closure_path/bin/$validation_tool ]]; then
+      found_validation_tool=1
+      break
+    fi
+  done
+  if ((!found_validation_tool)); then
+    printf 'helix-update runtime is missing validation tool: %s\n' "$validation_tool" >&2
+    exit 1
+  fi
+done
+
 printf 'Checking OpenClaw sandbox in the built default system...\n'
 openclaw_unit=$system_closure/etc/systemd/user/openclaw-gateway.service
 [[ -r $openclaw_unit ]]
