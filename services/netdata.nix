@@ -58,7 +58,7 @@ in
 
         db = {
           db = "ram";
-          retention = "1h";
+          retention = 3600;
         };
 
         web = {
