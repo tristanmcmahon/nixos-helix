@@ -108,34 +108,34 @@ in
         Group = "root";
       };
       script = ''
-        key_file=${lib.escapeShellArg streamKeyFile}
-        output=/run/netdata-stream.conf
+                key_file=${lib.escapeShellArg streamKeyFile}
+                output=/run/netdata-stream.conf
 
-        if [[ -s "$key_file" ]]; then
-          key=$(tr -d '\r\n' < "$key_file")
-          if [[ ! "$key" =~ ^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$ ]]; then
-            echo "Netdata parent stream key is malformed: $key_file" >&2
-            exit 1
-          fi
+                if [[ -s "$key_file" ]]; then
+                  key=$(tr -d '\r\n' < "$key_file")
+                  if [[ ! "$key" =~ ^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$ ]]; then
+                    echo "Netdata parent stream key is malformed: $key_file" >&2
+                    exit 1
+                  fi
 
-          umask 077
-          cat > "$output" <<EOF
-[stream]
-    enabled = yes
-    destination = ${parentAddress}:19999
-    api key = $key
-    enable compression = yes
-    send charts matching = *
-    buffer size bytes = 10485760
-    reconnect delay = 5s
-EOF
-        else
-          umask 077
-          cat > "$output" <<'EOF'
-[stream]
-    enabled = no
-EOF
-        fi
+                  umask 077
+                  cat > "$output" <<EOF
+        [stream]
+            enabled = yes
+            destination = ${parentAddress}:19999
+            api key = $key
+            enable compression = yes
+            send charts matching = *
+            buffer size bytes = 10485760
+            reconnect delay = 5s
+        EOF
+                else
+                  umask 077
+                  cat > "$output" <<'EOF'
+        [stream]
+            enabled = no
+        EOF
+                fi
       '';
     };
 
