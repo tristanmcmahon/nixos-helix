@@ -70,3 +70,28 @@ pull-request heads are preserved. The delete path also enables GitHub's automati
 deletion of merged pull-request branches so the same clutter does not immediately
 return. Diverged branches are never deleted by this tool and require deliberate
 review.
+
+
+## Central Netdata
+
+Helix also runs a loopback-only Netdata Agent as a streaming child of the Netdata parent on
+infernalnexus at `192.168.1.8:19999`. This is additive to the existing Prometheus/Grafana
+long-retention hardware dashboard.
+
+The child collects native host/process/filesystem/network/sensor metrics plus explicit NVIDIA,
+SMART and systemd-unit jobs. Its local database is intentionally short-lived RAM storage; the NAS
+parent owns the longer 30-day history.
+
+The stream API key is not part of the Nix store. `hamology-netdata-deploy --execute` installs the
+shared UUID at `/var/lib/netdata/parent-api-key` with mode 0600. Before that file exists, the local
+Netdata service still starts normally with outbound streaming disabled.
+
+The Netdata web interface on Helix binds only to `127.0.0.1:19999`; port 19999 is not opened in
+the workstation firewall. Use:
+
+```bash
+helix-monitor netdata
+```
+
+or the **Home Monitor** launcher to open the central parent dashboard. `helix-monitor dashboard`
+continues to open the existing local Grafana long-view.
