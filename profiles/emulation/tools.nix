@@ -95,17 +95,14 @@ let
 
       mkdir -p \
         "$root/bios/sources" \
-        "$root/saves/arcade" \
         "$root/saves/ps2" \
         "$root/saves/ps3" \
         "$root/saves/ps4" \
         "$root/saves/snes" \
-        "$root/states/arcade" \
         "$root/states/ps2" \
         "$root/states/ps3" \
         "$root/states/ps4" \
         "$root/states/snes" \
-        "$root/screenshots/arcade" \
         "$root/screenshots/ps2" \
         "$root/screenshots/ps3" \
         "$root/screenshots/ps4" \
@@ -113,7 +110,6 @@ let
         "$root/metadata" \
         "$root/tools/downloaded_media" \
         "$root/tools/skyscraper-home" \
-        "$root/tools/dat-index" \
         "$root/tools/reports" \
         "$root/roms" \
         "$state_root"
@@ -204,12 +200,12 @@ let
       case "$platform" in
         ps2|snes) ;;
         ps3|ps4)
-          printf 'Skyscraper does not support %s; automated scraping is available for ps2, snes, and arcade only.\n' \
+          printf 'Skyscraper does not support %s; automated scraping is available for ps2 and snes only.\n' \
             "$platform" >&2
           exit 2
           ;;
         *)
-          printf 'Usage: helix-emulation-scrape {ps2|snes|arcade} [scraper-source]\n' >&2
+          printf 'Usage: helix-emulation-scrape {ps2|snes} [scraper-source]\n' >&2
           exit 2
           ;;
       esac
