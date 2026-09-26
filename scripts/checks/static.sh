@@ -78,7 +78,7 @@ if grep -Rqs '../../hamCade' profiles; then
   printf 'A NixOS profile still imports the sibling private hamCade checkout.\n' >&2
   exit 1
 fi
-grep -qF 'b64dc3c90c66b46c8e4e35ba5f590706ece8d8f1' vendor/hamcade/dependencies.nix
+grep -qF '1d5a2bbc315e617b3062641cbbde1f549f78d065' vendor/hamcade/dependencies.nix
 
 printf 'Checking Git whitespace...\n'
 git diff --check
