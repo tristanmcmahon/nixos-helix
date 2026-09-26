@@ -48,9 +48,9 @@ Since Alpha 4, Helix has also gained:
   theme rotation, and Ghostty profile/surface selection;
 - declarative local Ollama operation on the games NVMe with a five-model
   baseline, a 32K context setting, and an explicit model refresh helper;
-- NAS-first emulation and hamCade integration, including read-only NAS ROM
-  policy, local writable state, Doom/GZDoom tooling, and OpenClaw/Codex
-  orchestration for the RetroArch path;
+- NAS-first console emulation plus a separate hamCade arcade integration,
+  keeping read-only NAS ROM policy and local writable state while making
+  arcade/MAME ownership explicit;
 - repository-owned OpenClaw integration and a pinned first-party package;
 - workstation lifecycle tooling including `helix-health`, `helix-update`,
   improved rebuild output, memory-pressure policy, storage helpers, and stronger
