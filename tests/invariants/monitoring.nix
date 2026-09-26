@@ -22,7 +22,7 @@ assert !config.services.netdata.enableAnalyticsReporting;
 assert config.services.netdata.package.withNdsudo;
 assert config.services.netdata.config.global.hostname == "helix";
 assert config.services.netdata.config.db.db == "ram";
-assert config.services.netdata.config.db.retention == "1h";
+assert config.services.netdata.config.db.retention == 3600;
 assert config.services.netdata.config.web."bind to" == "127.0.0.1:19999";
 assert config.services.netdata.config.web."allow dashboard from" == "localhost";
 assert config.services.netdata.config.web."allow management from" == "localhost";
