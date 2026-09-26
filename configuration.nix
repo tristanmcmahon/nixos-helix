@@ -30,6 +30,7 @@ in
     ./desktop/theme.nix
 
     ./shell/modern-bash.nix
+    ./shell/git.nix
 
     ./system/boot.nix
     ./system/hosts.nix

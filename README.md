@@ -30,7 +30,7 @@ system/                    boot, users, networking, NAS, and storage
 services/                  OpenSSH, monitoring, and routine native maintenance
 profiles/                  workstation, development, gaming, emulation, and local LLM
 packages/                  package sets and custom package definitions
-shell/                     immutable modern-bash integration
+shell/                     interactive shell and Git client integration
 scripts/                   checks, rebuilds, inventory, backup, and recovery
 docs/                      focused operating guides
 ```
@@ -76,7 +76,9 @@ weekly store optimisation hard-links identical store files.
 
 For normal maintenance, `helix-health` prints a compact workstation report and
 `helix-update` performs a clean-tree, validate, build, diff, test, and switch
-sequence. `helix-update` never runs garbage collection. Use `helix-theme list`,
+sequence. `helix-update` never runs garbage collection. `helix-git-credential-repair`
+repairs GitHub HTTPS authentication without pinning `gh` to a garbage-collectable
+Nix store path. Use `helix-theme list`,
 `helix-theme current`, or `helix-theme NAME` to inspect and switch appearance.
 
 ## Installed-system compatibility
@@ -104,6 +106,16 @@ for disaster recovery and any deliberately planned future reinstall; see
 - [Media applications](docs/media.md)
 - [Custom package pins](docs/custom-packages.md)
 - [1Password integration](docs/onepassword.md)
+
+Repository branch hygiene is deliberately conservative. Preview branches that are
+already merged into `origin/main` with:
+
+```bash
+./scripts/prune-merged-branches.sh
+```
+
+Delete only those proven-merged branches with `--delete`; release and rollback
+branches are always preserved, as are branches with open pull requests.
 
 Hardware evaluation and builds do not prove physical devices work. Use the
 hardware checklist after temporary activation and before switching.

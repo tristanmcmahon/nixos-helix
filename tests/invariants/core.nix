@@ -32,6 +32,8 @@ assert builtins.elem "nix-output-monitor" packageNames;
 assert builtins.elem "nvd" packageNames;
 assert builtins.elem "helix-health" packageNames;
 assert builtins.elem "helix-update" packageNames;
+assert builtins.elem "helix-git-credential-repair" packageNames;
+assert builtins.elem "gh" packageNames;
 assert builtins.elem "helix-theme" packageNames;
 assert builtins.compareVersions system.pkgs.openclaw.version "2026.6.9" >= 0;
 assert system.pkgs.openclaw.version == "2026.7.1-2";
@@ -40,4 +42,5 @@ assert builtins.elem "evtest" packageNames;
 assert config.environment.variables.EDITOR == "vim";
 assert config.environment.variables.VISUAL == "vim";
 assert builtins.any (name: builtins.match "vim.*" name != null) packageNames;
+assert config.systemd.user.services."helix-git-credential-helper".serviceConfig.ExecStart != "";
 true
