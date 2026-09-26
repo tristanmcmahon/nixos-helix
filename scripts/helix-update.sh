@@ -36,8 +36,15 @@ if ! "$candidate/sw/bin/helix-health" --check; then
   sudo "$previous/bin/switch-to-configuration" test
   exit 1
 fi
-printf 'Candidate health check passed; selecting it for boot...\n'
-sudo "$candidate/bin/switch-to-configuration" switch
+printf 'Candidate health check passed; registering system generation...\n'
+sudo nix-env --profile /nix/var/nix/profiles/system --set "$candidate"
+printf 'Selecting registered generation for boot...\n'
+if ! sudo "$candidate/bin/switch-to-configuration" switch; then
+  printf 'Final activation failed; restoring previous system generation...\n' >&2
+  sudo nix-env --profile /nix/var/nix/profiles/system --set "$previous"
+  sudo "$previous/bin/switch-to-configuration" switch
+  exit 1
+fi
 profile=$(readlink -f /nix/var/nix/profiles/system)
 generation=$(sudo nix-env --profile /nix/var/nix/profiles/system --list-generations |
   awk '$0 ~ /current/ { print $1 }')
