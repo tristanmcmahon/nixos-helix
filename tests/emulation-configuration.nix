@@ -33,8 +33,6 @@
         pkgs.pcsx2
         pkgs.rpcs3
         pkgs.shadps4
-        pkgs.mame
-        pkgs.igir
         pkgs.skyscraper
       ];
       message = "An enabled emulator or curation package is unavailable.";
