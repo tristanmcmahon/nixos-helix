@@ -18,6 +18,8 @@ assert config.services.prometheus.exporters.smartctl.enable;
 assert config.services.prometheus.exporters.smartctl.listenAddress == "127.0.0.1";
 assert config.services.prometheus.exporters.smartctl.maxInterval == "2m";
 assert config.services.netdata.enable;
+assert config.environment.etc."netdata/conf.d/stream.conf".text != "";
+assert builtins.elem "/run/netdata-stream.conf:/etc/netdata/conf.d/stream.conf" config.systemd.services.netdata.serviceConfig.BindReadOnlyPaths;
 assert !config.services.netdata.enableAnalyticsReporting;
 assert config.services.netdata.package.withNdsudo;
 assert config.services.netdata.config.global.hostname == "helix";
