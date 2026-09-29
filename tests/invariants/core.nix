@@ -34,6 +34,7 @@ assert builtins.elem "helix-health" packageNames;
 assert builtins.elem "helix-update" packageNames;
 assert builtins.elem "helix-git-credential-repair" packageNames;
 assert builtins.elem "gh" packageNames;
+assert builtins.elem "claude-code" packageNames;
 assert builtins.elem "helix-theme" packageNames;
 assert builtins.compareVersions system.pkgs.openclaw.version "2026.6.9" >= 0;
 assert system.pkgs.openclaw.version == "2026.7.1-2";
