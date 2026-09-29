@@ -7,7 +7,10 @@ Scope:
 
 - keep the existing Zed install;
 - add the NixOS 26.05 Claude Code CLI;
-- add the NixOS 26.05 Claude and Codex ACP adapters;
+- add the NixOS 26.05 Claude ACP adapter;
+- pin Codex ACP 1.12.0 from agentclientprotocol because the NixOS 26.05
+  codex-acp 0.13.0 package fails to link its embedded Bubblewrap sandbox on
+  Helix;
 - package VS Code with the Nix IDE and Anthropic Claude Code extension;
 - keep the existing Codex VS Code recommendation;
 - configure Claude and Codex as project-local Zed External Agents.
@@ -29,7 +32,7 @@ claude --version
 claude doctor
 codex --version
 claude-agent-acp --help
-codex-acp --help
+codex-acp --version
 code --list-extensions --show-versions
 zed .
 ```
