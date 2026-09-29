@@ -2,8 +2,7 @@
   lib,
   stdenv,
   buildNpmPackage,
-  nodejs_24,
-  nodejs-slim_24,
+  nodejs_22,
   makeWrapper,
   sourceInfo,
   bundledAcpx,
@@ -11,19 +10,8 @@
 }:
 
 let
-  # NixOS 26.05 builds Node 24 against the nixpkgs SQLite by default. Keep
-  # OpenClaw on Node 24, but let Node use its bundled SQLite instead: OpenClaw
-  # rejects the affected shared SQLite build because of the WAL-reset
-  # corruption bug.
-  openclawNodeSlim = nodejs-slim_24.overrideAttrs (old: {
-    configureFlags = builtins.filter (flag: !(lib.hasPrefix "--shared-sqlite" flag)) old.configureFlags;
-  });
-  openclawNode = nodejs_24.override {
-    nodejs-slim = openclawNodeSlim;
-  };
-
   buildNpmPackageForOpenClaw = buildNpmPackage.override {
-    nodejs = openclawNode;
+    nodejs = nodejs_22;
   };
   wrapperSrc = upstreamSource + "/nix/npm/openclaw";
   lock = builtins.fromJSON (builtins.readFile (wrapperSrc + "/package-lock.json"));
@@ -59,7 +47,7 @@ buildNpmPackageForOpenClaw {
   nativeBuildInputs = [ makeWrapper ];
 
   env = {
-    NODE_BIN = "${openclawNode}/bin/node";
+    NODE_BIN = "${nodejs_22}/bin/node";
     OPENCLAW_BUNDLED_ACPX = "${bundledAcpx}";
     OPENCLAW_NPM_PACKAGE_ROOT = "node_modules/openclaw";
     OPENCLAW_PATCH_NPM_DIST_SCRIPT = toString (
