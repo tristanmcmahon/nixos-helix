@@ -20,10 +20,10 @@ Run a single command in the same environment with:
 
 The installed workstation development environment is separately owned by
 `profiles/development.nix` and `packages/development.nix`. That maintained
-system profile contains VS Code, Zed, the Helix editor, hamLLM, GitHub CLI, Git LFS,
-Codex, Claude Code, Node.js, `nil`, compilers, runtimes, and the other daily
-development tools. Do not expand the
-bootstrap shell to duplicate that workstation profile.
+system profile contains VS Code, Zed, the Helix editor, hamLLM, GitHub CLI, Git
+LFS, Codex, Claude Code, Node.js, `nil`, compilers, runtimes, and the other daily
+development tools. Do not expand the bootstrap shell to duplicate that
+workstation profile.
 
 ## Local models and editors
 
@@ -121,8 +121,8 @@ git config --global user.email "you@example.com"
 ```
 
 GitHub authentication, Git LFS filter setup, Git identity, extension state, Codex
-login, and Claude Code login are mutable per-user settings. NixOS installs the tools but should
-not own those identities or credentials.
+login, and Claude Code login are mutable per-user settings. NixOS installs the
+tools but should not own those identities or credentials.
 
 ## Repository checks
 
