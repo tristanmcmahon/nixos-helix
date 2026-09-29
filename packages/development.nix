@@ -16,7 +16,7 @@
     git-lfs
     codex
     claude-code
-    codex-acp
+    (callPackage ./codex-acp.nix { })
     claude-agent-acp
     (callPackage ./hamllm.nix { })
 
