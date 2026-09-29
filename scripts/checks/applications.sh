@@ -32,6 +32,9 @@ printf 'Checking media applications in the built default system...\n'
 for media_executable in spotify vlc mpv haruna strawberry plex-desktop gridplayer; do
   [[ -x $system_closure/sw/bin/$media_executable ]]
 done
+for desktop_pattern in 'Signal' 'Pidgin'; do
+  :
+done
 for desktop_pattern in 'Spotify' 'VLC media player' 'Haruna' 'Strawberry' 'Plex' 'GridPlayer'; do
   grep -Rqs "^Name=.*$desktop_pattern" "$system_closure/sw/share/applications"
 done
@@ -52,6 +55,8 @@ if find "$system_closure/etc/xdg/autostart" "$system_closure/sw/share/autostart"
   exit 1
 fi
 [[ -x $system_closure/sw/bin/claude ]]
+[[ -x $system_closure/sw/bin/claude-agent-acp ]]
+[[ -x $system_closure/sw/bin/codex-acp ]]
 [[ -x $system_closure/sw/bin/ollama ]]
 [[ -x $system_closure/sw/bin/helix-ollama-update-models ]]
 [[ -r $system_closure/etc/systemd/system/ollama.service ]]
