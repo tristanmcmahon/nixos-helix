@@ -1,0 +1,14 @@
+{
+  "agent_servers": {
+    "Claude Code (experimental)": {
+      "type": "custom",
+      "command": "claude-agent-acp",
+      "args": []
+    },
+    "Codex (experimental)": {
+      "type": "custom",
+      "command": "codex-acp",
+      "args": []
+    }
+  }
+}
