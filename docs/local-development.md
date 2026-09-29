@@ -20,8 +20,9 @@ Run a single command in the same environment with:
 
 The installed workstation development environment is separately owned by
 `profiles/development.nix` and `packages/development.nix`. That maintained
-system profile contains VS Code, Zed, the Helix editor, hamLLM, GitHub CLI, Git LFS, Codex, Node.js, `nil`,
-compilers, runtimes, and the other daily development tools. Do not expand the
+system profile contains VS Code, Zed, the Helix editor, hamLLM, GitHub CLI, Git LFS,
+Codex, Claude Code, Node.js, `nil`, compilers, runtimes, and the other daily
+development tools. Do not expand the
 bootstrap shell to duplicate that workstation profile.
 
 ## Local models and editors
@@ -45,8 +46,9 @@ smaller. Keep personal editor settings under `~/.config/zed/` rather than in
 the system configuration. Local model chat/agent features and edit prediction
 have separate Zed settings.
 
-The Codex CLI is also independent of the editor and uses its own authentication
-and model access. Installing a local Ollama service does not make Codex local.
+The Codex and Claude Code CLIs are also independent of the editor and use their
+own authentication and model access. Installing a local Ollama service does not
+make either service-backed agent local.
 
 ## VS Code and Nix
 
@@ -89,6 +91,24 @@ codex login status
 
 Credentials and `~/.codex` state do not belong in this repository.
 
+## Claude Code
+
+NixOS 26.05 packages Claude Code as `pkgs.claude-code`; Helix installs that
+package through the development profile instead of using Anthropic's native
+installer or a global npm install. The Nix package owns updates, so do not run
+`claude update` to replace the managed executable.
+
+After switching the system, verify the packaged binary and installation health:
+
+```bash
+claude --version
+claude doctor
+```
+
+Authenticate interactively by running `claude` and following the browser
+login flow. Authentication and `~/.claude` are mutable per-user state and do
+not belong in Nix or Git.
+
 ## Git and GitHub user state
 
 Run these interactively as the user who will develop on Helix:
@@ -100,8 +120,8 @@ git config --global user.name "Your Name"
 git config --global user.email "you@example.com"
 ```
 
-GitHub authentication, Git LFS filter setup, Git identity, extension state, and
-Codex login are mutable per-user settings. NixOS installs the tools but should
+GitHub authentication, Git LFS filter setup, Git identity, extension state, Codex
+login, and Claude Code login are mutable per-user settings. NixOS installs the tools but should
 not own those identities or credentials.
 
 ## Repository checks
