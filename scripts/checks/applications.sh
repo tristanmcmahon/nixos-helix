@@ -39,7 +39,7 @@ done
 gridplayer_wrapper=$(readlink -f "$system_closure/sw/bin/gridplayer")
 grep -Eq '/nix/store/[^/]+-vlc-[^/]+/lib' "$gridplayer_wrapper"
 
-printf 'Checking messaging applications and local inference in the built default system...\n'
+printf 'Checking messaging, agent CLI, and local inference in the built default system...\n'
 for application_executable in signal-desktop pidgin; do
   [[ -x $system_closure/sw/bin/$application_executable ]]
 done
