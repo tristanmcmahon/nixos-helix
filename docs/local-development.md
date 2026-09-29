@@ -20,10 +20,9 @@ Run a single command in the same environment with:
 
 The installed workstation development environment is separately owned by
 `profiles/development.nix` and `packages/development.nix`. That maintained
-system profile contains VS Code, Zed, the Helix editor, hamLLM, GitHub CLI, Git
-LFS, Codex, Claude Code, their Zed ACP adapters, Node.js, `nil`, compilers,
-runtimes, and the other daily development tools. Do not expand the bootstrap
-shell to duplicate that workstation profile.
+system profile contains VS Code, Zed, the Helix editor, hamLLM, GitHub CLI, Git LFS, Codex, Node.js, `nil`,
+compilers, runtimes, and the other daily development tools. Do not expand the
+bootstrap shell to duplicate that workstation profile.
 
 ## Local models and editors
 
@@ -42,37 +41,23 @@ Zed is available alongside VS Code and `hx`. Zed's Ollama provider connects
 directly to the loopback service; it does not run through hamLLM. Select an
 installed model in Zed and set its Ollama context window explicitly to match
 the service's 32768-token configuration, since editor request defaults can be
-smaller. Local model chat/agent features and edit prediction have separate Zed
-settings.
+smaller. Keep personal editor settings under `~/.config/zed/` rather than in
+the system configuration. Local model chat/agent features and edit prediction
+have separate Zed settings.
 
-For this repository, `.zed/settings.json` registers the Nix-managed
-`claude-agent-acp` and `codex-acp` binaries as Zed External Agents. Open the
-Agent Panel and start either the Claude Code or Codex agent directly. Their
-authentication, billing, model selection, and native configuration remain owned
-by the agents rather than by Zed or Nix.
-
-Personal Zed settings remain under `~/.config/zed/`; the system configuration
-does not overwrite them. To make the same custom agents global across other
-projects, copy the two `agent_servers` entries from this repository's
-`.zed/settings.json` into the user settings file, or install the corresponding
-agents from Zed's ACP Registry.
-
-The Codex and Claude Code CLIs are also independent of the editor and use their
-own authentication and model access. Installing a local Ollama service does not
-make either service-backed agent local.
+The Codex CLI is also independent of the editor and uses its own authentication
+and model access. Installing a local Ollama service does not make Codex local.
 
 ## VS Code and Nix
 
-Helix packages VS Code with `jnoortheen.nix-ide` and Anthropic's official
-`anthropic.claude-code` extension through `pkgs.vscode-with-extensions`.
-The workspace also recommends the verified official Codex extension identifier,
-`openai.chatgpt`; that recommendation remains mutable user extension state.
+The workspace recommends `jnoortheen.nix-ide` and the verified official Codex
+extension identifier, `openai.chatgpt`. Recommendations do not install or
+authenticate extensions automatically.
 
-The shared settings use `nil` as the single Nix language server and `nixfmt`
-as the formatter, with format-on-save for Nix files. On the installed
-workstation, launch `code .` from the ordinary user environment supplied by
-the maintained development profile; VS Code is intentionally absent from
-`shell.nix`.
+The shared settings use `nil` as the single Nix language server and `nixfmt` as
+the formatter, with format-on-save for Nix files. On the installed workstation,
+launch `code .` from the ordinary user environment supplied by the maintained
+development profile; VS Code is intentionally absent from `shell.nix`.
 
 Confirm extensions without changing them:
 
@@ -83,9 +68,7 @@ code --list-extensions --show-versions
 ## Codex
 
 NixOS 26.05 packages the official OpenAI Codex CLI as `pkgs.codex`; the
-installed development profile provides it independently of VS Code. NixOS also
-provides `pkgs.codex-acp` for Zed's External Agent integration.
-
+installed development profile provides it independently of VS Code.
 The Codex IDE extension also bundles its own CLI, so installing VS Code alone
 must not be treated as installing a user-facing terminal command.
 
@@ -106,29 +89,6 @@ codex login status
 
 Credentials and `~/.codex` state do not belong in this repository.
 
-## Claude Code
-
-NixOS 26.05 packages Claude Code as `pkgs.claude-code`; Helix installs that
-package through the development profile instead of using Anthropic's native
-installer or a global npm install. NixOS also provides
-`pkgs.claude-agent-acp` for Zed's External Agent integration.
-
-VS Code receives Anthropic's official Claude Code extension from the same NixOS
-release. The Nix package owns updates, so do not run `claude update` to replace
-the managed executable.
-
-After switching the system, verify the packaged binary and installation health:
-
-```bash
-claude --version
-claude doctor
-```
-
-Authenticate interactively by running `claude` and following the browser
-login flow. Authentication and `~/.claude` are mutable per-user state and do
-not belong in Nix or Git. Zed's Claude External Agent may request its own login
-inside the Agent Panel; that login is also user state and is not committed.
-
 ## Git and GitHub user state
 
 Run these interactively as the user who will develop on Helix:
@@ -140,9 +100,9 @@ git config --global user.name "Your Name"
 git config --global user.email "you@example.com"
 ```
 
-GitHub authentication, Git LFS filter setup, Git identity, mutable extension
-state, Codex login, Claude Code login, and Zed agent login are per-user state.
-NixOS installs the tools but should not own those identities or credentials.
+GitHub authentication, Git LFS filter setup, Git identity, extension state, and
+Codex login are mutable per-user settings. NixOS installs the tools but should
+not own those identities or credentials.
 
 ## Repository checks
 
