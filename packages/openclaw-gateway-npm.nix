@@ -16,9 +16,7 @@ let
   # rejects the affected shared SQLite build because of the WAL-reset
   # corruption bug.
   openclawNodeSlim = nodejs-slim_24.overrideAttrs (old: {
-    configureFlags = builtins.filter
-      (flag: !(lib.hasPrefix "--shared-sqlite" flag))
-      old.configureFlags;
+    configureFlags = builtins.filter (flag: !(lib.hasPrefix "--shared-sqlite" flag)) old.configureFlags;
   });
   openclawNode = nodejs_24.override {
     nodejs-slim = openclawNodeSlim;
