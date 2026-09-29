@@ -52,6 +52,8 @@ if find "$system_closure/etc/xdg/autostart" "$system_closure/sw/share/autostart"
   exit 1
 fi
 [[ -x $system_closure/sw/bin/claude ]]
+[[ -x $system_closure/sw/bin/claude-agent-acp ]]
+[[ -x $system_closure/sw/bin/codex-acp ]]
 [[ -x $system_closure/sw/bin/ollama ]]
 [[ -x $system_closure/sw/bin/helix-ollama-update-models ]]
 [[ -r $system_closure/etc/systemd/system/ollama.service ]]

@@ -1,6 +1,7 @@
 {
   "recommendations": [
     "jnoortheen.nix-ide",
-    "openai.chatgpt"
+    "openai.chatgpt",
+    "anthropic.claude-code"
   ]
 }
