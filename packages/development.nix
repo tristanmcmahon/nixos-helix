@@ -2,13 +2,20 @@
 
 {
   environment.systemPackages = with pkgs; [
-    vscode
+    (vscode-with-extensions.override {
+      vscodeExtensions = with vscode-extensions; [
+        jnoortheen.nix-ide
+        anthropic.claude-code
+      ];
+    })
     zed-editor
     helix
     gh
     git-lfs
     codex
     claude-code
+    codex-acp
+    claude-agent-acp
     (callPackage ./hamllm.nix { })
 
     bottom
