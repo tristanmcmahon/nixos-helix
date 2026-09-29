@@ -2,12 +2,22 @@
 
 {
   environment.systemPackages = with pkgs; [
-    vscode
+    # EXPERIMENTAL: editor-agent integration. Keep this branch unmerged until
+    # Helix has completed a real dry-build and temporary activation.
+    (vscode-with-extensions.override {
+      vscodeExtensions = with vscode-extensions; [
+        jnoortheen.nix-ide
+        anthropic.claude-code
+      ];
+    })
     zed-editor
     helix
     gh
     git-lfs
     codex
+    claude-code
+    codex-acp
+    claude-agent-acp
     (callPackage ./hamllm.nix { })
 
     bottom
