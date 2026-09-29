@@ -3,10 +3,12 @@
 {
   environment.systemPackages = with pkgs; [
     vscode
+    zed-editor
     helix
     gh
     git-lfs
     codex
+    (callPackage ./hamllm.nix { })
 
     bottom
     ripgrep

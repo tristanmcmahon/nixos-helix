@@ -20,9 +20,33 @@ Run a single command in the same environment with:
 
 The installed workstation development environment is separately owned by
 `profiles/development.nix` and `packages/development.nix`. That maintained
-system profile contains VS Code, GitHub CLI, Git LFS, Codex, Node.js, `nil`,
+system profile contains VS Code, Zed, the Helix editor, hamLLM, GitHub CLI, Git LFS, Codex, Node.js, `nil`,
 compilers, runtimes, and the other daily development tools. Do not expand the
 bootstrap shell to duplicate that workstation profile.
+
+## Local models and editors
+
+The local-LLM profile runs Ollama on `127.0.0.1:11434`. The development profile
+packages hamLLM's CLI from the pinned source snapshot under `vendor/hamllm`.
+The snapshot is packaging input only: shared model and agent code is maintained
+in the separate hamLLM repository. Inspect the actual running service with:
+
+```bash
+hamllm doctor
+ollama list
+ollama ps
+```
+
+Zed is available alongside VS Code and `hx`. Zed's Ollama provider connects
+directly to the loopback service; it does not run through hamLLM. Select an
+installed model in Zed and set its Ollama context window explicitly to match
+the service's 32768-token configuration, since editor request defaults can be
+smaller. Keep personal editor settings under `~/.config/zed/` rather than in
+the system configuration. Local model chat/agent features and edit prediction
+have separate Zed settings.
+
+The Codex CLI is also independent of the editor and uses its own authentication
+and model access. Installing a local Ollama service does not make Codex local.
 
 ## VS Code and Nix
 
