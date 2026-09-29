@@ -23,9 +23,11 @@ publishing tools.
 ### Development
 
 `profiles/development.nix` is an explicit enable/disable boundary for editors,
-GitHub publishing tools, Codex, Claude Code, compilers, runtimes, the Nix
-language server and formatter, and ShellCheck. It remains separate even though
-it currently adds no system service policy.
+GitHub publishing tools, Codex, Claude Code, the Claude and Codex ACP adapters
+used by Zed, compilers, runtimes, the Nix language server and formatter, and
+ShellCheck. VS Code is packaged with the maintained Nix IDE and official Claude
+Code extension. It remains separate even though it currently adds no system
+service policy.
 
 ### Gaming
 
