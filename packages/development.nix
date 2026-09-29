@@ -8,6 +8,7 @@
     gh
     git-lfs
     codex
+    claude-code
     (callPackage ./hamllm.nix { })
 
     bottom
