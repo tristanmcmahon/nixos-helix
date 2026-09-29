@@ -51,7 +51,8 @@ if find "$system_closure/etc/xdg/autostart" "$system_closure/sw/share/autostart"
   printf 'Signal or Pidgin is configured to autostart.\n' >&2
   exit 1
 fi
-[[ -x $system_closure/sw/bin/claude ]]\n[[ -x $system_closure/sw/bin/ollama ]]
+[[ -x $system_closure/sw/bin/claude ]]
+[[ -x $system_closure/sw/bin/ollama ]]
 [[ -x $system_closure/sw/bin/helix-ollama-update-models ]]
 [[ -r $system_closure/etc/systemd/system/ollama.service ]]
 [[ -r $system_closure/etc/systemd/system/ollama-model-loader.service ]]
