@@ -13,13 +13,17 @@ Scope:
   Helix;
 - package VS Code with the Nix IDE and Anthropic Claude Code extension;
 - keep the existing Codex VS Code recommendation;
-- configure Claude and Codex as project-local Zed External Agents.
+- provide an opt-in helper that registers the Nix-managed Claude and Codex
+  ACP binaries in Zed's user settings. Zed does not currently accept
+  `agent_servers` in project-local `.zed/settings.json`.
 
 Deliberately excluded:
 
 - OpenClaw changes;
 - Home Manager;
-- global mutation of `~/.config/zed/settings.json`;
+- automatic mutation of `~/.config/zed/settings.json`; the user must run
+  `helix-zed-agent-setup` explicitly, and the helper backs up an existing
+  settings file before changing only `agent_servers`;
 - credentials, tokens, or API keys;
 - any merge to `main` before live validation.
 
