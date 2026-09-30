@@ -106,6 +106,7 @@ for disaster recovery and any deliberately planned future reinstall; see
 - [Media applications](docs/media.md)
 - [Custom package pins](docs/custom-packages.md)
 - [1Password integration](docs/onepassword.md)
+- [Evaluation and consolidation roadmap](docs/roadmap.md)
 
 Repository branch hygiene is deliberately conservative. Preview branches that are
 already merged into `origin/main` with:
