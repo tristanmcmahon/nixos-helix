@@ -18,6 +18,7 @@
     claude-code
     (callPackage ./codex-acp.nix { })
     claude-agent-acp
+    (callPackage ./zed-agent-setup.nix { })
     (callPackage ./hamllm.nix { })
 
     bottom
