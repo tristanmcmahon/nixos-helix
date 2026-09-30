@@ -39,7 +39,7 @@ done
 gridplayer_wrapper=$(readlink -f "$system_closure/sw/bin/gridplayer")
 grep -Eq '/nix/store/[^/]+-vlc-[^/]+/lib' "$gridplayer_wrapper"
 
-printf 'Checking messaging applications and local inference in the built default system...\n'
+printf 'Checking messaging, agent tooling, and local inference in the built default system...\n'
 for application_executable in signal-desktop pidgin; do
   [[ -x $system_closure/sw/bin/$application_executable ]]
 done
@@ -51,6 +51,10 @@ if find "$system_closure/etc/xdg/autostart" "$system_closure/sw/share/autostart"
   printf 'Signal or Pidgin is configured to autostart.\n' >&2
   exit 1
 fi
+[[ -x $system_closure/sw/bin/claude ]]
+[[ -x $system_closure/sw/bin/claude-agent-acp ]]
+[[ -x $system_closure/sw/bin/codex-acp ]]
+[[ -x $system_closure/sw/bin/helix-zed-agent-setup ]]
 [[ -x $system_closure/sw/bin/ollama ]]
 [[ -x $system_closure/sw/bin/helix-ollama-update-models ]]
 [[ -r $system_closure/etc/systemd/system/ollama.service ]]
