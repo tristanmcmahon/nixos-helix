@@ -12,7 +12,7 @@ writeShellApplication {
   text = ''
     set -euo pipefail
 
-    config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
+    config_home="''${XDG_CONFIG_HOME:-$HOME/.config}"
     settings_dir="$config_home/zed"
     settings_file="$settings_dir/settings.json"
 
