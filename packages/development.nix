@@ -1,5 +1,11 @@
 { pkgs, ... }:
 
+let
+  codexAcp = pkgs.callPackage ./codex-acp.nix { };
+  zedAgentSetup = pkgs.callPackage ./zed-agent-setup.nix {
+    codex-acp = codexAcp;
+  };
+in
 {
   environment.systemPackages = with pkgs; [
     # EXPERIMENTAL: editor-agent integration. Keep this branch unmerged until
@@ -16,9 +22,9 @@
     git-lfs
     codex
     claude-code
-    (callPackage ./codex-acp.nix { })
+    codexAcp
     claude-agent-acp
-    (callPackage ./zed-agent-setup.nix { })
+    zedAgentSetup
     (callPackage ./hamllm.nix { })
 
     bottom
