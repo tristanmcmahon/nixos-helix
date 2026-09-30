@@ -2,6 +2,8 @@
   lib,
   writeShellApplication,
   jq,
+  claude-agent-acp,
+  codex-acp,
 }:
 
 writeShellApplication {
@@ -31,12 +33,12 @@ writeShellApplication {
       .agent_servers = ((.agent_servers // {}) + {
         "Claude Code": {
           "type": "custom",
-          "command": "claude-agent-acp",
+          "command": "${lib.getExe claude-agent-acp}",
           "args": []
         },
         "Codex": {
           "type": "custom",
-          "command": "codex-acp",
+          "command": "${lib.getExe codex-acp}",
           "args": []
         }
       })
