@@ -10,7 +10,7 @@ package. Updates arrive through the selected NixOS package channel.
 
 General Firefox, Chrome, and Chromium policy—including Dark Reader and managed
 password-manager behavior—is owned by `desktop/browsers.nix`; this module owns
-only 1Password and its technically required Zen allow-list entry.
+only 1Password.
 
 - Google Chrome and Chromium receive the official extension ID
   `aeblfdkhhhdcdjpifhhbdiojplfjncoa` through managed Chromium policy. The same
@@ -19,11 +19,6 @@ only 1Password and its technically required Zen allow-list entry.
   extension `{d634138d-c276-4fc8-924b-40a0ea21d284}` through
   `ExtensionSettings`. Enterprise policy disables new built-in password-save
   prompts.
-- Zen Browser's inspected AppImage process is `zen-bin`, which is declared in
-  `/etc/1password/custom_allowed_browsers`. Although Zen contains Firefox's
-  policy engine, its AppImage application tree is immutable and does not offer
-  a reliable system policy location in this package. Install the official
-  1Password Firefox extension once from Mozilla Add-ons in Zen.
 
 These policies neither edit profiles nor erase existing saved passwords. Before
 manually removing old browser passwords later, use each browser's password

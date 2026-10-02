@@ -63,10 +63,27 @@ in
           retention = 3600;
         };
 
-        # Helix runs no Nagios-style check scripts. Without its config
-        # directory, which NixOS never creates, scripts.d logs a watch error
-        # every minute.
-        plugins."scripts.d" = "no";
+        # Helix is a streaming child: the Infernalnexus parent runs anomaly
+        # detection and alerts on the streamed data, so running them here too
+        # only spends CPU and memory.
+        ml.enabled = "no";
+        health.enabled = "no";
+
+        plugins = {
+          # Helix runs no Nagios-style check scripts; without the config
+          # directory, which NixOS never creates, scripts.d logs a watch
+          # error every minute.
+          "scripts.d" = "no";
+          # Unused collectors: OpenTelemetry ingestion and viewer, live socket
+          # viewer, kernel debugfs, netfilter accounting and traffic-control
+          # QoS. Host, process, sensor, NVIDIA, SMART and systemd metrics stay.
+          otel = "no";
+          "otel-signal-viewer" = "no";
+          "network-viewer" = "no";
+          debugfs = "no";
+          nfacct = "no";
+          tc = "no";
+        };
 
         web = {
           "default port" = 19999;

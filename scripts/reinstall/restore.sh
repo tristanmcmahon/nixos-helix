@@ -2,11 +2,13 @@
 
 set -euo pipefail
 
-canonical_repo=/home/tristan/Projects/nixos-helix
-nas_mount=/mnt/infernalnexus/nas1
-backup_root=/mnt/infernalnexus/nas1/backup
-expected_source=//192.168.1.8/nas1
-target_home=/home/tristan
+# shellcheck source=scripts/reinstall/facts.sh
+source "$(dirname -- "${BASH_SOURCE[0]}")/facts.sh"
+canonical_repo=$helix_checkout
+nas_mount=$helix_nas_mount
+backup_root=$helix_backup_root
+expected_source=$helix_nas_source
+target_home=$helix_home
 target_secrets=/etc/nixos/secrets
 target_nm_profile=/etc/NetworkManager/system-connections/towerofdoom.nmconnection
 target_ssh_dir=/etc/ssh

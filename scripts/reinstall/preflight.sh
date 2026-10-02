@@ -3,6 +3,8 @@
 set -euo pipefail
 
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
+# shellcheck source=scripts/reinstall/facts.sh
+source "$(dirname -- "${BASH_SOURCE[0]}")/facts.sh"
 root_channel=/nix/var/nix/profiles/per-user/root/channels/nixos
 expected_release=$(nix-instantiate --eval --raw -E "(import $repo_root/release.nix).nixosRelease")
 state_version=$(nix-instantiate --eval --raw -E "(import $repo_root/release.nix).stateVersion")
@@ -24,7 +26,7 @@ printf 'Root channel:     %s\n' "$root_channel"
 printf 'Selected release: %s\n' "$selected_release"
 printf 'Expected release: %s\n' "$expected_release"
 printf 'State version:    %s\n' "$state_version"
-[[ $repo_root == /home/tristan/Projects/nixos-helix ]] || {
+[[ $repo_root == "$helix_checkout" ]] || {
   printf 'FAIL: this is not the canonical Helix checkout.\n' >&2
   exit 1
 }
@@ -79,7 +81,7 @@ printf 'Tracked hardware configuration checksum\n'
 sha256sum "$repo_root/hardware-configuration.nix"
 
 printf '\nRuntime-data readiness (contents are never printed)\n'
-authorized_keys=/home/tristan/.ssh/authorized_keys
+authorized_keys=$helix_home/.ssh/authorized_keys
 if [[ -s $authorized_keys ]] && grep -Eq '^[[:space:]]*[^#[:space:]]' "$authorized_keys"; then
   printf 'SSH authorized keys: present\n'
 else
@@ -100,7 +102,7 @@ ip route
 
 printf '\nRequired independent backup scope\n'
 printf '%s\n' \
-  '/home/tristan' '/home/tristan/Projects' '/home/tristan/.ssh' \
+  "$helix_home" "$helix_home/Projects" "$helix_home/.ssh" \
   '/etc/nixos/secrets' "$repo_root/hardware-configuration.nix" \
   '/etc/NetworkManager/system-connections/towerofdoom.nmconnection' \
   '/etc/ssh/ssh_host_*' \
@@ -108,7 +110,7 @@ printf '%s\n' \
   'repository commit and any uncommitted patch' \
   'browser data, Obsidian vaults, and all other non-reproducible local data'
 printf '\nRequired backup command: scripts/helix-reinstall.sh backup\n'
-printf 'Fixed destination: /mnt/infernalnexus/nas1/backup\n'
+printf 'Fixed destination: %s\n' "$helix_backup_root"
 printf '\nPRE-WIPE BOOTSTRAP GATE\n'
 printf '%s\n' \
   'Independently confirm first-boot wired access or retrievable Wi-Fi credentials.' \

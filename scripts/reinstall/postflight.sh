@@ -6,12 +6,14 @@ repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 expected_release=$(nix-instantiate --eval --raw -E "(import $repo_root/release.nix).nixosRelease")
 expected_state_version=$(nix-instantiate --eval --raw -E "(import $repo_root/release.nix).stateVersion")
 preserved_hardware=/var/lib/helix-install/hardware-configuration.nix
-canonical_backup_root=/mnt/infernalnexus/nas1/backup
+# shellcheck source=scripts/reinstall/facts.sh
+source "$(dirname -- "${BASH_SOURCE[0]}")/facts.sh"
+canonical_backup_root=$helix_backup_root
 backup_root=$canonical_backup_root
 
 printf '%s\n' 'HELIX REINSTALL POSTFLIGHT — READ ONLY'
 printf 'Canonical checkout: %s\n' "$repo_root"
-[[ $repo_root == /home/tristan/Projects/nixos-helix ]]
+[[ $repo_root == "$helix_checkout" ]]
 [[ -d $repo_root/.git ]]
 printf 'Installed checkout commit: %s\n' "$(git -C "$repo_root" rev-parse HEAD)"
 approved_commit=$(</var/lib/helix-install/approved-commit)
@@ -56,8 +58,8 @@ done
 printf 'Review the inventory above and confirm no retired or unexpected disk is mounted.\n'
 
 printf '\nRuntime data (contents are never printed)\n'
-test -s /home/tristan/.ssh/authorized_keys
-grep -Eq '^[[:space:]]*[^#[:space:]]' /home/tristan/.ssh/authorized_keys
+test -s "$helix_home/.ssh/authorized_keys"
+grep -Eq '^[[:space:]]*[^#[:space:]]' "$helix_home/.ssh/authorized_keys"
 sudo stat -c 'NAS credential: %U:%G %a' /etc/nixos/secrets/infernalnexus-smb
 [[ $(sudo stat -c '%U:%G %a' /etc/nixos/secrets/infernalnexus-smb) == 'root:root 600' ]]
 
@@ -81,14 +83,14 @@ for command in vi vim git gh code codex ghostty steam mangohud op 1password \
 done
 
 printf '\nBackup preservation\n'
-stat -- /mnt/infernalnexus/nas1 >/dev/null
-mountpoint -q /mnt/infernalnexus/nas1
+stat -- "$helix_nas_mount" >/dev/null
+mountpoint -q "$helix_nas_mount"
 mapfile -t canonical_cifs_sources < <(
-  findmnt -rn --target /mnt/infernalnexus/nas1 --types cifs -o SOURCE
+  findmnt -rn --target "$helix_nas_mount" --types cifs -o SOURCE
 )
 [[ ${#canonical_cifs_sources[@]} -eq 1 ]]
 backup_source=${canonical_cifs_sources[0]}
-[[ ${backup_source%/} == //192.168.1.8/nas1 ]]
+[[ ${backup_source%/} == "$helix_nas_source" ]]
 [[ -d $backup_root && -r $backup_root ]]
 mapfile -t completed_sets < <(
   find "$backup_root" -mindepth 1 -maxdepth 1 -type d \

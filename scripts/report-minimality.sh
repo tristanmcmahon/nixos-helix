@@ -46,5 +46,5 @@ nix-instantiate --eval --strict -E '
 '
 printf 'Custom pins:\n'
 grep -nE 'version = |rev = |tag = |Commit:|url = ' \
-  packages/openclaw.nix packages/zen-browser.nix packages/gridplayer.nix \
+  packages/openclaw.nix packages/gridplayer.nix \
   packages/hamllm.nix shell/modern-bash.nix vendor/hamcade/dependencies.nix

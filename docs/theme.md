@@ -80,8 +80,7 @@ Waybar, Mako, and Fuzzel files. A repository-owned startup helper performs the
 login theme draw before launching those surfaces so they all see the same
 selection. Its workspaces and normal session behaviour are unchanged; the
 Ghostty surface chooser is shared with Plasma. Obsidian remains per-vault:
-select its Dark base colour scheme when necessary. Zen follows the system
-preference but retains its own profile-local extension state.
+select its Dark base colour scheme when necessary.
 
 Steam does not inherit KDE colours. NixOS therefore installs the maintained
 AdwSteamGtk wrapper and a repository-owned Graphite custom-colour file.

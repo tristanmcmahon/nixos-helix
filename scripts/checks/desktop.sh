@@ -27,6 +27,8 @@ require_contains() {
   }
 }
 
+# Facts the evaluation invariants already assert are not repeated here; these
+# checks inspect built artefacts in ways evaluation cannot.
 printf 'Checking Helix Graphite + Fern in the built default system...\n'
 fern_scheme=$system_closure/sw/share/color-schemes/HelixGraphiteFern.colors
 require_readable "$fern_scheme"
@@ -44,9 +46,6 @@ require_executable "$system_closure/sw/bin/helix-apply-theme"
 # Their presence in the helper closure is verified below.
 for theme in fern petrol plum oxide amber rosewood hotdog; do
   [[ -d $system_closure/etc/helix/themes/$theme ]]
-done
-for scheme in Fern Petrol Plum Oxide Amber Rosewood HotDogStand; do
-  [[ -r $system_closure/sw/share/color-schemes/HelixGraphite$scheme.colors ]]
 done
 [[ -x $system_closure/sw/bin/helix-theme ]]
 "$system_closure/sw/bin/helix-theme" list | grep -qF 'regrettably available.'
@@ -71,11 +70,7 @@ for theme_runtime_command in gsettings python3 plasma-apply-colorscheme \
 done
 # Each login applies exactly one theme, from the session's rotation.
 [[ ! -e $system_closure/etc/systemd/user/helix-graphite-fern-theme.service ]]
-ghostty_unit=$system_closure/etc/systemd/user/helix-ghostty-config.service
-[[ -r $ghostty_unit ]]
-grep -qF 'ConditionUser=tristan' "$ghostty_unit"
-grep -qF 'HOME=/home/tristan' "$ghostty_unit"
-grep -qF 'XDG_CONFIG_HOME=/home/tristan/.config' "$ghostty_unit"
+[[ -r $system_closure/etc/systemd/user/helix-ghostty-config.service ]]
 for theme_asset in gtk-3.0-settings.ini gtk-4.0-settings.ini waybar.css mako.conf \
   fuzzel.ini steam.css wallpaper.svg apply-theme-settings.py; do
   [[ -r $system_closure/etc/helix/theme/$theme_asset ]]
@@ -90,37 +85,22 @@ grep -qF 'swaybg --image /home/tristan/.config/helix/theme/current/wallpaper.svg
 grep -qF 'waybar --style /home/tristan/.config/helix/theme/current/waybar.css' "$hyprland_config"
 grep -qF 'mako --config /home/tristan/.config/helix/theme/current/mako.conf' "$hyprland_config"
 grep -qF 'fuzzel --config /home/tristan/.config/helix/theme/current/fuzzel.ini' "$hyprland_config"
-ghostty_config=config/ghostty/config.ghostty
-ghostty_appearance=$ghostty_config
-ghostty_validation_config=$ghostty_config
-if grep -qF 'config-file = /home/tristan/.config/ghostty/profile.ghostty' "$ghostty_config"; then
-  ghostty_appearance=$system_closure/etc/helix/ghostty/profiles/main.ghostty
-  ghostty_validation_profile=$temporary_directory/ghostty-profile.ghostty
-  ghostty_validation_config=$temporary_directory/ghostty-config.ghostty
-  cp -- "$ghostty_appearance" "$ghostty_validation_profile"
-  sed "s|config-file = /home/tristan/.config/ghostty/profile.ghostty|config-file = $ghostty_validation_profile|" \
-    "$ghostty_config" > "$ghostty_validation_config"
-fi
+# Validate the managed Ghostty config together with the built Main profile it
+# includes, substituting a temporary path for the per-user profile file.
+ghostty_validation_profile=$temporary_directory/ghostty-profile.ghostty
+ghostty_validation_config=$temporary_directory/ghostty-config.ghostty
+cp -- "$system_closure/etc/helix/ghostty/profiles/main.ghostty" "$ghostty_validation_profile"
+sed "s|^config-file = .*|config-file = $ghostty_validation_profile|" \
+  config/ghostty/config.ghostty > "$ghostty_validation_config"
+grep -qxF "config-file = $ghostty_validation_profile" "$ghostty_validation_config"
 "$system_closure/sw/bin/ghostty" +validate-config \
   --config-file="$ghostty_validation_config"
-grep -qF 'background = #0B0D0C' "$ghostty_appearance"
-grep -qF 'palette = 2=#67B87A' "$ghostty_appearance"
-
-grep -qF 'initial-command = direct:/run/current-system/sw/bin/bash' "$ghostty_config"
-grep -qF 'command = direct:/run/current-system/sw/bin/ghostty-surface-shell' "$ghostty_config"
-grep -qF 'shell-integration = bash' "$ghostty_config"
-grep -qF 'shell-integration-features = ssh-env' "$ghostty_config"
 for ghostty_helper in ghostty-profile ghostty-surface-profile ghostty-surface-shell; do
   [[ -x $system_closure/sw/bin/$ghostty_helper ]]
 done
-[[ ! -e $system_closure/sw/bin/ghostty-split-profile ]]
 ghostty_profile_launcher=$system_closure/sw/share/applications/ghostty-profile.desktop
 [[ -r $ghostty_profile_launcher ]]
 grep -qF 'X-KDE-Shortcuts=Meta+Shift+Return' "$ghostty_profile_launcher"
-if grep -qF 'ghostty-split-profile' "$hyprland_config"; then
-  printf 'The Hyprland-only Ghostty split hook is still configured.\n' >&2
-  exit 1
-fi
 
 printf 'Checking ckb-next in the built default system...\n'
 [[ -x $system_closure/sw/bin/ckb-next ]]

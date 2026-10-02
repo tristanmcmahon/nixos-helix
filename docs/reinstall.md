@@ -8,7 +8,8 @@ A future reinstall is a separate destructive project, not part of an ordinary
 Helix rebuild. This repository contains no partitioning or formatting command.
 The tools live in `scripts/reinstall/` behind one entry point,
 `./scripts/helix-reinstall.sh` (run it with `--help` for the commands). For
-routine nightly backups see [backup.md](backup.md).
+routine nightly backups see [backup.md](backup.md). The scripts read host facts (user, checkout,
+NAS share, GAMES_NVME) from `config/` through `scripts/reinstall/facts.sh`.
 
 Run `./scripts/helix-reinstall.sh preflight` on the current installation first; it is
 read-only and never labels a disk safe to erase.

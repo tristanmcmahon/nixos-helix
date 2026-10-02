@@ -108,5 +108,8 @@ ollama ps
 After activation, run a representative model and use `ollama ps` plus `nvidia-smi` in another terminal
 to verify actual GPU use. Successful evaluation alone does not prove that
 inference is GPU-accelerated. Helix sets `OLLAMA_CONTEXT_LENGTH=32768` for the
-service. Quantisation and keep-alive policy remain at Ollama defaults until
-measurements demonstrate a problem.
+service, with flash attention (`OLLAMA_FLASH_ATTENTION=1`) and an 8-bit KV
+cache (`OLLAMA_KV_CACHE_TYPE=q8_0`). At that context length the cache is a large
+share of the 16 GB of VRAM; halving it keeps more of each model on the GPU.
+Compare `ollama ps` (the GPU/CPU split) before and after a model loads to see
+the effect. Keep-alive policy remains at the Ollama default.
