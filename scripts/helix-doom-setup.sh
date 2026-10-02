@@ -90,6 +90,7 @@ if jq -e 'type == "object"' "$doomrunner_options" >/dev/null 2>&1; then
   core_base=$(jq -c . "$doomrunner_options")
 fi
 core_tmp=$(mktemp "$doomrunner_data_dir/options.json.XXXXXX")
+trap 'rm -f "$core_tmp"' EXIT
 jq -n \
   --argjson base "$core_base" \
   --arg home "$HOME" \

@@ -180,7 +180,7 @@ in
           job_name = "helix-system";
           static_configs = [
             {
-              targets = [ "127.0.0.1:9100" ];
+              targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.node.port}" ];
               labels.instance = "helix";
             }
           ];
@@ -189,7 +189,7 @@ in
           job_name = "helix-nvidia";
           static_configs = [
             {
-              targets = [ "127.0.0.1:9835" ];
+              targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.nvidia-gpu.port}" ];
               labels.instance = "helix";
             }
           ];
@@ -199,7 +199,7 @@ in
           scrape_interval = "2m";
           static_configs = [
             {
-              targets = [ "127.0.0.1:9633" ];
+              targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.smartctl.port}" ];
               labels.instance = "helix";
             }
           ];
@@ -249,7 +249,7 @@ in
               uid = "helix-prometheus";
               type = "prometheus";
               access = "proxy";
-              url = "http://127.0.0.1:9090";
+              url = "http://127.0.0.1:${toString config.services.prometheus.port}";
               isDefault = true;
               editable = false;
               jsonData = {

@@ -28,12 +28,43 @@ let
     slate = builtins.readFile ../config/ghostty/profiles/slate.ghostty;
     ember = builtins.readFile ../config/ghostty/profiles/ember.ghostty;
   };
-  profileNames = [
-    "main"
-    "moss"
-    "slate"
-    "ember"
+  # One table drives both choosers; the first word of each menu line is the
+  # profile name.
+  profileMenu = [
+    {
+      name = "main";
+      surface = "Main  · graphite / fern";
+      profile = "Main   · JetBrains Mono · follows the Helix theme";
+    }
+    {
+      name = "moss";
+      surface = "Moss  · softer green";
+      profile = "Moss   · Maple Mono     · softer green";
+    }
+    {
+      name = "slate";
+      surface = "Slate · cool graphite";
+      profile = "Slate  · Iosevka        · cool graphite";
+    }
+    {
+      name = "ember";
+      surface = "Ember · warm graphite";
+      profile = "Ember  · Monaspace Neon · warm graphite";
+    }
   ];
+  profileNames = map (entry: entry.name) profileMenu;
+  # Shell that shows a menu of `field` labels and sets $profile to the chosen
+  # name, or to the empty string when cancelled.
+  chooseProfile = field: prompt: ''
+    selection=$(printf '%s\n' ${lib.escapeShellArgs (map (entry: entry.${field}) profileMenu)} |
+      helix-menu --dmenu --prompt=${lib.escapeShellArg prompt} || true)
+    profile=''${selection%% *}
+    profile=''${profile,,}
+    case $profile in
+      ${lib.concatStringsSep "|" profileNames}) ;;
+      *) profile= ;;
+    esac
+  '';
 
   # The OSC 10/11/12 (foreground, background, cursor) and OSC 4 (palette)
   # sequences that recolour one surface, derived from a profile's own values.
@@ -94,21 +125,7 @@ let
       ghosttySurfaceProfile
     ];
     text = ''
-      selection=$(printf '%s\n' \
-        'Main  · graphite / fern' \
-        'Moss  · softer green' \
-        'Slate · cool graphite' \
-        'Ember · warm graphite' |
-        helix-menu --dmenu --prompt='New Ghostty surface: ' || true)
-
-      case "$selection" in
-        Main*) profile=main ;;
-        Moss*) profile=moss ;;
-        Slate*) profile=slate ;;
-        Ember*) profile=ember ;;
-        *) profile= ;;
-      esac
-
+      ${chooseProfile "surface" "New Ghostty surface: "}
       if [[ -n "$profile" ]]; then
         ghostty-surface-profile "$profile"
       fi
@@ -126,20 +143,8 @@ let
       pkgs.systemd
     ];
     text = ''
-      selection=$(printf '%s\n' \
-        'Main   · JetBrains Mono · follows the Helix theme' \
-        'Moss   · Maple Mono     · softer green' \
-        'Slate  · Iosevka        · cool graphite' \
-        'Ember  · Monaspace Neon · warm graphite' |
-        helix-menu --dmenu --prompt='Ghostty profile: ' || true)
-
-      case "$selection" in
-        Main*) profile=main ;;
-        Moss*) profile=moss ;;
-        Slate*) profile=slate ;;
-        Ember*) profile=ember ;;
-        *) exit 0 ;;
-      esac
+      ${chooseProfile "profile" "Ghostty profile: "}
+      [[ -n $profile ]] || exit 0
 
       config_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/ghostty"
       mkdir -p "$config_dir"
