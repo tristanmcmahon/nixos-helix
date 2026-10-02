@@ -9,9 +9,6 @@ import sys
 
 root = pathlib.Path(__file__).resolve().parent.parent
 entry = root / "configuration.nix"
-dormant_roots: set[pathlib.Path] = {
-    (root / "packages/chatgpt.nix").resolve(),
-}
 module_dirs = ("hardware", "desktop", "system", "services", "profiles", "packages", "shell")
 maintained = {
     path.resolve()
@@ -31,7 +28,7 @@ def imports(path: pathlib.Path) -> list[pathlib.Path]:
 reachable: set[pathlib.Path] = set()
 edges: list[tuple[pathlib.Path, pathlib.Path]] = []
 external_imports: list[tuple[pathlib.Path, pathlib.Path]] = []
-pending = [entry.resolve(), *sorted(dormant_roots)]
+pending = [entry.resolve()]
 while pending:
     parent = pending.pop()
     if parent in reachable:

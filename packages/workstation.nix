@@ -15,8 +15,8 @@
     eza
     jq
     yq-go
-    htop
-    btop
+    # One CPU/process monitor; nvtop covers the GPU (hardware-tools.nix).
+    bottom
     fastfetch
 
     # Native Wayland clipboard tools. Keep macOS-compatible command names

@@ -20,7 +20,6 @@ assert config.systemd.oomd.enable;
 assert config.systemd.oomd.enableRootSlice;
 assert config.systemd.oomd.enableUserSlices;
 assert !config.systemd.oomd.enableSystemSlice;
-assert !(builtins.elem "chatgpt" packageNames);
 assert builtins.elem "adwsteamgtk" packageNames;
 assert builtins.elem "doomrunner" packageNames;
 assert builtins.elem "gzdoom" packageNames;

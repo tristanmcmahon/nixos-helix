@@ -23,10 +23,6 @@ in
     zedAgentSetup
     (callPackage ./hamllm.nix { })
 
-    bottom
-    ripgrep
-    fd
-    bat
     fzf
     dust
 

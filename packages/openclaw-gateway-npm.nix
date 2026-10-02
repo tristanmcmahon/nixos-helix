@@ -4,6 +4,7 @@
   buildNpmPackage,
   nodejs_22,
   nodejs-slim_22,
+  sqlite,
   makeWrapper,
   sourceInfo,
   bundledAcpx,
@@ -11,18 +12,24 @@
 }:
 
 let
-  # NixOS 26.05 links Node 22 against the shared nixpkgs SQLite 3.51.2, which
-  # OpenClaw rejects because of the SQLite WAL-reset corruption bug. Keep Node
-  # 22 but build it with its bundled SQLite. The assertion below fails loudly
-  # if nixpkgs stops passing the shared-SQLite flags, so this override can then
-  # be removed rather than silently becoming a no-op.
+  # NixOS 26.05 links Node 22 against the shared nixpkgs SQLite, and SQLite
+  # before 3.51.3 has the WAL-reset corruption bug that OpenClaw rejects. Only
+  # while both hold, build Node with its bundled SQLite instead. Once nixpkgs
+  # ships a fixed SQLite (or stops sharing it), this falls back to the cached
+  # nodejs_22 automatically and the source build of Node disappears.
   isSharedSqliteFlag = flag: lib.hasPrefix "--shared-sqlite" flag;
-  openclawNodeSlim = nodejs-slim_22.overrideAttrs (old: {
-    configureFlags = builtins.filter (flag: !(isSharedSqliteFlag flag)) old.configureFlags;
-  });
-  openclawNode = nodejs_22.override {
-    nodejs-slim = openclawNodeSlim;
-  };
+  needsBundledSqlite =
+    builtins.any isSharedSqliteFlag nodejs-slim_22.configureFlags
+    && lib.versionOlder sqlite.version "3.51.3";
+  openclawNode =
+    if needsBundledSqlite then
+      nodejs_22.override {
+        nodejs-slim = nodejs-slim_22.overrideAttrs (old: {
+          configureFlags = builtins.filter (flag: !(isSharedSqliteFlag flag)) old.configureFlags;
+        });
+      }
+    else
+      nodejs_22;
   buildNpmPackageForOpenClaw = buildNpmPackage.override {
     nodejs = openclawNode;
   };
@@ -31,8 +38,6 @@ let
   lockedVersion = lock.packages."node_modules/openclaw".version or null;
 in
 
-assert lib.assertMsg (builtins.any isSharedSqliteFlag nodejs-slim_22.configureFlags)
-  "nodejs-slim_22 no longer uses shared SQLite; remove the OpenClaw bundled-SQLite override";
 assert lib.assertMsg (lockedVersion == sourceInfo.releaseVersion)
   "OpenClaw npm lock version ${toString lockedVersion} does not match OpenClaw ${sourceInfo.releaseVersion}";
 assert lib.assertMsg (
