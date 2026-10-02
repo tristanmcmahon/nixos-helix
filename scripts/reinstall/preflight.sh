@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 root_channel=/nix/var/nix/profiles/per-user/root/channels/nixos
 expected_release=$(nix-instantiate --eval --raw -E "(import $repo_root/release.nix).nixosRelease")
 state_version=$(nix-instantiate --eval --raw -E "(import $repo_root/release.nix).stateVersion")
@@ -107,7 +107,7 @@ printf '%s\n' \
   'the preceding two paths are the only additional /etc identities preserved' \
   'repository commit and any uncommitted patch' \
   'browser data, Obsidian vaults, and all other non-reproducible local data'
-printf '\nRequired backup command: scripts/backup-for-reinstall.sh\n'
+printf '\nRequired backup command: scripts/helix-reinstall.sh backup\n'
 printf 'Fixed destination: /mnt/infernalnexus/nas1/backup\n'
 printf '\nPRE-WIPE BOOTSTRAP GATE\n'
 printf '%s\n' \

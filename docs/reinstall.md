@@ -6,7 +6,11 @@ separate installer configuration or pre/post-install state-version bridge.
 
 A future reinstall is a separate destructive project, not part of an ordinary
 Helix rebuild. This repository contains no partitioning or formatting command.
-Run `./scripts/reinstall-preflight.sh` on the current installation first; it is
+The tools live in `scripts/reinstall/` behind one entry point,
+`./scripts/helix-reinstall.sh` (run it with `--help` for the commands). For
+routine nightly backups see [backup.md](backup.md).
+
+Run `./scripts/helix-reinstall.sh preflight` on the current installation first; it is
 read-only and never labels a disk safe to erase.
 
 A wiped installation using the NixOS 26.05 installer installs only 26.05.
@@ -52,7 +56,7 @@ the existing Infernalnexus CIFS share at `/mnt/infernalnexus/nas1/backup`:
 
 ```bash
 cd /home/tristan/Projects/nixos-helix
-./scripts/backup-for-reinstall.sh
+./scripts/helix-reinstall.sh backup
 ```
 
 The script refuses an unmounted directory or any source other than
@@ -119,7 +123,7 @@ Close GParted, then run the repository's short read-only check:
 git clone https://github.com/tristanmcmahon/nixos-helix.git /tmp/nixos-helix-install
 git -C /tmp/nixos-helix-install checkout APPROVED_COMMIT
 cd /tmp/nixos-helix-install
-./scripts/check-install-storage.sh
+./scripts/helix-reinstall.sh check-storage
 ```
 
 It verifies labels, types, the protected UUID, approximate ESP size, common OS
@@ -163,7 +167,7 @@ sudo install -m 0444 /mnt/etc/nixos/hardware-configuration.nix \
   | sudo tee hardware-configuration.nix.sha256)
 git -C /tmp/nixos-helix-install rev-parse HEAD \
   | sudo tee /mnt/var/lib/helix-install/approved-commit
-/tmp/nixos-helix-install/scripts/verify-hardware-continuity.sh \
+/tmp/nixos-helix-install/scripts/helix-reinstall.sh verify-hardware \
   /tmp/nixos-helix-install/hardware-configuration.nix \
   /mnt/etc/nixos/hardware-configuration.nix \
   /mnt/var/lib/helix-install/hardware-configuration.nix
@@ -233,7 +237,7 @@ git clone https://github.com/tristanmcmahon/nixos-helix.git ~/Projects/nixos-hel
 cd ~/Projects/nixos-helix
 git checkout "$(cat /var/lib/helix-install/approved-commit)"
 cp /var/lib/helix-install/hardware-configuration.nix hardware-configuration.nix
-./scripts/verify-hardware-continuity.sh \
+./scripts/helix-reinstall.sh verify-hardware \
   /var/lib/helix-install/hardware-configuration.nix \
   /etc/nixos/hardware-configuration.nix hardware-configuration.nix
 git switch -c hardware/helix-reinstall
@@ -263,7 +267,7 @@ restore. The restore replaces this bootstrap file with the backed-up exact
 credential.
 
 ```bash
-./scripts/restore-after-reinstall.sh helix-reinstall-YYYYMMDD-HHMMSS
+./scripts/helix-reinstall.sh restore helix-reinstall-YYYYMMDD-HHMMSS
 ```
 
 Review the checksum, archive, collision, home-state and session results. Log out
@@ -271,7 +275,7 @@ of Plasma and all other graphical sessions for Tristan, switch to a text console
 then run the exact command printed by the plan:
 
 ```bash
-./scripts/restore-after-reinstall.sh helix-reinstall-YYYYMMDD-HHMMSS --run
+./scripts/helix-reinstall.sh restore helix-reinstall-YYYYMMDD-HHMMSS --run
 ```
 
 If the fresh home contains more than shell skeleton files and the canonical
@@ -307,7 +311,7 @@ Reboot after the canonical restore, then run postflight:
 sudo reboot
 # After logging in locally following the reboot:
 cd ~/Projects/nixos-helix
-./scripts/reinstall-postflight.sh
+./scripts/helix-reinstall.sh postflight
 ```
 
 The reboot makes the restored SSH host keys and NetworkManager connection state

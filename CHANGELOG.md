@@ -1,4 +1,22 @@
-# Alpha 5
+# Changelog
+
+Release notes for Helix. Operating guides live in `docs/`.
+
+## Unreleased
+
+- Claude Code and its Zed agent adapter in the development profile, with
+  `helix-zed-agent-setup` and `CLAUDE.md` (#84).
+- OpenClaw: Node with bundled SQLite (rejects the WAL-reset-affected shared
+  SQLite) and a writable runtime config copy (#84, #85).
+- Roadmap Phases 0–5 (#86): defect fixes, `config/helix.nix` host facts and
+  `lib/helix.nix` helpers, `helix.<feature>.enable` for every feature, a
+  generated health gate, the palette-driven theme pipeline (Fuzzel now follows
+  the theme), and Nixpkgs pinned in `nixpkgs.json`.
+- Roadmap Phase 6: nightly restic backups to Infernalnexus, the reinstall suite
+  behind `scripts/helix-reinstall.sh`, one vendor provenance manifest, and an
+  explicit unfree-package allowlist.
+
+## v0.3.0-alpha.5
 
 Release target: `v0.3.0-alpha.5`
 
@@ -6,7 +24,7 @@ Alpha 5 is a substantial workstation checkpoint after Alpha 4. The most
 important operational change is that **Helix now uses the Pi-hole on
 `infernalnexus` as its normal system DNS resolver**.
 
-## Important DNS behaviour change
+### Important DNS behaviour change
 
 Helix enables:
 
@@ -37,7 +55,7 @@ Runtime qualification completed on 2026-09-26:
 Rollback is explicit: set `helix.networking.pihole.enable = false` and rebuild,
 or switch to the previous NixOS generation.
 
-## Other Alpha 5 highlights
+### Other Alpha 5 highlights
 
 Since Alpha 4, Helix has also gained:
 
@@ -64,7 +82,7 @@ Since Alpha 4, Helix has also gained:
   rebuilding CUDA/MAME, while `scripts/check.sh --full` remains the explicit
   release gate for the complete workstation closure.
 
-## Pi-hole ownership boundary
+### Pi-hole ownership boundary
 
 Pi-hole container lifecycle remains owned by `hamology`. Private DNS and
 ingress policy live in `hamFence`. This repository owns only Helix's client-side
@@ -78,7 +96,7 @@ hamFence     -> private DNS names + DSM ingress policy
 nixos-helix  -> chooses Pi-hole as Helix's system resolver
 ```
 
-## Validation
+### Validation
 
 Before switching Alpha 5:
 
@@ -119,3 +137,8 @@ Alpha 5 remains an alpha: the repository deliberately keeps some subsystem
 qualification work open, notably sustained NAS SMB testing and the evolving
 emulation workflow. Those are documented operational limits rather than hidden
 release blockers.
+
+## Earlier releases
+
+`v0.3.0-alpha.4`, `v0.3.0-alpha.3`, `v0.2.0` and `v0.1.0` are recorded as Git
+tags; see their commit history.

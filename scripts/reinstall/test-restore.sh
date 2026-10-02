@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-restore_script=$repo_root/scripts/restore-after-reinstall.sh
+repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
+restore_script=$repo_root/scripts/reinstall/restore.sh
 test_base=$(mktemp -d --tmpdir=/tmp)
 trap 'rm -rf -- "$test_base"' EXIT
 backup_root=$test_base/backup

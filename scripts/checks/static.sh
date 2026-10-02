@@ -41,7 +41,7 @@ pinned_selection=$(
 
 printf 'Checking Nix formatting...\n'
 PYTHONPYCACHEPREFIX=$temporary_directory \
-  python3 -m py_compile scripts/*.py
+  python3 -m py_compile scripts/*.py scripts/reinstall/*.py
 
 while IFS= read -r nix_file; do
   temporary_file="$temporary_directory/${nix_file//\//_}"
@@ -57,12 +57,13 @@ done < <(find . -name '*.nix' -type f ! -name hardware-configuration.nix -print 
 printf 'Checking shell syntax...\n'
 mapfile -t shell_files < <(find scripts -type f -name '*.sh' -print | sort)
 bash -n "${shell_files[@]}"
-mapfile -t top_level_shell_files < <(find scripts -maxdepth 1 -type f -name '*.sh' -print | sort)
+# scripts/checks holds sourced fragments; everything else is checked directly.
+mapfile -t top_level_shell_files < <(find scripts scripts/reinstall -maxdepth 1 -type f -name '*.sh' -print | sort)
 
 if grep -Eq '\b(mkfs|parted|fdisk|sgdisk|wipefs|mount|umount|swapon|swapoff|mkswap|e2label|fatlabel)\b' \
-  scripts/backup-for-reinstall.sh scripts/reinstall-preflight.sh \
-  scripts/reinstall-postflight.sh scripts/restore-after-reinstall.sh \
-  scripts/check-install-storage.sh; then
+  scripts/reinstall/backup.sh scripts/reinstall/preflight.sh \
+  scripts/reinstall/postflight.sh scripts/reinstall/restore.sh \
+  scripts/reinstall/check-storage.sh; then
   printf 'A destructive storage command entered a read-only reinstall helper.\n' >&2
   exit 1
 fi
@@ -83,7 +84,6 @@ if grep -RqiE 'arcade|mame' profiles/emulation.nix profiles/emulation; then
   printf 'Generic Helix emulation regained arcade/MAME ownership; arcade belongs to hamCade.\n' >&2
   exit 1
 fi
-grep -qF '1d5a2bbc315e617b3062641cbbde1f549f78d065' vendor/hamcade/dependencies.nix
 
 printf 'Checking Git whitespace...\n'
 git diff --check
@@ -106,12 +106,23 @@ if git grep -Il '' -- ':!.git' | xargs grep -El \
   exit 1
 fi
 
+printf 'Checking vendored snapshot provenance...\n'
+python3 - <<'PY'
+import json, pathlib, re
+sources = json.loads(pathlib.Path("vendor/sources.json").read_text(encoding="utf-8"))
+for name, source in sources.items():
+    assert re.fullmatch(r"[0-9a-f]{40}", source["commit"]), name
+    for path in source["paths"]:
+        assert (pathlib.Path("vendor") / name / path).exists(), f"vendor/{name}/{path}"
+assert sorted(sources) == sorted(p.name for p in pathlib.Path("vendor").iterdir() if p.is_dir())
+PY
+
 printf 'Validating the Helix theme family and merge fixtures...\n'
 python3 scripts/test-theme-settings.py
 python3 scripts/test-fan-commission.py
 python3 scripts/test-zed-agent-setup.py
 python3 -m json.tool config/monitoring/helix-overview.json >/dev/null
 
-./scripts/test-reinstall-safety.sh
-./scripts/test-reinstall-restore.sh
+./scripts/reinstall/test-safety.sh
+./scripts/reinstall/test-restore.sh
 

@@ -1,4 +1,9 @@
-{ config, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   release = import ./release.nix;
@@ -42,6 +47,7 @@ in
     ./system/memory-pressure.nix
     ./system/commands.nix
     ./services/maintenance.nix
+    ./services/backup.nix
     ./services/monitoring.nix
     ./services/netdata.nix
     ./services/hamsteam.nix
@@ -79,10 +85,40 @@ in
     };
   };
 
-  # NVIDIA's user-space driver is redistributable but not free software, so
-  # Nixpkgs will refuse to evaluate it unless unfree packages are permitted.
-  # This does not install CUDA or any other compute/development stack.
-  nixpkgs.config.allowUnfree = true;
+  # Unfree software is allowed by name, so each new unfree package is a
+  # deliberate choice: evaluation refuses anything not listed here.
+  nixpkgs.config.allowUnfreePredicate =
+    pkg:
+    let
+      names = [
+        (lib.getName pkg)
+        (builtins.parseDrvName (pkg.name or "")).name
+      ];
+      allowed = [
+        # NVIDIA driver and settings (hardware/nvidia.nix)
+        "nvidia-x11"
+        "nvidia-settings"
+        # Desktop applications
+        "1password"
+        "1password-cli"
+        "google-chrome"
+        "obsidian"
+        "plex-desktop"
+        "spotify"
+        "vscode"
+        "claude-code"
+        # Gaming and emulation
+        "steam"
+        "steam-unwrapped"
+        "rpcs3"
+        # Netdata's bundled dashboard
+        "netdata"
+      ];
+      # CUDA, for the CUDA build of Ollama (profiles/local-llm.nix); its
+      # library names carry the CUDA version, so allow the family.
+      isCuda = name: name == "cuda-merged" || builtins.match "cuda[0-9.]+-.*" name != null;
+    in
+    builtins.any (name: builtins.elem name allowed || isCuda name) names;
 
   # This is the compatibility floor from Helix's 26.05 fresh installation,
   # not the currently selected channel. Keep it unchanged across upgrades.

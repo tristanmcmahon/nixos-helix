@@ -49,8 +49,8 @@ done
   exit 1
 }
 
-repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-validator=$repo_root/scripts/validate-reinstall-restore.py
+repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
+validator=$repo_root/scripts/reinstall/validate-restore.py
 for command in python3 sha256sum ssh-keygen tar; do
   command -v "$command" >/dev/null || {
     printf 'FAIL: required command is unavailable: %s\n' "$command" >&2
@@ -99,7 +99,7 @@ if [[ $run_restore == true && $test_mode != 1 ]]; then
   if [[ $EUID -ne 0 ]]; then
     arguments=("$set_name" --run)
     [[ $merge_existing == true ]] && arguments+=(--merge-existing-home)
-    exec sudo -- "$repo_root/scripts/restore-after-reinstall.sh" "${arguments[@]}"
+    exec sudo -- "$repo_root/scripts/reinstall/restore.sh" "${arguments[@]}"
   fi
 fi
 
@@ -552,5 +552,5 @@ printf '%s\n' \
   "Report: $report" \
   'Deliberately not restored: hardware configuration, UUIDs, bootloader, Nix store, profiles, generations and inventories.' \
   'Do not rely on remote SSH until after the required reboot.' \
-  'Next: reboot so restored SSH and NetworkManager identity is authoritative, then run ./scripts/reinstall-postflight.sh.' \
+  'Next: reboot so restored SSH and NetworkManager identity is authoritative, then run ./scripts/reinstall/postflight.sh.' \
   'Retain the NAS backup until postflight passes.'

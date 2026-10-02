@@ -13,7 +13,7 @@ if [[ $# -ne 0 ]]; then
   exit 2
 fi
 
-repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 [[ $repo_root == "$canonical_repo" ]] || {
   printf 'FAIL: run the script from the canonical checkout: %s\n' "$canonical_repo" >&2
   exit 1
@@ -24,7 +24,7 @@ repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 }
 
 if [[ $EUID -ne 0 ]]; then
-  exec sudo -- "$repo_root/scripts/backup-for-reinstall.sh"
+  exec sudo -- "$repo_root/scripts/reinstall/backup.sh"
 fi
 
 for command in blkid bootctl df findmnt git lsblk nix-env nixos-version \
@@ -313,13 +313,13 @@ for expected_path in home/tristan/.config/ home/tristan/.ssh/ home/tristan/Proje
   }
 done
 tar -tf "$incomplete_path/etc-nixos-secrets.tar" >/dev/null
-python3 "$repo_root/scripts/validate-reinstall-restore.py" archive \
+python3 "$repo_root/scripts/reinstall/validate-restore.py" archive \
   "$incomplete_path/home-tristan.tar" home/tristan >/dev/null
-python3 "$repo_root/scripts/validate-reinstall-restore.py" archive \
+python3 "$repo_root/scripts/reinstall/validate-restore.py" archive \
   "$incomplete_path/etc-nixos-secrets.tar" etc/nixos/secrets >/dev/null
-python3 "$repo_root/scripts/validate-reinstall-restore.py" machine-identity \
+python3 "$repo_root/scripts/reinstall/validate-restore.py" machine-identity \
   "$incomplete_path/machine-identity.tar" >/dev/null
-python3 "$repo_root/scripts/validate-reinstall-restore.py" fingerprints \
+python3 "$repo_root/scripts/reinstall/validate-restore.py" fingerprints \
   "$incomplete_path/ssh-host-key-fingerprints.txt" \
   "$incomplete_path/machine-identity.tar" >/dev/null
 

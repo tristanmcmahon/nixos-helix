@@ -1,0 +1,29 @@
+{
+  "hamcade": {
+    "repository": "tristanmcmahon/hamCade",
+    "commit": "1d5a2bbc315e617b3062641cbbde1f549f78d065",
+    "paths": [
+      "dependencies.nix"
+    ]
+  },
+  "hamllm": {
+    "repository": "tristanmcmahon/hamLLM",
+    "commit": "4f2f931226a677241d829a227a7c7a8fe03a8943",
+    "paths": [
+      "pyproject.toml",
+      "README.md",
+      "src/hamllm"
+    ]
+  },
+  "modern-bash": {
+    "repository": "tristanmcmahon/modern-bash",
+    "commit": "55b1c4de6bc47e14285d55f6a1dfdf9fb494e806",
+    "paths": [
+      "bin/modern-bash",
+      "docs/configuration.md",
+      "docs/engineering-principles.md",
+      "scripts/install.bash",
+      "src"
+    ]
+  }
+}
