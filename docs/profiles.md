@@ -23,7 +23,7 @@ publishing tools.
 ### Development
 
 `profiles/development.nix` is an explicit enable/disable boundary for editors,
-GitHub publishing tools, Codex, compilers, runtimes, the Nix language server and
+GitHub publishing tools, Codex, Claude Code and its Zed ACP adapter, compilers, runtimes, the Nix language server and
 formatter, and ShellCheck. It remains separate even though it currently adds no
 system service policy.
 

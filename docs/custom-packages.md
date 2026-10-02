@@ -21,7 +21,11 @@ package at a time, build it against the maintained NixOS release, run
 - nix-openclaw is pinned to commit
   `d3760a6f103642f11e24bc01ee9aec80a0153774` / OpenClaw `2026.7.1-2`.
   Helix carries a narrow local definition of the upstream npm gateway package
-  so the wrapper lock is read as a path during non-flake evaluation. ACPX,
+  so the wrapper lock is read as a path during non-flake evaluation. The
+  gateway runs on Node 22 built with Node's bundled SQLite rather than the
+  nixpkgs shared SQLite 3.51.2, which OpenClaw rejects because of the WAL-reset
+  corruption bug; an evaluation assertion flags the override once nixpkgs no
+  longer needs it. ACPX,
   extended tools, the batteries bundle, source/version pins and dependency
   hashes still come from that immutable upstream revision.
 
