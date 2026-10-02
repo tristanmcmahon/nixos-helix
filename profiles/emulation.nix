@@ -93,8 +93,8 @@ in
     # Vulkan/OpenGL emulators also use, and Steam's controller udev rules.
     assertions = [
       {
-        assertion = config.helix.gaming.enable;
-        message = "helix.emulation requires helix.gaming for 32-bit graphics, audio and controller udev rules.";
+        assertion = config.programs.steam.enable && config.hardware.graphics.enable32Bit;
+        message = "helix.emulation requires helix.gaming (Steam controller udev rules and 32-bit graphics).";
       }
     ];
   };
