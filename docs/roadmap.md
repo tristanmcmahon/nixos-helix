@@ -33,7 +33,8 @@ All five defects and the weekly Release CI schedule from Phase 0 were fixed on
 Status on 2026-10-02: Phases 0–5 are implemented, except the named-invariant
 reporter and the bulk pruning of implementation-mirroring assertions (current
 Nix already names the failing assertion; churning every test line was not worth
-it). Monitoring keeps both stacks, and Hyprland and both Doom engines stay. The
+it). Local Prometheus/Grafana was retired in favour of the Infernalnexus Netdata
+parent, and Hyprland and both Doom engines stay. The
 MAME builds in the hamCade snapshot are hamCade's decision; Helix does not
 change them. Phase 6 is implemented too: nightly restic
 backups, `scripts/helix-reinstall.sh`, `CHANGELOG.md`, `vendor/sources.json` with

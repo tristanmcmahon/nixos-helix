@@ -92,8 +92,8 @@ review.
 ## Central Netdata
 
 Helix runs a loopback-only Netdata Agent as a streaming child of the Netdata parent on
-infernalnexus at `192.168.1.8:19999`. This is additive to the existing Prometheus/Grafana
-long-retention hardware dashboard.
+infernalnexus at `192.168.1.8:19999`. The parent is Helix's only metrics history; the earlier
+local Prometheus/Grafana stack was retired.
 
 The child collects native host/process/filesystem/network/sensor metrics plus explicit NVIDIA,
 SMART and systemd-unit jobs. Its local database is intentionally short-lived RAM storage; the NAS
@@ -111,5 +111,4 @@ the workstation firewall. Use:
 helix-monitor netdata
 ```
 
-or the **Home Monitor** launcher to open the central parent dashboard.
-`helix-monitor dashboard` continues to open the existing local Grafana long-view.
+or the **Helix Monitor** launcher to open the central parent dashboard.

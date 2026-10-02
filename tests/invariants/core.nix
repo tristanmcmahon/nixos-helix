@@ -60,7 +60,6 @@ assert builtins.all (unit: builtins.elem unit config.helix.health.criticalUnits)
   "sshd.service"
   "ollama.service"
   "netdata.service"
-  "prometheus.service"
   "coolercontrold.service"
 ];
 assert config.helix.health.criticalUserUnits == [ "openclaw-gateway.service" ];

@@ -1,58 +1,37 @@
 # Monitoring and fan control
 
-Helix keeps hardware telemetry locally and presents it as one restrained,
-repository-owned dashboard. The suite is enabled by
-`helix.monitoring.enable = true` in `configuration.nix` and can be removed as a
-unit without disturbing the underlying hardware support.
+Helix's metrics history lives on the Netdata parent on Infernalnexus. Helix runs
+a Netdata child that streams to it, plus live cooling control. Both are enabled
+by `helix.monitoring.enable = true` in `configuration.nix` and can be removed as
+a unit without disturbing the underlying hardware support.
 
 ## What runs
 
-- Prometheus listens on `127.0.0.1:9090`, samples every 15 seconds, and retains
-  400 days of history in its persistent state directory.
-- node_exporter listens on `127.0.0.1:9100` and supplies CPU, memory,
-  filesystem, network, disk-I/O, systemd, hwmon temperature, and fan data.
-- nvidia_gpu_exporter listens on `127.0.0.1:9835` and reads the installed
-  NVIDIA driver's `nvidia-smi` for RTX 5080 temperature, utilisation, VRAM,
-  fan, clock, throttle, and power data.
-- smartctl_exporter listens on `127.0.0.1:9633`, discovers local drives, and
-  samples their SMART/NVMe health at a deliberately slower two-minute rate.
-- Grafana listens on `127.0.0.1:3000` and provisions **Helix · Long View** from
-  `config/monitoring/helix-overview.json`. Anonymous viewer access is safe only
-  because the listener and every datasource are loopback-only.
+- Netdata, loopback-only on `127.0.0.1:19999`, collects host, process,
+  filesystem, network, sensor, NVIDIA, SMART and systemd-unit metrics and
+  streams them to the parent on Infernalnexus. Its own database is one hour of
+  RAM; the parent keeps the persistent history. See
+  [operations.md](operations.md#central-netdata) for the stream key.
 - CoolerControl runs its daemon and GUI for sensor inspection and fan curves.
 
-No monitoring port is opened in the firewall. None of the services sends
-telemetry away from Helix, and Grafana's reporting and update checks are
-disabled. Rebuilds and Nix garbage collection do not delete Prometheus history;
-deleting its state directory is a separate, explicit operation.
-
-Grafana's database-encryption key is generated once at first service start and
-kept in its private state directory. The key is referenced through Grafana's
-file provider, so it never enters the world-readable Nix store or this
-repository.
+No monitoring port is opened in the firewall. The earlier local
+Prometheus/Grafana stack was retired in favour of the Infernalnexus parent; an
+invariant keeps it from returning. Its old history in `/var/lib/prometheus2`
+and `/var/lib/grafana` is no longer used and can be deleted by hand.
 
 ## Using it
 
 Launch **Helix Monitor** from Plasma or run:
 
 ```bash
-helix-monitor
+helix-monitor           # the Netdata parent on Infernalnexus
+helix-monitor fans      # CoolerControl
+helix-monitor status    # coolercontrold and netdata
 ```
 
-The dashboard defaults to the last 24 hours, refreshes every 15 seconds, and
-offers useful ranges through one year. Prometheus and CoolerControl are linked
-from the dashboard header. The same helper exposes the two operational views:
-
-```bash
-helix-monitor fans
-helix-monitor status
-```
-
-The dashboard shows live CPU/GPU load, RAM/VRAM, thermal history, fan RPM,
-local storage and network throughput, filesystem capacity, NVMe wear, storage
-temperature, GPU board power, scrape health, and SMART status. A missing panel
-usually means that the underlying device or driver does not expose that metric;
-it is not replaced with guessed data.
+The parent dashboard shows both `infernalnexus` and `helix`. If the NAS is
+offline, the child keeps collecting locally and resumes streaming when it
+returns; Helix itself is unaffected.
 
 ## Automatic fan commissioning
 
@@ -92,9 +71,6 @@ are repository-owned.
 
 ## Validation and rollback
 
-Validate without activation, then try one boot's runtime state before making it
-persistent:
-
 ```bash
 ./scripts/dev-shell.sh --run './scripts/check.sh'
 ./scripts/rebuild.sh dry-build
@@ -102,8 +78,7 @@ persistent:
 helix-monitor status
 ```
 
-Check all three Prometheus targets at `http://localhost:9090/targets`, inspect
-**Helix · Long View**, and confirm CoolerControl sees the expected devices. Use
-`./scripts/rebuild.sh switch` only after those checks. A previous NixOS
+Confirm `helix` appears on the parent dashboard and CoolerControl sees the
+expected devices before `./scripts/rebuild.sh switch`. A previous NixOS
 generation restores the prior service set. `helix-monitor restore` restores the
 pre-commissioning CoolerControl settings as a separate mutable-state rollback.

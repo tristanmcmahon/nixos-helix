@@ -16,6 +16,10 @@ Release notes for Helix. Operating guides live in `docs/`.
   behind `scripts/helix-reinstall.sh`, one vendor provenance manifest, and an
   explicit unfree-package allowlist.
 
+- Local Prometheus/Grafana history retired; the Infernalnexus Netdata parent
+  is Helix's metrics history. Login applies the theme once, rebuilds no longer
+  re-pull Ollama models, zram tuning, and a 20-entry boot menu (#89).
+
 ## v0.3.0-alpha.5
 
 Release target: `v0.3.0-alpha.5`
