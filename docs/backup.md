@@ -23,10 +23,18 @@ The repository password never enters Git or the Nix store. Create it as root,
 and store a copy in 1Password: without it the snapshots cannot be read.
 
 ```bash
-sudo install -m 0600 -o root -g root /dev/null /etc/nixos/secrets/restic-helix
-sudo sh -c 'head -c 32 /dev/urandom | base64 > /etc/nixos/secrets/restic-helix'
+# Refuses to run if a password already exists: replacing it makes every
+# existing snapshot unreadable.
+sudo sh -c 'set -o noclobber; umask 077; head -c 32 /dev/urandom | base64 > /etc/nixos/secrets/restic-helix'
+sudo cat /etc/nixos/secrets/restic-helix   # save this in 1Password now
 sudo systemctl start restic-backups-helix.service   # first run creates the repository
 ```
+
+Never regenerate the password once the repository exists. A run that reports
+"wrong password" followed by "config file already exists" means the password
+file no longer matches the repository: restore the saved password, or, if it
+is lost, move `helix-restic` aside (its snapshots cannot be decrypted) and run
+the service again to start a new repository.
 
 Until the password file exists the unit is skipped, not failed. If the NAS is
 offline the run fails, appears among failed units in `helix-health`, and runs
