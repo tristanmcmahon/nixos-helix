@@ -1,9 +1,3 @@
-# Snapshot of hamCade dependencies.nix from private repo commit
-# 1d5a2bbc315e617b3062641cbbde1f549f78d065.
-#
-# nixos-helix owns this small integration snapshot so evaluation and CI do not
-# depend on a sibling private checkout. The hamCade application itself remains
-# owned by ~/Projects/hamCade and is executed from there at runtime.
 # Canonical hamCade runtime dependency definition. nixos-helix may vendor an
 # exact snapshot for credential-free Nix evaluation/CI, but must not redefine
 # arcade application policy here.

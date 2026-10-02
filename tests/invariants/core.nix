@@ -79,6 +79,8 @@ assert
     "/etc/nixos/secrets"
     "/etc/ssh"
   ];
+# Unfree software is allowed by name only, never wholesale.
+assert !(config.nixpkgs.config.allowUnfree or false);
 assert (config.nixpkgs.config.permittedInsecurePackages or [ ]) == [ ];
 assert builtins.elem "evtest" packageNames;
 assert config.environment.variables.EDITOR == "vim";

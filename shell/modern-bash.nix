@@ -1,10 +1,8 @@
 { pkgs, ... }:
 
 let
-  # Pinned from tristanmcmahon/modern-bash commit
-  # 55b1c4de6bc47e14285d55f6a1dfdf9fb494e806. Keeping the small runtime
-  # snapshot in this repository makes NixOS builds independent of sibling
-  # repository visibility and GitHub credentials.
+  # A vendored snapshot (commit recorded in vendor/sources.json) keeps NixOS
+  # builds independent of sibling repository visibility and GitHub credentials.
   source = ../vendor/modern-bash;
 
   runtime = pkgs.stdenvNoCC.mkDerivation {

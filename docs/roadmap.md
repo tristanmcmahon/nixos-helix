@@ -34,7 +34,10 @@ Status on 2026-10-02: Phases 0–5 are implemented, except the named-invariant
 reporter and the bulk pruning of implementation-mirroring assertions (current
 Nix already names the failing assertion; churning every test line was not worth
 it). Monitoring keeps both stacks, Hyprland and both Doom engines stay, and the
-second MAME build belongs to hamCade. Phase 6 remains open.
+second MAME build belongs to hamCade. Phase 6 is implemented too: nightly restic
+backups, `scripts/helix-reinstall.sh`, `CHANGELOG.md`, `vendor/sources.json` with
+`scripts/vendor-sync.sh`, and an unfree allowlist. hamCade now takes `chdman`
+from its pinned MAME (hamCade#6), so Helix carries one MAME build.
 
 1. **The `--full` release gate has failed since #74.**
    `scripts/checks/monitoring.sh:12` greps `helix-monitor --help` for

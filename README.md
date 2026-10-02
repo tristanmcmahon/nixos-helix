@@ -94,7 +94,7 @@ for disaster recovery and any deliberately planned future reinstall; see
 
 ## Focused guides
 
-- [Alpha 5 release notes](docs/alpha-5.md)
+- [Changelog](CHANGELOG.md)
 - [Architecture and ownership](docs/architecture.md)
 - [Normal installation and recovery](docs/installation.md)
 - [Routine backups](docs/backup.md)

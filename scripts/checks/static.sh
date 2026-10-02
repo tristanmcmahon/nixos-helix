@@ -84,7 +84,6 @@ if grep -RqiE 'arcade|mame' profiles/emulation.nix profiles/emulation; then
   printf 'Generic Helix emulation regained arcade/MAME ownership; arcade belongs to hamCade.\n' >&2
   exit 1
 fi
-grep -qF '1d5a2bbc315e617b3062641cbbde1f549f78d065' vendor/hamcade/dependencies.nix
 
 printf 'Checking Git whitespace...\n'
 git diff --check
@@ -106,6 +105,17 @@ if git grep -Il '' -- ':!.git' | xargs grep -El \
   printf 'A private key or token-shaped value is present in tracked content.\n' >&2
   exit 1
 fi
+
+printf 'Checking vendored snapshot provenance...\n'
+python3 - <<'PY'
+import json, pathlib, re
+sources = json.loads(pathlib.Path("vendor/sources.json").read_text(encoding="utf-8"))
+for name, source in sources.items():
+    assert re.fullmatch(r"[0-9a-f]{40}", source["commit"]), name
+    for path in source["paths"]:
+        assert (pathlib.Path("vendor") / name / path).exists(), f"vendor/{name}/{path}"
+assert sorted(sources) == sorted(p.name for p in pathlib.Path("vendor").iterdir() if p.is_dir())
+PY
 
 printf 'Validating the Helix theme family and merge fixtures...\n'
 python3 scripts/test-theme-settings.py
