@@ -63,6 +63,11 @@ in
           retention = 3600;
         };
 
+        # Helix runs no Nagios-style check scripts. Without its config
+        # directory, which NixOS never creates, scripts.d logs a watch error
+        # every minute.
+        plugins."scripts.d" = "no";
+
         web = {
           "default port" = 19999;
           "bind to" = "127.0.0.1:19999";
