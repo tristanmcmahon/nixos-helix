@@ -20,8 +20,9 @@ Run a single command in the same environment with:
 
 The installed workstation development environment is separately owned by
 `profiles/development.nix` and `packages/development.nix`. That maintained
-system profile contains VS Code, Zed, the Helix editor, hamLLM, GitHub CLI, Git LFS, Codex, Node.js, `nil`,
-compilers, runtimes, and the other daily development tools. Do not expand the
+system profile contains VS Code, Zed, the Helix editor, hamLLM, GitHub CLI, Git
+LFS, Codex, Claude Code and its Zed ACP adapter, Node.js, `nil`, compilers,
+runtimes, and the other daily development tools. Do not expand the
 bootstrap shell to duplicate that workstation profile.
 
 ## Local models and editors
@@ -45,8 +46,12 @@ smaller. Keep personal editor settings under `~/.config/zed/` rather than in
 the system configuration. Local model chat/agent features and edit prediction
 have separate Zed settings.
 
-The Codex CLI is also independent of the editor and uses its own authentication
-and model access. Installing a local Ollama service does not make Codex local.
+The Codex and Claude Code CLIs are independent of the editors and use their own
+authentication and model access. Installing a local Ollama service does not
+make either service-backed agent local.
+
+Helix's editor split is deliberate: VS Code is used with Codex, and Zed is used
+with Claude Code.
 
 ## VS Code and Nix
 
@@ -89,6 +94,40 @@ codex login status
 
 Credentials and `~/.codex` state do not belong in this repository.
 
+## Claude Code
+
+NixOS 26.05 packages Claude Code as `pkgs.claude-code` and its Agent Client
+Protocol adapter as `pkgs.claude-agent-acp`; the development profile installs
+both instead of Anthropic's native installer or a global npm install. The Nix
+package owns updates, so do not run `claude update`.
+
+After switching the system, verify the packaged binary and authenticate
+interactively:
+
+```bash
+claude --version
+claude doctor
+claude
+```
+
+Zed reads `agent_servers` only from user settings, not from a project's
+`.zed/settings.json`. Register the adapter once with the explicit helper:
+
+```bash
+helix-zed-agent-setup
+```
+
+The helper edits only `agent_servers."Claude Code"` in
+`~/.config/zed/settings.json`. It records the PATH-resolved
+`claude-agent-acp` command rather than a `/nix/store` path, which would break
+after garbage collection. It accepts Zed's JSON-with-comments format, refuses
+unparseable settings, writes atomically, and keeps a timestamped backup of the
+original file for every change. The rewritten file does not keep comments; they
+remain in the backup. Rerunning it on configured settings changes nothing.
+
+Repository guidance for Claude sessions lives in `CLAUDE.md`. Authentication
+and `~/.claude` are mutable per-user state and do not belong in Nix or Git.
+
 ## Git and GitHub user state
 
 Run these interactively as the user who will develop on Helix:
@@ -100,8 +139,8 @@ git config --global user.name "Your Name"
 git config --global user.email "you@example.com"
 ```
 
-GitHub authentication, Git LFS filter setup, Git identity, extension state, and
-Codex login are mutable per-user settings. NixOS installs the tools but should
+GitHub authentication, Git LFS filter setup, Git identity, extension state,
+Codex login, Claude Code login, and Zed settings are mutable per-user state. NixOS installs the tools but should
 not own those identities or credentials.
 
 ## Repository checks
