@@ -12,6 +12,9 @@ assert config.services.netdata.config.global.hostname == "helix";
 assert config.services.netdata.config.db.db == "ram";
 assert config.services.netdata.config.db.retention == 3600;
 assert config.services.netdata.config.plugins."scripts.d" == "no";
+# A lightweight child: the parent does anomaly detection and alerting.
+assert config.services.netdata.config.ml.enabled == "no";
+assert config.services.netdata.config.health.enabled == "no";
 assert config.services.netdata.config.web."bind to" == "127.0.0.1:19999";
 assert config.services.netdata.config.web."allow dashboard from" == "localhost";
 assert config.services.netdata.config.web."allow management from" == "localhost";

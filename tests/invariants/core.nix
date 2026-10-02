@@ -33,6 +33,7 @@ assert builtins.elem "helix-health" packageNames;
 assert builtins.elem "helix-update" packageNames;
 assert builtins.elem "helix-git-credential-repair" packageNames;
 assert builtins.elem "gh" packageNames;
+assert !(builtins.elem "zen-browser" packageNames);
 assert builtins.elem "claude-code" packageNames;
 assert builtins.elem "claude-agent-acp" packageNames;
 assert builtins.elem "helix-zed-agent-setup" packageNames;

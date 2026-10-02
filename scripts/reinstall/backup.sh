@@ -2,11 +2,13 @@
 
 set -euo pipefail
 
-canonical_repo=/home/tristan/Projects/nixos-helix
-nas_mount=/mnt/infernalnexus/nas1
-backup_root=/mnt/infernalnexus/nas1/backup
-expected_source=//192.168.1.8/nas1
-backup_user=tristan
+# shellcheck source=scripts/reinstall/facts.sh
+source "$(dirname -- "${BASH_SOURCE[0]}")/facts.sh"
+canonical_repo=$helix_checkout
+nas_mount=$helix_nas_mount
+backup_root=$helix_backup_root
+expected_source=$helix_nas_source
+backup_user=$helix_user
 
 if [[ $# -ne 0 ]]; then
   printf 'Usage: %s\n' "${0##*/}" >&2
@@ -118,7 +120,7 @@ root_device=$(findmnt -nro MAJ:MIN --mountpoint /)
 # 8.2 GiB Steam tree with 4.0 GiB of installed game/runtime payloads. Preserve
 # Steam userdata and compatdata, but exclude installed/downloaded games,
 # workshop payloads and shader caches. Recalculate conservatively every run.
-home_bytes=$(du -sx --bytes --one-file-system /home/tristan | awk '{ print $1 }')
+home_bytes=$(du -sx --bytes --one-file-system "$helix_home" | awk '{ print $1 }')
 secrets_bytes=$(du -sx --bytes --one-file-system /etc/nixos/secrets | awk '{ print $1 }')
 available_bytes=$(df --output=avail -B1 "$backup_root" | tail -n 1 | tr -d ' ')
 required_bytes=$((home_bytes + secrets_bytes + home_bytes / 10 + 1024 * 1024 * 1024))
@@ -177,21 +179,21 @@ nix-env --profile /nix/var/nix/profiles/system --list-generations \
   printf '\nUser profile packages:\n'
   runuser -u "$backup_user" -- nix-env --query --installed || true
 } >"$incomplete_path/package-inventory.txt"
-du -x -h --max-depth=1 /home/tristan | sort -h \
+du -x -h --max-depth=1 "$helix_home" | sort -h \
   >"$incomplete_path/home-size-audit.txt"
 
 ssh_directory=no
 authorized_keys_nonempty=no
 private_key_files=0
-if [[ -d /home/tristan/.ssh ]]; then
+if [[ -d $helix_home/.ssh ]]; then
   ssh_directory=yes
-  if [[ -s /home/tristan/.ssh/authorized_keys ]]; then
+  if [[ -s $helix_home/.ssh/authorized_keys ]]; then
     authorized_keys_nonempty=yes
   fi
   private_key_files=$(
     { grep -IlRE --include='*' \
       '^-----BEGIN (OPENSSH|RSA|EC|DSA) PRIVATE KEY-----' \
-      /home/tristan/.ssh 2>/dev/null || true; } | wc -l
+      "$helix_home/.ssh" 2>/dev/null || true; } | wc -l
   )
 fi
 printf '%s\n' \

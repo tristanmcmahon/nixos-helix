@@ -3,7 +3,9 @@ set -euo pipefail
 
 # Read-only installer check. It never decides whether a disk is safe to erase.
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
-games_uuid=d07ac88e-34f6-4d56-9941-5ceaf52fd6bb
+# shellcheck source=scripts/reinstall/facts.sh
+source "$(dirname -- "${BASH_SOURCE[0]}")/facts.sh"
+games_uuid=$helix_games_uuid
 [[ $# -eq 0 ]] || { printf 'Usage: %s\n' "${0##*/}" >&2; exit 2; }
 if [[ $EUID -ne 0 ]]; then
   exec sudo -- "$0"

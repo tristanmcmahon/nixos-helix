@@ -20,6 +20,10 @@ Release notes for Helix. Operating guides live in `docs/`.
   is Helix's metrics history. Login applies the theme once, rebuilds no longer
   re-pull Ollama models, zram tuning, and a 20-entry boot menu (#89).
 
+- Netdata runs as a lightweight child, Ollama uses flash attention with an
+  8-bit KV cache, duplicated closure checks are pruned, reinstall scripts read
+  host facts from `config/`, and Zen Browser is removed.
+
 ## v0.3.0-alpha.5
 
 Release target: `v0.3.0-alpha.5`

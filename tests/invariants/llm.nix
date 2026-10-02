@@ -3,6 +3,8 @@ let
   inherit (context) config lib system;
 in
 assert config.services.ollama.enable;
+assert config.services.ollama.environmentVariables.OLLAMA_FLASH_ATTENTION == "1";
+assert config.services.ollama.environmentVariables.OLLAMA_KV_CACHE_TYPE == "q8_0";
 # Model pulls happen once per boot or Ollama restart, not on every rebuild.
 assert config.systemd.services.ollama-model-loader.serviceConfig.RemainAfterExit;
 assert config.services.ollama.host == "127.0.0.1";

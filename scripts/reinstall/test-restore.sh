@@ -270,7 +270,7 @@ actual_fingerprint=$(ssh-keygen -lf "$target_ssh_dir/ssh_host_ed25519_key.pub" -
 [[ $(find "$report_root" -name 'restore-*.txt' -type f | wc -l) == 1 ]]
 [[ $(tree_checksum "$backup_root/$valid_name") == "$backup_before_restore" ]]
 
-grep -qxF 'backup_root=/mnt/infernalnexus/nas1/backup' "$restore_script"
+grep -qxF "backup_root=\$helix_backup_root" "$restore_script"
 grep -qF "findmnt -rn --target \"\$nas_mount\" --types cifs" "$restore_script"
 if grep -Eq '\b(mkfs|parted|fdisk|sgdisk|wipefs)\b' "$restore_script"; then
   printf 'A destructive storage command entered the restore script.\n' >&2

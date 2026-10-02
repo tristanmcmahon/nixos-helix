@@ -18,8 +18,13 @@ fi
 
 backup_script=$repo_root/scripts/reinstall/backup.sh
 storage_script=$repo_root/scripts/reinstall/check-storage.sh
-grep -qxF 'backup_root=/mnt/infernalnexus/nas1/backup' "$backup_script"
-grep -qxF 'expected_source=//192.168.1.8/nas1' "$backup_script"
+# Host facts come from config/ via facts.sh, and resolve to the fixed NAS
+# destination and source the backup must refuse to deviate from.
+facts=$(bash -c 'set -euo pipefail; source "$1"; printf "%s|%s|%s\n" "$helix_backup_root" "$helix_nas_source" "$helix_checkout"' \
+  _ "$repo_root/scripts/reinstall/facts.sh")
+[[ $facts == '/mnt/infernalnexus/nas1/backup|//192.168.1.8/nas1|/home/tristan/Projects/nixos-helix' ]]
+grep -qxF "backup_root=\$helix_backup_root" "$backup_script"
+grep -qxF "expected_source=\$helix_nas_source" "$backup_script"
 grep -qF "findmnt -rn --target \"\$nas_mount\" --types cifs" "$backup_script"
 grep -qF "[[ \${#nas_records[@]} -eq 1 ]]" "$backup_script"
 grep -qF "tar --create --file=\"\$incomplete_path/home-tristan.tar\"" "$backup_script"
@@ -41,7 +46,7 @@ done
 for required_file in machine-identity.tar ssh-host-key-fingerprints.txt; do
   grep -qF "$required_file" "$repo_root/scripts/reinstall/postflight.sh"
 done
-grep -qF '/mnt/infernalnexus/nas1/backup' "$repo_root/scripts/reinstall/preflight.sh"
+grep -qF "\"\$helix_backup_root\"" "$repo_root/scripts/reinstall/preflight.sh"
 grep -qF './scripts/helix-reinstall.sh backup' "$repo_root/docs/reinstall.md"
 
 grep -qF 'exec sudo --' "$storage_script"

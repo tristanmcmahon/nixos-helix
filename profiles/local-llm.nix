@@ -51,6 +51,11 @@ in
       openFirewall = false;
       environmentVariables = {
         OLLAMA_CONTEXT_LENGTH = "32768";
+        # At 32k context the KV cache is a large share of the RTX 5080's
+        # 16 GB. Flash attention plus an 8-bit cache roughly halves it, so
+        # more of each model stays on the GPU; q8_0 is close to lossless.
+        OLLAMA_FLASH_ATTENTION = "1";
+        OLLAMA_KV_CACHE_TYPE = "q8_0";
       };
       loadModels = desiredModels;
       syncModels = false;

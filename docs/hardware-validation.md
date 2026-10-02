@@ -146,7 +146,7 @@ These are physical tests; a successful build does not prove they pass.
 - [ ] Ghostty, Konsole, and VS Code use graphite surfaces with restrained fern focus states.
 - [ ] Obsidian follows dark mode or its documented per-vault setting works.
 - [ ] 1Password is dark; Spotify and Plex remain dark.
-- [ ] Firefox, Chrome, Chromium, and Zen browser chrome are dark and websites
+- [ ] Firefox, Chrome and Chromium browser chrome are dark and websites
       report a dark preference.
 - [ ] Dark Reader appears in managed browsers, can be disabled per site, and
       does not blindly invert photographs, video, or PDFs.
@@ -160,7 +160,6 @@ These are physical tests; a successful build does not prove they pass.
 - [ ] System authentication can be enabled.
 - [ ] `op --version` works and CLI integration authenticates through the unlocked app.
 - [ ] Chrome, Chromium, and Firefox extensions appear and connect.
-- [ ] Zen's manually installed official extension connects.
 - [ ] Locking and unlocking is shared where supported.
 - [ ] Managed built-in password prompts no longer compete with 1Password.
 - [ ] Existing browser passwords remain intact.
