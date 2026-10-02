@@ -3,6 +3,7 @@
 let
   stateDirectory = "/home/tristan/.local/state/openclaw";
   workspaceDirectory = "${stateDirectory}/workspace";
+  runtimeConfigFile = "${stateDirectory}/config/openclaw.json";
   repositoryDirectory = "/home/tristan/Projects/nixos-helix";
   emulationDirectory = "/mnt/games_nvme/emulation";
   secretFile = "/home/tristan/.config/openclaw/gateway.env";
@@ -69,7 +70,11 @@ in
 
     environment = {
       HOME = "/home/tristan";
-      OPENCLAW_CONFIG_PATH = openclawConfig;
+      # OpenClaw writes a last-known-good backup beside its config, which fails
+      # with EROFS when the config is read directly from /nix/store. Each start
+      # copies the generated config into the state directory, so Nix remains
+      # authoritative and any runtime edit is discarded on the next start.
+      OPENCLAW_CONFIG_PATH = runtimeConfigFile;
       OPENCLAW_STATE_DIR = stateDirectory;
 
       # OpenClaw's current plugin boundary checks explicitly recognize immutable
@@ -80,7 +85,10 @@ in
 
     serviceConfig = {
       Type = "simple";
-      ExecStartPre = "${pkgs.coreutils}/bin/mkdir -p ${workspaceDirectory}";
+      ExecStartPre = [
+        "${pkgs.coreutils}/bin/mkdir -p ${workspaceDirectory}"
+        "${pkgs.coreutils}/bin/install -D -m 0600 ${openclawConfig} ${runtimeConfigFile}"
+      ];
       ExecStart = "${pkgs.openclaw}/bin/openclaw gateway run";
       EnvironmentFile = secretFile;
       Restart = "on-failure";

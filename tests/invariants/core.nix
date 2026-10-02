@@ -41,6 +41,9 @@ assert !(builtins.elem "codex-acp" packageNames);
 assert builtins.elem "helix-theme" packageNames;
 assert builtins.compareVersions system.pkgs.openclaw.version "2026.6.9" >= 0;
 assert system.pkgs.openclaw.version == "2026.7.1-2";
+# OpenClaw writes beside its config; a /nix/store config path fails with EROFS.
+assert
+  !(system.pkgs.lib.hasPrefix builtins.storeDir config.systemd.user.services.openclaw-gateway.environment.OPENCLAW_CONFIG_PATH);
 assert (config.nixpkgs.config.permittedInsecurePackages or [ ]) == [ ];
 assert builtins.elem "evtest" packageNames;
 assert config.environment.variables.EDITOR == "vim";
