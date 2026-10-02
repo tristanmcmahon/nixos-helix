@@ -2,22 +2,22 @@
 
 set -euo pipefail
 
-repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 temporary_directory=$(mktemp -d)
 trap 'rm -rf -- "$temporary_directory"' EXIT
 
 printf 'hardware\n' >"$temporary_directory/a"
 cp "$temporary_directory/a" "$temporary_directory/b"
-"$repo_root/scripts/verify-hardware-continuity.sh" \
+"$repo_root/scripts/reinstall/verify-hardware.sh" \
   "$temporary_directory/a" "$temporary_directory/b" >/dev/null
 printf 'different\n' >"$temporary_directory/b"
-if "$repo_root/scripts/verify-hardware-continuity.sh" \
+if "$repo_root/scripts/reinstall/verify-hardware.sh" \
   "$temporary_directory/a" "$temporary_directory/b" >/dev/null 2>&1; then
   exit 1
 fi
 
-backup_script=$repo_root/scripts/backup-for-reinstall.sh
-storage_script=$repo_root/scripts/check-install-storage.sh
+backup_script=$repo_root/scripts/reinstall/backup.sh
+storage_script=$repo_root/scripts/reinstall/check-storage.sh
 grep -qxF 'backup_root=/mnt/infernalnexus/nas1/backup' "$backup_script"
 grep -qxF 'expected_source=//192.168.1.8/nas1' "$backup_script"
 grep -qF "findmnt -rn --target \"\$nas_mount\" --types cifs" "$backup_script"
@@ -36,13 +36,13 @@ fi
 
 for required_file in COMPLETE SHA256SUMS BACKUP-README.txt \
   home-tristan.tar etc-nixos-secrets.tar; do
-  grep -qF "$required_file" "$repo_root/scripts/reinstall-postflight.sh"
+  grep -qF "$required_file" "$repo_root/scripts/reinstall/postflight.sh"
 done
 for required_file in machine-identity.tar ssh-host-key-fingerprints.txt; do
-  grep -qF "$required_file" "$repo_root/scripts/reinstall-postflight.sh"
+  grep -qF "$required_file" "$repo_root/scripts/reinstall/postflight.sh"
 done
-grep -qF '/mnt/infernalnexus/nas1/backup' "$repo_root/scripts/reinstall-preflight.sh"
-grep -qF './scripts/backup-for-reinstall.sh' "$repo_root/docs/reinstall.md"
+grep -qF '/mnt/infernalnexus/nas1/backup' "$repo_root/scripts/reinstall/preflight.sh"
+grep -qF './scripts/helix-reinstall.sh backup' "$repo_root/docs/reinstall.md"
 
 grep -qF 'exec sudo --' "$storage_script"
 grep -qF 'installer was not booted in UEFI mode' "$storage_script"
@@ -61,9 +61,9 @@ if grep -Eq '\b(mkfs|parted|fdisk|sgdisk|wipefs|mount|umount|mkswap)\b' \
 fi
 
 if grep -Eq '\b(mkfs|parted|fdisk|sgdisk|wipefs)\b' \
-  "$repo_root/scripts/backup-for-reinstall.sh" \
-  "$repo_root/scripts/reinstall-preflight.sh" \
-  "$repo_root/scripts/reinstall-postflight.sh"; then
+  "$repo_root/scripts/reinstall/backup.sh" \
+  "$repo_root/scripts/reinstall/preflight.sh" \
+  "$repo_root/scripts/reinstall/postflight.sh"; then
   printf 'A destructive storage command entered a reinstall helper.\n' >&2
   exit 1
 fi

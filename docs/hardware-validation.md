@@ -7,8 +7,8 @@ module evaluation does not establish that physical hardware works.
 The read-only inventory script can collect initial evidence:
 
 ```bash
-./scripts/hardware-inventory.sh > "$HOME/helix-hardware.txt"
-sudo ./scripts/hardware-inventory.sh > "$HOME/helix-hardware-root.txt"
+./scripts/helix-reinstall.sh inventory > "$HOME/helix-hardware.txt"
+sudo ./scripts/helix-reinstall.sh inventory > "$HOME/helix-hardware-root.txt"
 ```
 
 Reports may contain UUIDs, MAC addresses, labels, and model information. Review

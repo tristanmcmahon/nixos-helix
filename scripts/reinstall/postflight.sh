@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 expected_release=$(nix-instantiate --eval --raw -E "(import $repo_root/release.nix).nixosRelease")
 expected_state_version=$(nix-instantiate --eval --raw -E "(import $repo_root/release.nix).stateVersion")
 preserved_hardware=/var/lib/helix-install/hardware-configuration.nix
@@ -33,7 +33,7 @@ printf 'Persistent: '; readlink -f /nix/var/nix/profiles/system
 uname -a
 
 printf '\nFilesystems and generated hardware\n'
-"$repo_root/scripts/verify-hardware-continuity.sh" \
+"$repo_root/scripts/reinstall/verify-hardware.sh" \
   "$preserved_hardware" "$repo_root/hardware-configuration.nix" \
   /etc/nixos/hardware-configuration.nix
 (cd /var/lib/helix-install && sha256sum --check hardware-configuration.nix.sha256)

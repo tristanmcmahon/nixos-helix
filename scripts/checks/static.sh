@@ -41,7 +41,7 @@ pinned_selection=$(
 
 printf 'Checking Nix formatting...\n'
 PYTHONPYCACHEPREFIX=$temporary_directory \
-  python3 -m py_compile scripts/*.py
+  python3 -m py_compile scripts/*.py scripts/reinstall/*.py
 
 while IFS= read -r nix_file; do
   temporary_file="$temporary_directory/${nix_file//\//_}"
@@ -57,12 +57,13 @@ done < <(find . -name '*.nix' -type f ! -name hardware-configuration.nix -print 
 printf 'Checking shell syntax...\n'
 mapfile -t shell_files < <(find scripts -type f -name '*.sh' -print | sort)
 bash -n "${shell_files[@]}"
-mapfile -t top_level_shell_files < <(find scripts -maxdepth 1 -type f -name '*.sh' -print | sort)
+# scripts/checks holds sourced fragments; everything else is checked directly.
+mapfile -t top_level_shell_files < <(find scripts scripts/reinstall -maxdepth 1 -type f -name '*.sh' -print | sort)
 
 if grep -Eq '\b(mkfs|parted|fdisk|sgdisk|wipefs|mount|umount|swapon|swapoff|mkswap|e2label|fatlabel)\b' \
-  scripts/backup-for-reinstall.sh scripts/reinstall-preflight.sh \
-  scripts/reinstall-postflight.sh scripts/restore-after-reinstall.sh \
-  scripts/check-install-storage.sh; then
+  scripts/reinstall/backup.sh scripts/reinstall/preflight.sh \
+  scripts/reinstall/postflight.sh scripts/reinstall/restore.sh \
+  scripts/reinstall/check-storage.sh; then
   printf 'A destructive storage command entered a read-only reinstall helper.\n' >&2
   exit 1
 fi
@@ -112,6 +113,6 @@ python3 scripts/test-fan-commission.py
 python3 scripts/test-zed-agent-setup.py
 python3 -m json.tool config/monitoring/helix-overview.json >/dev/null
 
-./scripts/test-reinstall-safety.sh
-./scripts/test-reinstall-restore.sh
+./scripts/reinstall/test-safety.sh
+./scripts/reinstall/test-restore.sh
 
