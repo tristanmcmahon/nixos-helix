@@ -1,8 +1,8 @@
 { pkgs, ... }:
 
 let
-  user = "tristan";
-  home = "/home/${user}";
+  helix = import ../config/helix.nix;
+  inherit (helix) user home;
   repo = "${home}/Projects/hamSteam";
   entrypoint = "${repo}/hamsteam.py";
   serviceImplementation = "${repo}/hamsteam/service.py";

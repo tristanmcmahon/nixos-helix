@@ -52,7 +52,7 @@ lsblk -e7 -o NAME,PATH,SIZE,TYPE,FSTYPE,LABEL,UUID,PARTUUID,MOUNTPOINTS,MODEL,SE
 root=$(one_by_label HELIX_ROOT ext4)
 efi=$(one_by_label HELIX_EFI vfat)
 mapfile -t local_ssd_records < <(
-  nix-instantiate --eval --strict --json "$repo_root/system/local-ssds.nix" |
+  nix-instantiate --eval --strict --json "$repo_root/config/helix.nix" -A ssds |
     python3 -c '
 import json
 import sys

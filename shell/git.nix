@@ -1,6 +1,7 @@
 { pkgs, ... }:
 
 let
+  helix = import ../config/helix.nix;
   gitCredentialRepair = pkgs.writeShellApplication {
     name = "helix-git-credential-repair";
     runtimeInputs = with pkgs; [
@@ -49,7 +50,7 @@ in
   systemd.user.services.helix-git-credential-helper = {
     description = "Keep GitHub Git credentials independent of Nix store paths";
     wantedBy = [ "default.target" ];
-    unitConfig.ConditionUser = "tristan";
+    unitConfig.ConditionUser = helix.user;
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${gitCredentialRepair}/bin/helix-git-credential-repair";

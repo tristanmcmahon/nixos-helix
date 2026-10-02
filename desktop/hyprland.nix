@@ -1,6 +1,7 @@
 { pkgs, ... }:
 
 let
+  helix = import ../config/helix.nix;
   themeSessionStart = pkgs.writeShellApplication {
     name = "helix-hyprland-theme-start";
     runtimeInputs = [
@@ -10,9 +11,9 @@ let
     ];
     text = ''
       /run/current-system/sw/bin/helix-theme random || true
-      swaybg --image /home/tristan/.config/helix/theme/current/wallpaper.svg --mode fill &
-      waybar --style /home/tristan/.config/helix/theme/current/waybar.css &
-      mako --config /home/tristan/.config/helix/theme/current/mako.conf &
+      swaybg --image ${helix.configHome}/helix/theme/current/wallpaper.svg --mode fill &
+      waybar --style ${helix.configHome}/helix/theme/current/waybar.css &
+      mako --config ${helix.configHome}/helix/theme/current/mako.conf &
       wait
     '';
   };
@@ -23,7 +24,7 @@ let
 
     $mainMod = SUPER
     $terminal = ghostty
-    $menu = fuzzel --config /home/tristan/.config/helix/theme/current/fuzzel.ini
+    $menu = fuzzel --config ${helix.configHome}/helix/theme/current/fuzzel.ini
 
     exec-once = helix-hyprland-theme-start
     exec-once = nm-applet --indicator

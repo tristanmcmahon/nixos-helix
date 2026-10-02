@@ -1,6 +1,7 @@
 { pkgs, ... }:
 
 let
+  helix = import ../config/helix.nix;
   themeDirectory = ../config/theme;
   palette = import ../config/theme/palette.nix;
   themes = [
@@ -230,13 +231,13 @@ in
     description = "Apply Tristan's persisted Helix theme";
     wantedBy = [ "graphical-session.target" ];
     after = [ "graphical-session-pre.target" ];
-    unitConfig.ConditionUser = "tristan";
+    unitConfig.ConditionUser = helix.user;
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${helixTheme}/bin/helix-theme --apply-current";
       Environment = [
-        "HOME=/home/tristan"
-        "XDG_CONFIG_HOME=/home/tristan/.config"
+        "HOME=${helix.home}"
+        "XDG_CONFIG_HOME=${helix.configHome}"
       ];
     };
   };

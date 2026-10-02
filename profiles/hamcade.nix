@@ -6,11 +6,12 @@
 }:
 
 let
+  helix = import ../config/helix.nix;
   # This is deliberately a thin Helix adapter. hamCade owns all arcade
   # application policy, curation, audit, media and mutable state.
   cfg = config.helix.hamCade;
   dependencies = import ../vendor/hamcade/dependencies.nix { inherit pkgs; };
-  application = "/home/tristan/Projects/hamCade/hamcade.py";
+  application = "${helix.home}/Projects/hamCade/hamcade.py";
   launcher = pkgs.writeShellApplication {
     name = "hamcade";
     runtimeInputs = [

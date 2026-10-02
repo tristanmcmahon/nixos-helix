@@ -18,6 +18,10 @@ them, and tests that encode the behaviour the workstation must preserve.
 - `services/` owns long-running services and their lifecycle policy.
 - `packages/` defines software sets and repository-owned package definitions.
 - `profiles/` composes packages plus the policy needed for a coherent use case.
+- `config/` holds host facts: `helix.nix` (user, paths, disks) and
+  `infernalnexus.nix` (NAS). Modules import these instead of repeating them.
+- `lib/helix.nix` holds helpers for repeated patterns (mounted-disk
+  directories, Infernalnexus shares).
 - `scripts/` contains operator tooling, validation, and recovery helpers.
 - `tests/` encodes system invariants that must remain true after refactoring.
 - `docs/` explains operating procedures and decisions that cannot be inferred

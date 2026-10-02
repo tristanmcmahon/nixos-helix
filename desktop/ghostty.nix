@@ -1,6 +1,7 @@
 { pkgs, ... }:
 
 let
+  helix = import ../config/helix.nix;
   managedConfig = ../config/ghostty/config.ghostty;
   profiles = {
     main = ../config/ghostty/profiles/main.ghostty;
@@ -154,12 +155,12 @@ in
   systemd.user.services.helix-ghostty-config = {
     description = "Deploy the Helix Ghostty configuration";
     wantedBy = [ "default.target" ];
-    unitConfig.ConditionUser = "tristan";
+    unitConfig.ConditionUser = helix.user;
     serviceConfig = {
       Type = "oneshot";
       Environment = [
-        "HOME=/home/tristan"
-        "XDG_CONFIG_HOME=/home/tristan/.config"
+        "HOME=${helix.home}"
+        "XDG_CONFIG_HOME=${helix.configHome}"
       ];
     };
     script = ''

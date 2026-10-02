@@ -1,10 +1,11 @@
 { pkgs, ... }:
 
 let
-  stateDirectory = "/home/tristan/.local/state/openclaw";
+  helix = import ../config/helix.nix;
+  stateDirectory = "${helix.home}/.local/state/openclaw";
   workspaceDirectory = "${stateDirectory}/workspace";
   runtimeConfigFile = "${stateDirectory}/config/openclaw.json";
-  repositoryDirectory = "/home/tristan/Projects/nixos-helix";
+  repositoryDirectory = helix.checkout;
   repositoryExecutableMetadata = [
     ".git"
     ".vscode"
@@ -12,7 +13,7 @@ let
     ".claude"
   ];
   emulationDirectory = "/mnt/games_nvme/emulation";
-  secretFile = "/home/tristan/.config/openclaw/gateway.env";
+  secretFile = "${helix.configHome}/openclaw/gateway.env";
 
   openclawConfig = (pkgs.formats.json { }).generate "openclaw.json" {
     gateway = {
@@ -72,10 +73,10 @@ in
     wantedBy = [ "default.target" ];
     after = [ "network.target" ];
 
-    unitConfig.ConditionUser = "tristan";
+    unitConfig.ConditionUser = helix.user;
 
     environment = {
-      HOME = "/home/tristan";
+      HOME = helix.home;
       # OpenClaw writes a last-known-good backup beside its config, which fails
       # with EROFS when the config is read directly from /nix/store. Each start
       # copies the generated config into the state directory, so Nix remains

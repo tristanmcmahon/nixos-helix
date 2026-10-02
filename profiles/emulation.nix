@@ -6,6 +6,7 @@
 }:
 
 let
+  helix = import ../config/helix.nix;
   cfg = config.helix.emulation;
   infernalnexus = import ../config/infernalnexus.nix;
   romRoot = infernalnexus.shares.roms.mountPoint;
@@ -66,7 +67,7 @@ in
         description = "Prepare NAS-backed emulation paths for Tristan";
         wantedBy = [ "graphical-session.target" ];
         after = [ "graphical-session-pre.target" ];
-        unitConfig.ConditionUser = "tristan";
+        unitConfig.ConditionUser = helix.user;
         serviceConfig = {
           Type = "oneshot";
           ExecStart = "${prepare}/bin/helix-emulation-prepare";

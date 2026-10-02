@@ -1,11 +1,14 @@
 _:
 
+let
+  helix = import ../config/helix.nix;
+in
 {
   programs._1password.enable = true;
 
   programs._1password-gui = {
     enable = true;
-    polkitPolicyOwners = [ "tristan" ];
+    polkitPolicyOwners = [ helix.user ];
   };
 
   # The inspected AppImage launches its browser process as zen-bin. The

@@ -10,7 +10,7 @@ let
   dashboard = ../config/monitoring/helix-overview.json;
   grafanaSecretFile = "${config.services.grafana.dataDir}/secret_key";
   grafanaUrl = "http://localhost:${toString cfg.grafanaPort}/d/helix-overview";
-  netdataUrl = "http://192.168.1.8:19999/";
+  netdataUrl = "http://${(import ../config/infernalnexus.nix).host}:19999/";
 
   fanCommissionCommand = pkgs.writeShellApplication {
     name = "helix-fan-commission";

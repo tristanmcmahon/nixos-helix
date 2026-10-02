@@ -24,6 +24,8 @@ Corsair K70, long-history monitoring, and fan control.
 ```text
 configuration.nix          top-level module imports and release assertion
 hardware-configuration.nix generated facts for the currently installed system
+config/                    host facts (helix.nix, infernalnexus.nix) and assets
+lib/                       helpers for repeated module patterns
 hardware/                  device and driver policy
 desktop/                   Plasma, Hyprland, browsers, applications, and theme
 system/                    boot, users, networking, NAS, and storage
