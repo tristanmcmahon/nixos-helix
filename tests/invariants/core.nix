@@ -66,6 +66,19 @@ assert builtins.all (unit: builtins.elem unit config.helix.health.criticalUnits)
 assert config.helix.health.criticalUserUnits == [ "openclaw-gateway.service" ];
 # NIX_PATH exposes the repository's pinned Nixpkgs, not a moving channel.
 assert builtins.elem "nixpkgs=${import ../../nixpkgs.nix}" config.nix.nixPath;
+# Routine backups go to the NAS, cover the unrecreatable state, and keep the
+# password outside the store.
+assert
+  let
+    backup = config.services.restic.backups.helix;
+  in
+  system.pkgs.lib.hasPrefix "/mnt/infernalnexus/nas1/" backup.repository
+  && !(system.pkgs.lib.hasPrefix builtins.storeDir backup.passwordFile)
+  && builtins.all (path: builtins.elem path backup.paths) [
+    "/home/tristan"
+    "/etc/nixos/secrets"
+    "/etc/ssh"
+  ];
 assert (config.nixpkgs.config.permittedInsecurePackages or [ ]) == [ ];
 assert builtins.elem "evtest" packageNames;
 assert config.environment.variables.EDITOR == "vim";
