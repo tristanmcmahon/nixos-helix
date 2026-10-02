@@ -8,7 +8,12 @@ HELIX_REPO_ROOT=$(cd -- "$helix_script_dir/.." && pwd)
 if [[ -n ${HELIX_NIXPKGS_PATH:-} ]]; then
   HELIX_SELECTED_NIXPKGS=$HELIX_NIXPKGS_PATH
 else
-  HELIX_SELECTED_NIXPKGS=$(nix-instantiate --eval --raw -E "\"\${import $HELIX_REPO_ROOT/nixpkgs.nix}\"") || {
+  # nix-prefetch-url always realises the tarball in the store and verifies the
+  # pinned hash; evaluating fetchTarball alone may leave the path unrealised.
+  helix_pin_url=$(nix-instantiate --eval --raw -E "(builtins.fromJSON (builtins.readFile $HELIX_REPO_ROOT/nixpkgs.json)).url")
+  helix_pin_sha256=$(nix-instantiate --eval --raw -E "(builtins.fromJSON (builtins.readFile $HELIX_REPO_ROOT/nixpkgs.json)).sha256")
+  HELIX_SELECTED_NIXPKGS=$(nix-prefetch-url --unpack --name source --print-path \
+    "$helix_pin_url" "$helix_pin_sha256" 2>/dev/null | tail -n 1) || {
     printf 'ERROR: could not fetch the Nixpkgs pinned in %s/nixpkgs.json.\n' "$HELIX_REPO_ROOT" >&2
     # shellcheck disable=SC2317 # exit is the direct-execution fallback.
     return 1 2>/dev/null || exit 1

@@ -31,6 +31,7 @@ fi
 # Without an override the pinned tree from nixpkgs.json is selected, whatever
 # NIX_PATH or the root channel say.
 pinned_nixpkgs=$(nix-instantiate --eval --raw -E "\"\${import $repo_root/nixpkgs.nix}\"")
+# Both selection paths must name the same store path for the same pin.
 pinned_selection=$(
   NIX_PATH=/deliberately/invalid bash -c \
     'unset HELIX_NIXPKGS_PATH; source "$1" >/dev/null; printf "%s|%s\n" "$HELIX_SELECTED_RELEASE" "$HELIX_SELECTED_NIXPKGS"' \
