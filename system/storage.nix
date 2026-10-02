@@ -14,24 +14,6 @@ let
     "x-systemd.device-timeout=5s"
   ];
   games = helix.gamesNvme.mountPoint;
-  gamesDirectory =
-    {
-      description,
-      path,
-      owner ? helix.user,
-      group ? helix.group,
-      mode ? "0775",
-    }:
-    helixLib.mkMountedDirectory {
-      inherit
-        description
-        path
-        owner
-        group
-        mode
-        ;
-      mountPoint = games;
-    };
 in
 {
   # GAMES_NVME was reformatted once, outside NixOS; rebuilds only mount it and
@@ -55,37 +37,19 @@ in
   );
 
   # Each optional disk initialises independently and only when it is mounted.
-  systemd.services =
-    lib.listToAttrs (
-      map (ssd: {
-        name = "helix-storage-${ssd.id}-directories";
-        value = helixLib.mkMountedDirectory {
-          description = "Create the ${ssd.label} data directory";
-          inherit (ssd) mountPoint;
-          path = "${ssd.mountPoint}/data";
-          owner = helix.user;
-          inherit (helix) group;
-          mode = "0775";
-        };
-      }) helix.ssds
-    )
-    // {
-      helix-ollama-model-storage = gamesDirectory {
-        description = "Create the Ollama model store on GAMES_NVME";
-        path = "${games}/ollama/models";
-        owner = "ollama";
-        group = "ollama";
-        mode = "0750";
+  systemd.services = lib.listToAttrs (
+    map (ssd: {
+      name = "helix-storage-${ssd.id}-directories";
+      value = helixLib.mkMountedDirectory {
+        description = "Create the ${ssd.label} data directory";
+        inherit (ssd) mountPoint;
+        path = "${ssd.mountPoint}/data";
+        owner = helix.user;
+        inherit (helix) group;
+        mode = "0775";
       };
-      helix-doom-storage = gamesDirectory {
-        description = "Create the Doom library on GAMES_NVME";
-        path = "${games}/doom";
-      };
-      helix-emulation-storage = gamesDirectory {
-        description = "Create the emulation workspace on GAMES_NVME";
-        path = "${games}/emulation";
-      };
-    };
+    }) helix.ssds
+  );
 
   # Periodically discard unused blocks on SSD/NVMe filesystems.
   services.fstrim.enable = true;

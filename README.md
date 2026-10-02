@@ -22,7 +22,7 @@ Corsair K70, long-history monitoring, and fan control.
 ## Repository layout
 
 ```text
-configuration.nix          top-level module imports and release assertion
+configuration.nix          module imports, helix.<feature>.enable choices, assertions
 hardware-configuration.nix generated facts for the currently installed system
 config/                    host facts (helix.nix, infernalnexus.nix) and assets
 lib/                       helpers for repeated module patterns
@@ -30,8 +30,8 @@ hardware/                  device and driver policy
 desktop/                   Plasma, Hyprland, browsers, applications, and theme
 system/                    boot, users, networking, NAS, and storage
 services/                  OpenSSH, monitoring, and routine native maintenance
-profiles/                  workstation, development, gaming, emulation, and local LLM
-packages/                  package sets and custom package definitions
+profiles/                  optional features behind helix.<feature>.enable options
+packages/                  base package set and custom package definitions
 shell/                     interactive shell and Git client integration
 scripts/                   checks, rebuilds, inventory, backup, and recovery
 docs/                      focused operating guides

@@ -2,10 +2,15 @@
   config,
   lib,
   pkgs,
+  utils,
   ...
 }:
 
 let
+  helix = import ../config/helix.nix;
+  helixLib = import ../lib/helix.nix { inherit lib pkgs utils; };
+  cfg = config.helix.localLlm;
+  modelStore = "${helix.gamesNvme.mountPoint}/ollama/models";
   desiredModels = [
     "deepseek-r1:8b"
     "gemma4:12b"
@@ -30,30 +35,47 @@ let
   };
 in
 {
-  imports = [ ../packages/local-llm.nix ];
+  options.helix.localLlm.enable = lib.mkEnableOption "local CUDA inference with Ollama";
 
-  services.ollama = {
-    enable = true;
-    package = pkgs.ollama-cuda;
-    user = "ollama";
-    group = "ollama";
-    models = "/mnt/games_nvme/ollama/models";
+  config = lib.mkIf cfg.enable {
+    services.ollama = {
+      enable = true;
+      package = pkgs.ollama-cuda;
+      user = "ollama";
+      group = "ollama";
+      models = modelStore;
 
-    # Binding explicitly to loopback prevents model access from the LAN without
-    # relying on firewall policy alone.
-    host = "127.0.0.1";
-    openFirewall = false;
-    environmentVariables = {
-      OLLAMA_CONTEXT_LENGTH = "32768";
+      # Binding explicitly to loopback prevents model access from the LAN without
+      # relying on firewall policy alone.
+      host = "127.0.0.1";
+      openFirewall = false;
+      environmentVariables = {
+        OLLAMA_CONTEXT_LENGTH = "32768";
+      };
+      loadModels = desiredModels;
+      syncModels = false;
     };
-    loadModels = desiredModels;
-    syncModels = false;
-  };
 
-  environment.systemPackages = [ updateModels ];
+    # The service's CUDA build doubles as the user-facing CLI; Nix deduplicates
+    # the shared store closure.
+    environment.systemPackages = [
+      config.services.ollama.package
+      updateModels
+    ];
 
-  systemd.services.ollama = {
-    requires = [ "helix-ollama-model-storage.service" ];
-    after = [ "helix-ollama-model-storage.service" ];
+    systemd.services = {
+      ollama = {
+        requires = [ "helix-ollama-model-storage.service" ];
+        after = [ "helix-ollama-model-storage.service" ];
+      };
+      helix-ollama-model-storage = helixLib.mkMountedDirectory {
+        description = "Create the Ollama model store on GAMES_NVME";
+        inherit (helix.gamesNvme) mountPoint;
+        path = modelStore;
+        owner = "ollama";
+        group = "ollama";
+        mode = "0750";
+      };
+    };
   };
 }

@@ -16,8 +16,9 @@ them, and tests that encode the behaviour the workstation must preserve.
 - `system/` owns boot, users, networking, storage, NAS access, locale, and other
   host-level behaviour.
 - `services/` owns long-running services and their lifecycle policy.
-- `packages/` defines software sets and repository-owned package definitions.
-- `profiles/` composes packages plus the policy needed for a coherent use case.
+- `packages/` holds repository-owned package definitions and the base set.
+- `profiles/` holds optional features, each behind a `helix.<feature>.enable`
+  option with its packages, services and policy.
 - `config/` holds host facts: `helix.nix` (user, paths, disks) and
   `infernalnexus.nix` (NAS). Modules import these instead of repeating them.
 - `lib/helix.nix` holds helpers for repeated patterns (mounted-disk

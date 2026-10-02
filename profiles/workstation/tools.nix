@@ -1,6 +1,11 @@
-{ pkgs, ... }:
-
 {
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+
+lib.mkIf config.helix.workstation.enable {
   environment.systemPackages = with pkgs; [
     ghostty
     openclaw

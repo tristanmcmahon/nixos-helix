@@ -11,7 +11,7 @@ let
   infernalnexus = import ../config/infernalnexus.nix;
   romRoot = infernalnexus.shares.roms.mountPoint;
   romSource = infernalnexus.shares.roms.source;
-  emulationRoot = "/mnt/games_nvme/emulation";
+  emulationRoot = "${helix.gamesNvme.mountPoint}/emulation";
   stateRoot = "${emulationRoot}/state";
 
   retroarch = pkgs.retroarch.withCores (
@@ -89,15 +89,12 @@ in
     ]
     ++ desktopItems;
 
-    # These applications use Vulkan/OpenGL and benefit from the same graphics
-    # support as the normal gaming profile.
-    hardware.graphics.enable32Bit = true;
-    services.pipewire.alsa.support32Bit = true;
-
+    # The gaming profile supplies 32-bit graphics and audio, which these
+    # Vulkan/OpenGL emulators also use, and Steam's controller udev rules.
     assertions = [
       {
-        assertion = config.programs.steam.enable;
-        message = "helix.emulation requires the normal gaming profile so controller udev rules are present.";
+        assertion = config.helix.gaming.enable;
+        message = "helix.emulation requires helix.gaming for 32-bit graphics, audio and controller udev rules.";
       }
     ];
   };

@@ -19,7 +19,7 @@ Run a single command in the same environment with:
 ```
 
 The installed workstation development environment is separately owned by
-`profiles/development.nix` and `packages/development.nix`. That maintained
+`profiles/development.nix` (`helix.development.enable`). That maintained
 system profile contains VS Code, Zed, the Helix editor, hamLLM, GitHub CLI, Git
 LFS, Codex, Claude Code and its Zed ACP adapter, Node.js, `nil`, compilers,
 runtimes, and the other daily development tools. Do not expand the
