@@ -35,7 +35,16 @@ system_closure=$(nix-build --no-out-link '<nixpkgs/nixos>' -A system \
 printf 'Built system closure: %s\n' "$system_closure"
 nix path-info -Sh "$system_closure" 2>/dev/null || nix-store -q --size "$system_closure"
 
-printf 'Intentional listeners/services:\n'
-printf '%s\n' 'sshd: TCP 22' 'NetworkManager' 'Ollama: loopback TCP 11434'
+# Derived from the evaluated configuration so the report cannot drift. Every
+# other Helix service binds to loopback, which tests/invariants enforce.
+printf 'Firewall-open ports (TCP / UDP):\n'
+nix-instantiate --eval --strict -E '
+  let
+    system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
+    firewall = system.config.networking.firewall;
+  in { tcp = firewall.allowedTCPPorts; udp = firewall.allowedUDPPorts; }
+'
 printf 'Custom pins:\n'
-rg -n 'version =|rev =|Commit:' packages/zen-browser.nix packages/gridplayer.nix shell/modern-bash.nix
+grep -nE 'version = |rev = |tag = |Commit:|url = ' \
+  packages/openclaw.nix packages/zen-browser.nix packages/gridplayer.nix \
+  packages/hamllm.nix shell/modern-bash.nix vendor/hamcade/dependencies.nix

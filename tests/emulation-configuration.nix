@@ -10,6 +10,7 @@
 
   helix.emulation.enable = true;
   nixpkgs.config.allowUnfree = true;
+  # helix.gaming supplies this; emulation asserts it.
   programs.steam.enable = true;
 
   users.users.tristan = {

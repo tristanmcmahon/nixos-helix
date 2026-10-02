@@ -28,15 +28,16 @@ if HELIX_NIXPKGS_PATH=/deliberately/missing \
   printf 'release-environment accepted an unreadable explicit Nixpkgs source.\n' >&2
   exit 1
 fi
-root_channel=/nix/var/nix/profiles/per-user/root/channels/nixos
-if [[ -r $root_channel/default.nix ]]; then
-  root_selection=$(
-    NIX_PATH=/deliberately/invalid bash -c \
-      'unset HELIX_NIXPKGS_PATH; source "$1" >/dev/null; printf "%s|%s\n" "$HELIX_SELECTED_RELEASE" "$HELIX_SELECTED_NIXPKGS"' \
-      _ "$repo_root/scripts/release-environment.sh"
-  )
-  [[ $root_selection == "$expected_release|$(readlink -f "$root_channel")" ]]
-fi
+# Without an override the pinned tree from nixpkgs.json is selected, whatever
+# NIX_PATH or the root channel say.
+pinned_nixpkgs=$(nix-instantiate --eval --raw -E "\"\${import $repo_root/nixpkgs.nix}\"")
+# Both selection paths must name the same store path for the same pin.
+pinned_selection=$(
+  NIX_PATH=/deliberately/invalid bash -c \
+    'unset HELIX_NIXPKGS_PATH; source "$1" >/dev/null; printf "%s|%s\n" "$HELIX_SELECTED_RELEASE" "$HELIX_SELECTED_NIXPKGS"' \
+    _ "$repo_root/scripts/release-environment.sh"
+)
+[[ $pinned_selection == "$expected_release|$(readlink -f "$pinned_nixpkgs")" ]]
 
 printf 'Checking Nix formatting...\n'
 PYTHONPYCACHEPREFIX=$temporary_directory \

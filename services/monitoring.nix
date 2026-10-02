@@ -7,10 +7,20 @@
 
 let
   cfg = config.helix.monitoring;
+  # The local history and cooling units; helix-monitor status and the health
+  # gate both use this list.
+  monitoringUnits = [
+    "grafana.service"
+    "prometheus.service"
+    "prometheus-node-exporter.service"
+    "prometheus-nvidia-gpu-exporter.service"
+    "prometheus-smartctl-exporter.service"
+    "coolercontrold.service"
+  ];
   dashboard = ../config/monitoring/helix-overview.json;
   grafanaSecretFile = "${config.services.grafana.dataDir}/secret_key";
   grafanaUrl = "http://localhost:${toString cfg.grafanaPort}/d/helix-overview";
-  netdataUrl = "http://192.168.1.8:19999/";
+  netdataUrl = "http://${(import ../config/infernalnexus.nix).host}:19999/";
 
   fanCommissionCommand = pkgs.writeShellApplication {
     name = "helix-fan-commission";
@@ -50,13 +60,7 @@ let
         ;;
       status)
         exec systemctl --no-pager --full status \
-          grafana.service \
-          netdata.service \
-          prometheus.service \
-          prometheus-node-exporter.service \
-          prometheus-nvidia-gpu-exporter.service \
-          prometheus-smartctl-exporter.service \
-          coolercontrold.service
+          ${lib.escapeShellArgs (monitoringUnits ++ [ "netdata.service" ])}
         ;;
       --help|-h)
         printf 'Usage: helix-monitor [dashboard|netdata|fans|commission|inventory|restore|status]\n'
@@ -132,6 +136,8 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    helix.health.criticalUnits = monitoringUnits;
+
     # This exact ASUS board is supported by nct6775 through WMBD. The device is
     # not PCI-discoverable, so explicitly load the module for motherboard
     # temperatures, fan RPM, and PWM channels.

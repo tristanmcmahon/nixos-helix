@@ -4,6 +4,13 @@ let
 in
 assert config.services.desktopManager.plasma6.enable;
 assert config.services.displayManager.sddm.enable;
+# Hot Dog Stand stays opt-in: helix-theme random never selects it.
+assert !(import ../../config/theme/palettes.nix).themes.hotdog.random;
+assert
+  config.services.displayManager.generic.execCmd != ""
+  && builtins.match ".*[Ss][Dd][Dd][Mm].*" config.services.displayManager.generic.execCmd != null;
+assert config.security.wrappers.op.source != "";
+assert config.security.wrappers."1Password-BrowserSupport".source != "";
 assert config.programs.hyprland.enable;
 assert config.programs.hyprland.withUWSM;
 assert config.services.xserver.videoDrivers == [ "nvidia" ];

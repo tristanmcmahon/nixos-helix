@@ -1,15 +1,19 @@
 # Package and profile boundaries
 
-NixOS merges package lists contributed by ordinary imported modules. Package
-modules contain software only; profiles compose those packages and own related
-system policy.
+Every module is imported unconditionally. Each optional feature is a profile
+that declares a `helix.<feature>.enable` option and owns its packages, services
+and storage initialisers; `configuration.nix` only chooses which are enabled:
+`workstation`, `development`, `gaming`, `localLlm`, `emulation`, `hamCade` and
+`monitoring`. `tests/features-disabled.nix` turns them all off and checks that
+each one's packages, services and directories disappear while the recovery base
+remains. `packages/` holds only package definitions and the base set.
 
 ## Enabled layers
 
 ### Base
 
 `packages/base.nix` is imported directly and contains Git, curl, wget, `file`,
-`tree`, and Vim as the guaranteed console recovery editor (`vi` and `vim`). It
+`tree`, `nix-output-monitor`, `nvd`, and Vim as the guaranteed console recovery editor (`vi` and `vim`). It
 deliberately excludes language runtimes, GPU tools, desktop conveniences,
 gaming, and inference software.
 
@@ -38,9 +42,8 @@ access; it is not duplicated in the system package list. The upstream
 ProtonPlus, Protontricks, MangoHud, GOverlay, and the repository-owned Doom
 tooling are present; Heroic, Lutris, and a general Wine package remain absent.
 
-The normal default dry build validates this active profile. Disabling the single
-`./profiles/gaming.nix` import returns the evaluated configuration to the
-non-gaming workstation layer.
+Setting `helix.gaming.enable = false` returns the configuration to the
+non-gaming workstation layer; emulation asserts that gaming is enabled.
 
 ### Emulation and hamCade
 

@@ -19,52 +19,52 @@ IntensityAmount=0
 IntensityEffect=0
 
 [Colors:Button]
-BackgroundAlternate=48,56,50
-BackgroundNormal=35,40,36
-DecorationFocus=103,184,122
-DecorationHover=129,201,149
-ForegroundActive=129,201,149
+BackgroundAlternate=@surfaceHover:rgb@
+BackgroundNormal=@surfaceRaised:rgb@
+DecorationFocus=@accent:rgb@
+DecorationHover=@accentBright:rgb@
+ForegroundActive=@accentBright:rgb@
 ForegroundInactive=174,184,177
-ForegroundLink=103,184,122
+ForegroundLink=@accent:rgb@
 ForegroundNegative=215,122,120
 ForegroundNeutral=214,173,99
 ForegroundNormal=228,232,229
-ForegroundPositive=129,201,149
+ForegroundPositive=@accentBright:rgb@
 ForegroundVisited=137,174,145
 
 [Colors:Complementary]
-BackgroundAlternate=24,28,25
+BackgroundAlternate=@surface:rgb@
 BackgroundNormal=11,13,12
-DecorationFocus=103,184,122
-DecorationHover=129,201,149
-ForegroundActive=129,201,149
+DecorationFocus=@accent:rgb@
+DecorationHover=@accentBright:rgb@
+ForegroundActive=@accentBright:rgb@
 ForegroundInactive=174,184,177
-ForegroundLink=103,184,122
+ForegroundLink=@accent:rgb@
 ForegroundNegative=215,122,120
 ForegroundNeutral=214,173,99
 ForegroundNormal=228,232,229
-ForegroundPositive=129,201,149
+ForegroundPositive=@accentBright:rgb@
 ForegroundVisited=137,174,145
 
 [Colors:Header]
-BackgroundAlternate=48,56,50
-BackgroundNormal=35,40,36
-DecorationFocus=103,184,122
-DecorationHover=129,201,149
-ForegroundActive=129,201,149
+BackgroundAlternate=@surfaceHover:rgb@
+BackgroundNormal=@surfaceRaised:rgb@
+DecorationFocus=@accent:rgb@
+DecorationHover=@accentBright:rgb@
+ForegroundActive=@accentBright:rgb@
 ForegroundInactive=174,184,177
-ForegroundLink=103,184,122
+ForegroundLink=@accent:rgb@
 ForegroundNegative=215,122,120
 ForegroundNeutral=214,173,99
 ForegroundNormal=228,232,229
-ForegroundPositive=129,201,149
+ForegroundPositive=@accentBright:rgb@
 ForegroundVisited=137,174,145
 
 [Colors:Selection]
-BackgroundAlternate=49,94,62
-BackgroundNormal=49,94,62
-DecorationFocus=129,201,149
-DecorationHover=129,201,149
+BackgroundAlternate=@selection:rgb@
+BackgroundNormal=@selection:rgb@
+DecorationFocus=@accentBright:rgb@
+DecorationHover=@accentBright:rgb@
 ForegroundActive=228,232,229
 ForegroundInactive=228,232,229
 ForegroundLink=228,232,229
@@ -75,59 +75,59 @@ ForegroundPositive=228,232,229
 ForegroundVisited=228,232,229
 
 [Colors:Tooltip]
-BackgroundAlternate=48,56,50
-BackgroundNormal=35,40,36
-DecorationFocus=103,184,122
-DecorationHover=129,201,149
-ForegroundActive=129,201,149
+BackgroundAlternate=@surfaceHover:rgb@
+BackgroundNormal=@surfaceRaised:rgb@
+DecorationFocus=@accent:rgb@
+DecorationHover=@accentBright:rgb@
+ForegroundActive=@accentBright:rgb@
 ForegroundInactive=174,184,177
-ForegroundLink=103,184,122
+ForegroundLink=@accent:rgb@
 ForegroundNegative=215,122,120
 ForegroundNeutral=214,173,99
 ForegroundNormal=228,232,229
-ForegroundPositive=129,201,149
+ForegroundPositive=@accentBright:rgb@
 ForegroundVisited=137,174,145
 
 [Colors:View]
-BackgroundAlternate=24,28,25
+BackgroundAlternate=@surface:rgb@
 BackgroundNormal=11,13,12
-DecorationFocus=103,184,122
-DecorationHover=129,201,149
-ForegroundActive=129,201,149
+DecorationFocus=@accent:rgb@
+DecorationHover=@accentBright:rgb@
+ForegroundActive=@accentBright:rgb@
 ForegroundInactive=174,184,177
-ForegroundLink=103,184,122
+ForegroundLink=@accent:rgb@
 ForegroundNegative=215,122,120
 ForegroundNeutral=214,173,99
 ForegroundNormal=228,232,229
-ForegroundPositive=129,201,149
+ForegroundPositive=@accentBright:rgb@
 ForegroundVisited=137,174,145
 
 [Colors:Window]
-BackgroundAlternate=35,40,36
-BackgroundNormal=24,28,25
-DecorationFocus=103,184,122
-DecorationHover=129,201,149
-ForegroundActive=129,201,149
+BackgroundAlternate=@surfaceRaised:rgb@
+BackgroundNormal=@surface:rgb@
+DecorationFocus=@accent:rgb@
+DecorationHover=@accentBright:rgb@
+ForegroundActive=@accentBright:rgb@
 ForegroundInactive=174,184,177
-ForegroundLink=103,184,122
+ForegroundLink=@accent:rgb@
 ForegroundNegative=215,122,120
 ForegroundNeutral=214,173,99
 ForegroundNormal=228,232,229
-ForegroundPositive=129,201,149
+ForegroundPositive=@accentBright:rgb@
 ForegroundVisited=137,174,145
 
 [General]
-ColorScheme=Helix Graphite Fern
-Name=Helix Graphite Fern
+ColorScheme=Helix Graphite @name@
+Name=Helix Graphite @name@
 shadeSortColumn=true
 
 [KDE]
 contrast=4
 
 [WM]
-activeBackground=24,28,25
-activeBlend=103,184,122
+activeBackground=@surface:rgb@
+activeBlend=@accent:rgb@
 activeForeground=228,232,229
 inactiveBackground=11,13,12
-inactiveBlend=35,40,36
+inactiveBlend=@surfaceRaised:rgb@
 inactiveForeground=174,184,177

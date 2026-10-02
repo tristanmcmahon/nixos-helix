@@ -6,20 +6,21 @@
 }:
 
 let
-  localSsds = import ./local-ssds.nix;
+  helix = import ../config/helix.nix;
+  helixLib = import ../lib/helix.nix { inherit lib pkgs utils; };
   mountOptions = [
     "noatime"
     "nofail"
     "x-systemd.device-timeout=5s"
   ];
+  games = helix.gamesNvme.mountPoint;
 in
 {
   # GAMES_NVME was reformatted once, outside NixOS; rebuilds only mount it and
-  # never partition or format it. The UUID is stable across NVMe device-name
-  # changes, unlike paths such as /dev/nvme1n1p1.
+  # never partition or format it.
   fileSystems = {
-    "/mnt/games_nvme" = {
-      device = "/dev/disk/by-uuid/d07ac88e-34f6-4d56-9941-5ceaf52fd6bb";
+    ${games} = {
+      device = "/dev/disk/by-uuid/${helix.gamesNvme.uuid}";
       fsType = "ext4";
       options = mountOptions;
     };
@@ -32,84 +33,23 @@ in
         fsType = "ext4";
         options = mountOptions;
       };
-    }) localSsds
+    }) helix.ssds
   );
 
   # Each optional disk initialises independently and only when it is mounted.
-  systemd.services =
-    lib.listToAttrs (
-      map (ssd: {
-        name = "helix-storage-${ssd.id}-directories";
-        value = {
-          description = "Create the ${ssd.label} data directory";
-          wantedBy = [ "multi-user.target" ];
-          wants = [ "${utils.escapeSystemdPath ssd.mountPoint}.mount" ];
-          after = [ "${utils.escapeSystemdPath ssd.mountPoint}.mount" ];
-          unitConfig.ConditionPathIsMountPoint = ssd.mountPoint;
-          serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-          };
-          script = ''
-            ${pkgs.util-linux}/bin/mountpoint -q ${lib.escapeShellArg ssd.mountPoint}
-            ${pkgs.coreutils}/bin/install -d -o tristan -g users -m 0775 \
-              ${lib.escapeShellArg "${ssd.mountPoint}/data"}
-          '';
-        };
-      }) localSsds
-    )
-    // {
-      helix-ollama-model-storage = {
-        description = "Create the Ollama model store on GAMES_NVME";
-        wantedBy = [ "multi-user.target" ];
-        wants = [ "mnt-games_nvme.mount" ];
-        after = [ "mnt-games_nvme.mount" ];
-        unitConfig.ConditionPathIsMountPoint = "/mnt/games_nvme";
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-        };
-        script = ''
-          ${pkgs.util-linux}/bin/mountpoint -q /mnt/games_nvme
-          ${pkgs.coreutils}/bin/install -d -o ollama -g ollama -m 0750 \
-            /mnt/games_nvme/ollama/models
-        '';
+  systemd.services = lib.listToAttrs (
+    map (ssd: {
+      name = "helix-storage-${ssd.id}-directories";
+      value = helixLib.mkMountedDirectory {
+        description = "Create the ${ssd.label} data directory";
+        inherit (ssd) mountPoint;
+        path = "${ssd.mountPoint}/data";
+        owner = helix.user;
+        inherit (helix) group;
+        mode = "0775";
       };
-
-      helix-doom-storage = {
-        description = "Create the Doom library on GAMES_NVME";
-        wantedBy = [ "multi-user.target" ];
-        wants = [ "mnt-games_nvme.mount" ];
-        after = [ "mnt-games_nvme.mount" ];
-        unitConfig.ConditionPathIsMountPoint = "/mnt/games_nvme";
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-        };
-        script = ''
-          ${pkgs.util-linux}/bin/mountpoint -q /mnt/games_nvme
-          ${pkgs.coreutils}/bin/install -d -o tristan -g users -m 0775 \
-            /mnt/games_nvme/doom
-        '';
-      };
-
-      helix-emulation-storage = {
-        description = "Create the emulation workspace on GAMES_NVME";
-        wantedBy = [ "multi-user.target" ];
-        wants = [ "mnt-games_nvme.mount" ];
-        after = [ "mnt-games_nvme.mount" ];
-        unitConfig.ConditionPathIsMountPoint = "/mnt/games_nvme";
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-        };
-        script = ''
-          ${pkgs.util-linux}/bin/mountpoint -q /mnt/games_nvme
-          ${pkgs.coreutils}/bin/install -d -o tristan -g users -m 0775 \
-            /mnt/games_nvme/emulation
-        '';
-      };
-    };
+    }) helix.ssds
+  );
 
   # Periodically discard unused blocks on SSD/NVMe filesystems.
   services.fstrim.enable = true;

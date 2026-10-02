@@ -1,29 +1,15 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 
 let
-  themeDirectory = ../config/theme;
-  palette = import ../config/theme/palette.nix;
-  themes = [
-    "fern"
-    "petrol"
-    "plum"
-    "oxide"
-    "amber"
-    "rosewood"
-    "hotdog"
-  ];
-  themeFamily = pkgs.runCommand "helix-theme-family" { nativeBuildInputs = [ pkgs.python3 ]; } ''
-    python3 ${../scripts/generate-theme-family.py} ${themeDirectory} ${../config/ghostty/profiles/main.ghostty} $out/generated
-    for theme in ${builtins.concatStringsSep " " themes}; do
-      colors=$(find "$out/generated/$theme" -maxdepth 1 -name '*.colors')
-      scheme_name=$(basename "$colors" .colors)
-      install -Dm444 "$colors" "$out/share/color-schemes/$scheme_name.colors"
-      install -Dm444 "$out/generated/$theme/$scheme_name.colorscheme" "$out/share/konsole/$scheme_name.colorscheme"
-      install -Dm444 "$out/generated/$theme/$scheme_name.profile" "$out/share/konsole/$scheme_name.profile"
-      install -Dm444 "$out/generated/$theme/wallpaper.svg" \
-        "$out/share/wallpapers/$scheme_name/contents/images/wallpaper.svg"
-    done
-  '';
+  helix = import ../config/helix.nix;
+  palettes = import ../config/theme/palettes.nix;
+  palette = palettes.base;
+  themes = palettes.order;
+  randomThemes = builtins.filter (theme: palettes.themes.${theme}.random) themes;
+  themePattern = builtins.concatStringsSep "|" themes;
+  schemeName =
+    theme: "HelixGraphite" + lib.replaceStrings [ " " ] [ "" ] palettes.themes.${theme}.name;
+  themeFamily = import ../packages/helix-theme-family.nix { inherit pkgs; };
   fernWallpaper = "${themeFamily}/share/wallpapers/HelixGraphiteFern/contents/images/wallpaper.svg";
   sddmTheme = pkgs.runCommand "sddm-theme-helix-graphite-fern" { } ''
     mkdir -p $out/share/sddm/themes/helix-graphite-fern
@@ -59,24 +45,23 @@ let
       selection_file="$state_dir/theme"
 
       describe() {
-        printf '%-10s %s\n' fern 'graphite with restrained fern green (default)'
-        printf '%-10s %s\n' petrol 'muted deep petrol and teal'
-        printf '%-10s %s\n' plum 'dusty aubergine and plum'
-        printf '%-10s %s\n' oxide 'muted rust and copper'
-        printf '%-10s %s\n' amber 'desaturated ochre and gold'
-        printf '%-10s %s\n' rosewood 'dark wine and rosewood'
-        printf '%-10s %s\n' hotdog 'regrettably available.'
+        ${builtins.concatStringsSep "
+        " (
+          map (
+            theme: "printf '%-10s %s\\n' ${theme} ${lib.escapeShellArg palettes.themes.${theme}.description}"
+          ) themes
+        )}
       }
       selected=fern
       [[ -r $selection_file ]] && read -r selected < "$selection_file"
-      case $selected in fern|petrol|plum|oxide|amber|rosewood|hotdog) ;; *) selected=fern ;; esac
+      case $selected in ${themePattern}) ;; *) selected=fern ;; esac
 
       case ''${1:-} in
       list) describe; exit 0 ;;
       current) printf '%s\n' "$selected"; exit 0 ;;
-      fern|petrol|plum|oxide|amber|rosewood|hotdog) selected=$1 ;;
+      ${themePattern}) selected=$1 ;;
       random)
-        pool=(fern petrol plum oxide amber rosewood)
+        pool=(${builtins.concatStringsSep " " randomThemes})
         eligible=()
         for candidate in "''${pool[@]}"; do
           [[ $candidate == "$selected" ]] || eligible+=("$candidate")
@@ -85,7 +70,7 @@ let
         selected="''${eligible[$index]}"
         ;;
       --apply-current) ;;
-      --help|-h|"") printf 'Usage: helix-theme {list|current|random|fern|petrol|plum|oxide|amber|rosewood|hotdog}\n'; exit 0 ;;
+      --help|-h|"") printf 'Usage: helix-theme {list|current|random|${themePattern}}\n'; exit 0 ;;
       *) printf 'Unknown Helix theme: %s\n' "$1" >&2; exit 2 ;;
       esac
 
@@ -100,7 +85,13 @@ let
       install -m 0644 "$source/mako.conf" "$XDG_CONFIG_HOME/mako/helix.conf"
       install -m 0644 "$source/fuzzel.ini" "$XDG_CONFIG_HOME/fuzzel/helix.ini"
       install -m 0644 "$source/steam.css" "$XDG_CONFIG_HOME/AdwSteamGtk/custom.css"
-      install -m 0644 "$source/ghostty.ghostty" "$XDG_CONFIG_HOME/ghostty/profile.ghostty"
+      # ghostty-profile owns the Ghostty profile. Main follows the Helix theme;
+      # an explicit Moss, Slate or Ember choice must survive theme changes.
+      ghostty_choice=main
+      [[ -r $XDG_CONFIG_HOME/ghostty/profile-name ]] && read -r ghostty_choice < "$XDG_CONFIG_HOME/ghostty/profile-name"
+      if [[ $ghostty_choice == main ]]; then
+        install -m 0644 "$source/ghostty.ghostty" "$XDG_CONFIG_HOME/ghostty/profile.ghostty"
+      fi
       python3 /etc/helix/theme/apply-theme-settings.py merge-ini \
         /etc/helix/theme/gtk-3.0-settings.ini "$XDG_CONFIG_HOME/gtk-3.0/settings.ini"
       python3 /etc/helix/theme/apply-theme-settings.py merge-ini \
@@ -114,12 +105,11 @@ let
           gsettings set io.github.Foldex.AdwSteamGtk prefs-install-custom-css true
         fi
         if [[ $XDG_CURRENT_DESKTOP == *KDE* ]]; then
-          if [[ $selected == hotdog ]]; then
-            scheme=HelixGraphiteHotDogStand
-          else
-            pretty="$(tr '[:lower:]' '[:upper:]' <<<"''${selected:0:1}")''${selected:1}"
-            scheme="HelixGraphite$pretty"
-          fi
+          case $selected in
+            ${builtins.concatStringsSep "\n            " (
+              map (theme: "${theme}) scheme=${schemeName theme} ;;") themes
+            )}
+          esac
           plasma-apply-desktoptheme breeze-dark
           kwriteconfig6 --file kdeglobals --group KDE --key widgetStyle Breeze
           kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key library org.kde.breeze
@@ -224,13 +214,13 @@ in
     description = "Apply Tristan's persisted Helix theme";
     wantedBy = [ "graphical-session.target" ];
     after = [ "graphical-session-pre.target" ];
-    unitConfig.ConditionUser = "tristan";
+    unitConfig.ConditionUser = helix.user;
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${helixTheme}/bin/helix-theme --apply-current";
       Environment = [
-        "HOME=/home/tristan"
-        "XDG_CONFIG_HOME=/home/tristan/.config"
+        "HOME=${helix.home}"
+        "XDG_CONFIG_HOME=${helix.configHome}"
       ];
     };
   };

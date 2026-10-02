@@ -1,7 +1,7 @@
 _:
 
 let
-  palette = import ../config/theme/palette.nix;
+  palette = (import ../config/theme/palettes.nix).base;
   chrome1PasswordId = "aeblfdkhhhdcdjpifhhbdiojplfjncoa";
   chromeDarkReaderId = "eimadpbcbfnmbkopoojfekhnkhdbieeh";
   firefox1PasswordId = "{d634138d-c276-4fc8-924b-40a0ea21d284}";

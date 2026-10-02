@@ -11,6 +11,14 @@ let
   packageNames = map (package: package.pname or package.name or "") config.environment.systemPackages;
 in
 assert !config.helix.monitoring.enable;
+# Disabling monitoring removes its units from the health gate.
+assert
+  !(builtins.any (unit: builtins.elem unit config.helix.health.criticalUnits) [
+    "grafana.service"
+    "prometheus.service"
+    "netdata.service"
+    "coolercontrold.service"
+  ]);
 assert !config.services.prometheus.enable;
 assert !config.services.prometheus.exporters.node.enable;
 assert !config.services.prometheus.exporters.nvidia-gpu.enable;

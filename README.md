@@ -8,7 +8,7 @@ and other LAN clients remain unchanged.
 
 This is the canonical configuration for Helix, a NixOS 26.05 workstation with
 Plasma 6, an optional Hyprland/UWSM session, and an NVIDIA RTX 5080. It uses
-ordinary NixOS modules and the root Nix channel: no flakes, Home Manager, or a
+ordinary NixOS modules and a Nixpkgs release pinned in `nixpkgs.json`: no flakes, Home Manager, or a
 host framework. A narrow repository-owned overlay
 selects the immutably pinned first-party OpenClaw package.
 
@@ -22,14 +22,16 @@ Corsair K70, long-history monitoring, and fan control.
 ## Repository layout
 
 ```text
-configuration.nix          top-level module imports and release assertion
+configuration.nix          module imports, helix.<feature>.enable choices, assertions
 hardware-configuration.nix generated facts for the currently installed system
+config/                    host facts (helix.nix, infernalnexus.nix) and assets
+lib/                       helpers for repeated module patterns
 hardware/                  device and driver policy
 desktop/                   Plasma, Hyprland, browsers, applications, and theme
 system/                    boot, users, networking, NAS, and storage
 services/                  OpenSSH, monitoring, and routine native maintenance
-profiles/                  workstation, development, gaming, emulation, and local LLM
-packages/                  package sets and custom package definitions
+profiles/                  optional features behind helix.<feature>.enable options
+packages/                  base package set and custom package definitions
 shell/                     interactive shell and Git client integration
 scripts/                   checks, rebuilds, inventory, backup, and recovery
 docs/                      focused operating guides
@@ -75,8 +77,9 @@ Native weekly garbage collection deletes generations older than 14 days, and
 weekly store optimisation hard-links identical store files.
 
 For normal maintenance, `helix-health` prints a compact workstation report and
-`helix-update` performs a clean-tree, validate, build, diff, test, and switch
-sequence. `helix-update` never runs garbage collection. `helix-git-credential-repair`
+`helix-update` fast-forwards to reviewed `main`, then validates, builds, diffs,
+tests and switches. Nixpkgs updates are pull requests made with
+`./scripts/bump-nixpkgs.sh`. `helix-update` never runs garbage collection. `helix-git-credential-repair`
 repairs GitHub HTTPS authentication without pinning `gh` to a garbage-collectable
 Nix store path. Use `helix-theme list`,
 `helix-theme current`, or `helix-theme NAME` to inspect and switch appearance.
@@ -84,7 +87,7 @@ Nix store path. Use `helix-theme list`,
 ## Installed-system compatibility
 
 Helix was freshly installed on NixOS 26.05, and its permanent compatibility
-floor is `system.stateVersion = "26.05"`. Future channel upgrades must not raise
+floor is `system.stateVersion = "26.05"`. Future Nixpkgs upgrades must not raise
 that value. The backup, restore, and hardware-continuity tools remain available
 for disaster recovery and any deliberately planned future reinstall; see
 [docs/reinstall.md](docs/reinstall.md).

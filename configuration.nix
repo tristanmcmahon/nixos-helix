@@ -48,9 +48,8 @@ in
     ./services/openclaw.nix
     ./services/openssh.nix
 
-    # These profiles form the normal Plasma workstation. Gaming and local
-    # inference and the SSD-backed, read-only-ROM emulation stack are enabled
-    # by default.
+    # Feature profiles. Each declares a helix.<feature>.enable option; the
+    # choices below, not this import list, decide what Helix includes.
     ./profiles/workstation.nix
     ./profiles/development.nix
     ./profiles/gaming.nix
@@ -64,6 +63,10 @@ in
   ];
 
   helix = {
+    workstation.enable = true;
+    development.enable = true;
+    gaming.enable = true;
+    localLlm.enable = true;
     emulation.enable = true;
     hamCade.enable = true;
     monitoring.enable = true;

@@ -49,9 +49,9 @@ grep -qF 'installer was not booted in UEFI mode' "$storage_script"
 for serial in S463NF0M914938Z S4EWNX0NA44184L; do
   grep -qF "$serial" "$storage_script"
 done
-grep -qF 'system/local-ssds.nix' "$storage_script"
+grep -qF 'config/helix.nix' "$storage_script"
 for serial in S2PWNX0HA06906Y S21HNXBG406937R S1DHNSADB22089E; do
-  grep -qF "$serial" "$repo_root/system/local-ssds.nix"
+  grep -qF "$serial" "$repo_root/config/helix.nix"
 done
 grep -qF 'Estimated unallocated:' "$storage_script"
 if grep -Eq '\b(mkfs|parted|fdisk|sgdisk|wipefs|mount|umount|mkswap)\b' \

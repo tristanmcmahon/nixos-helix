@@ -24,8 +24,8 @@ package at a time, build it against the maintained NixOS release, run
   so the wrapper lock is read as a path during non-flake evaluation. The
   gateway runs on Node 22 built with Node's bundled SQLite rather than the
   nixpkgs shared SQLite 3.51.2, which OpenClaw rejects because of the WAL-reset
-  corruption bug; an evaluation assertion flags the override once nixpkgs no
-  longer needs it. ACPX,
+  corruption bug. The override applies only while nixpkgs shares a SQLite older
+  than 3.51.3, so it retires itself and the cached Node returns automatically. ACPX,
   extended tools, the batteries bundle, source/version pins and dependency
   hashes still come from that immutable upstream revision.
 

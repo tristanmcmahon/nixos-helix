@@ -1,6 +1,9 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 
 let
+  helixMenu = import ../packages/helix-menu.nix { inherit pkgs; };
+  inherit ((import ../config/theme/palettes.nix).themes) fern;
+  helix = import ../config/helix.nix;
   themeSessionStart = pkgs.writeShellApplication {
     name = "helix-hyprland-theme-start";
     runtimeInputs = [
@@ -10,9 +13,9 @@ let
     ];
     text = ''
       /run/current-system/sw/bin/helix-theme random || true
-      swaybg --image /home/tristan/.config/helix/theme/current/wallpaper.svg --mode fill &
-      waybar --style /home/tristan/.config/helix/theme/current/waybar.css &
-      mako --config /home/tristan/.config/helix/theme/current/mako.conf &
+      swaybg --image ${helix.configHome}/helix/theme/current/wallpaper.svg --mode fill &
+      waybar --style ${helix.configHome}/helix/theme/current/waybar.css &
+      mako --config ${helix.configHome}/helix/theme/current/mako.conf &
       wait
     '';
   };
@@ -23,7 +26,7 @@ let
 
     $mainMod = SUPER
     $terminal = ghostty
-    $menu = fuzzel --config /home/tristan/.config/helix/theme/current/fuzzel.ini
+    $menu = fuzzel --config ${helix.configHome}/helix/theme/current/fuzzel.ini
 
     exec-once = helix-hyprland-theme-start
     exec-once = nm-applet --indicator
@@ -73,8 +76,8 @@ let
       gaps_in = 4
       gaps_out = 8
       border_size = 2
-      col.active_border = rgb(67B87A)
-      col.inactive_border = rgb(3A443C)
+      col.active_border = rgb(${lib.removePrefix "#" fern.accent})
+      col.inactive_border = rgb(${lib.removePrefix "#" fern.border})
     }
 
     decoration {
@@ -89,12 +92,12 @@ let
   exitPrompt = pkgs.writeShellApplication {
     name = "helix-hyprland-exit";
     runtimeInputs = [
-      pkgs.fuzzel
+      helixMenu
       pkgs.hyprland
     ];
     text = ''
       answer=$(printf 'Cancel\nLog out\n' |
-        fuzzel --config /etc/helix/theme/fuzzel.ini --dmenu --prompt='Hyprland: ')
+        helix-menu --dmenu --prompt='Hyprland: ')
       if [[ $answer == 'Log out' ]]; then
         hyprctl dispatch exit
       fi

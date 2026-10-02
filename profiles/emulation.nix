@@ -6,11 +6,12 @@
 }:
 
 let
+  helix = import ../config/helix.nix;
   cfg = config.helix.emulation;
   infernalnexus = import ../config/infernalnexus.nix;
   romRoot = infernalnexus.shares.roms.mountPoint;
   romSource = infernalnexus.shares.roms.source;
-  emulationRoot = "/mnt/games_nvme/emulation";
+  emulationRoot = "${helix.gamesNvme.mountPoint}/emulation";
   stateRoot = "${emulationRoot}/state";
 
   retroarch = pkgs.retroarch.withCores (
@@ -66,7 +67,7 @@ in
         description = "Prepare NAS-backed emulation paths for Tristan";
         wantedBy = [ "graphical-session.target" ];
         after = [ "graphical-session-pre.target" ];
-        unitConfig.ConditionUser = "tristan";
+        unitConfig.ConditionUser = helix.user;
         serviceConfig = {
           Type = "oneshot";
           ExecStart = "${prepare}/bin/helix-emulation-prepare";
@@ -88,15 +89,12 @@ in
     ]
     ++ desktopItems;
 
-    # These applications use Vulkan/OpenGL and benefit from the same graphics
-    # support as the normal gaming profile.
-    hardware.graphics.enable32Bit = true;
-    services.pipewire.alsa.support32Bit = true;
-
+    # The gaming profile supplies 32-bit graphics and audio, which these
+    # Vulkan/OpenGL emulators also use, and Steam's controller udev rules.
     assertions = [
       {
-        assertion = config.programs.steam.enable;
-        message = "helix.emulation requires the normal gaming profile so controller udev rules are present.";
+        assertion = config.programs.steam.enable && config.hardware.graphics.enable32Bit;
+        message = "helix.emulation requires helix.gaming (Steam controller udev rules and 32-bit graphics).";
       }
     ];
   };

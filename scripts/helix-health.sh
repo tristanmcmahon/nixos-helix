@@ -2,6 +2,10 @@
 
 set -uo pipefail
 
+# system/commands.nix prepends these lists from helix.health; declaring them
+# here keeps any prepended values and lets the script run standalone.
+declare -a critical_units critical_user_units
+
 usage() {
   printf 'Usage: helix-health [--check|--help]\n'
 }
@@ -22,24 +26,17 @@ runtime_check() {
     fail 'GAMES_NVME is not mounted at /mnt/games_nvme'
   fi
 
-  local service
-  for service in \
-    sshd.service \
-    ollama.service \
-    grafana.service \
-    netdata.service \
-    prometheus.service \
-    prometheus-node-exporter.service \
-    prometheus-nvidia-gpu-exporter.service \
-    prometheus-smartctl-exporter.service \
-    coolercontrold.service; do
-    systemctl is-active --quiet "$service" 2>/dev/null ||
-      fail "$service is not active"
+  # critical_units and critical_user_units are generated from
+  # helix.health in system/commands.nix.
+  local unit
+  for unit in "${critical_units[@]}"; do
+    systemctl is-active --quiet "$unit" 2>/dev/null || fail "$unit is not active"
   done
 
-  if systemctl --user show-environment >/dev/null 2>&1; then
-    systemctl --user is-active --quiet openclaw-gateway.service 2>/dev/null ||
-      fail 'openclaw-gateway.service is not active'
+  if ((${#critical_user_units[@]})) && systemctl --user show-environment >/dev/null 2>&1; then
+    for unit in "${critical_user_units[@]}"; do
+      systemctl --user is-active --quiet "$unit" 2>/dev/null || fail "$unit is not active"
+    done
   fi
 
   if ((failed)); then
@@ -108,19 +105,15 @@ else
 fi
 printf 'OpenClaw %s | gateway: %s\n' "$(openclaw --version 2>/dev/null || printf unknown)" \
   "$(systemctl --user is-active openclaw-gateway.service 2>/dev/null || printf unavailable)"
-for service in grafana netdata prometheus prometheus-node-exporter prometheus-nvidia-gpu-exporter \
-  prometheus-smartctl-exporter coolercontrold; do
-  printf '%-39s %s\n' "$service" "$(status_word "$service.service")"
+for unit in "${critical_units[@]}"; do
+  printf '%-39s %s\n' "${unit%.service}" "$(status_word "$unit")"
 done
 
-heading 'NixOS channel'
-channel=/nix/var/nix/profiles/per-user/root/channels/nixos
-if [[ -e $channel ]]; then
-  target=$(readlink -f "$channel" 2>/dev/null || printf unknown)
-  printf 'root nixos: %s\n' "$target"
-  if [[ -e $target ]]; then
-    printf 'selected source age: %s days\n' "$(( ($(date +%s) - $(stat -c %Y "$target")) / 86400 ))"
-  fi
+heading 'Nixpkgs'
+# Nixpkgs is pinned in the repository's nixpkgs.json; nix.nixPath exposes the
+# pinned tree that built this system.
+if nixpkgs=$(nix-instantiate --find-file nixpkgs 2>/dev/null) && [[ -r $nixpkgs/.git-revision ]]; then
+  printf 'pinned revision: %s\n' "$(<"$nixpkgs/.git-revision")"
 else
-  printf 'WARNING: root nixos channel is not installed.\n'
+  printf 'WARNING: the pinned Nixpkgs is not on NIX_PATH.\n'
 fi

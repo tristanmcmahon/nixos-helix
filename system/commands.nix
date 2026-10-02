@@ -1,6 +1,12 @@
-{ pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
+  health = config.helix.health;
   helixHealth = pkgs.writeShellApplication {
     name = "helix-health";
     runtimeInputs = with pkgs; [
@@ -14,7 +20,13 @@ let
       util-linux
       openclaw
     ];
-    text = builtins.readFile ../scripts/helix-health.sh;
+    # Each feature registers its own units, so disabling a feature also drops
+    # it from the health gate.
+    text = ''
+      critical_units=(${lib.escapeShellArgs health.criticalUnits})
+      critical_user_units=(${lib.escapeShellArgs health.criticalUserUnits})
+    ''
+    + builtins.readFile ../scripts/helix-health.sh;
   };
   helixUpdate = pkgs.writeShellApplication {
     name = "helix-update";
@@ -34,7 +46,20 @@ let
   };
 in
 {
-  environment.systemPackages = [
+  options.helix.health = {
+    criticalUnits = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "System units that helix-health --check requires to be active.";
+    };
+    criticalUserUnits = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "User units that helix-health --check requires in a user session.";
+    };
+  };
+
+  config.environment.systemPackages = [
     helixHealth
     helixUpdate
   ];

@@ -2,6 +2,10 @@ name: Release CI
 
 on:
   workflow_dispatch:
+  # Weekly on the default branch only, so a broken release gate is noticed
+  # within a week; pushes to release branches still never start this build.
+  schedule:
+    - cron: "17 14 * * 6"
 
 permissions:
   contents: read
@@ -16,12 +20,11 @@ jobs:
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v7
+      # Nixpkgs comes from the repository pin (nixpkgs.json), so CI evaluates
+      # exactly the tree Helix builds.
       - uses: cachix/install-nix-action@v31
-        with:
-          nix_path: nixpkgs=channel:nixos-26.05
       - name: Full release validation
         env:
           TMPDIR: /tmp
         run: |
-          export HELIX_NIXPKGS_PATH="$(nix-instantiate --find-file nixpkgs)"
           ./scripts/dev-shell.sh --run './scripts/check.sh --full'

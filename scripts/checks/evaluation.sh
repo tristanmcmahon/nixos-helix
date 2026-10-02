@@ -8,3 +8,6 @@ nix-instantiate --eval --strict tests/monitoring-disabled.nix
 
 printf 'Evaluating emulation enable/disable boundaries...\n'
 nix-instantiate --eval --strict tests/emulation-disabled.nix
+
+printf "Evaluating the all-features-disabled boundary...\n"
+nix-instantiate --eval --strict tests/features-disabled.nix

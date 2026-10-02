@@ -5,8 +5,16 @@ set -euo pipefail
 repo=/home/tristan/Projects/nixos-helix
 cd "$repo"
 
-if [[ -n $(git status --porcelain --untracked-files=normal) ]]; then
+# Never let repository-local Git configuration run commands here.
+if [[ -n $(git -c core.fsmonitor=false -c core.hooksPath=/dev/null \
+  status --porcelain --untracked-files=normal) ]]; then
   printf 'Refusing to update: %s has uncommitted or untracked files.\n' "$repo" >&2
+  exit 1
+fi
+
+branch=$(git symbolic-ref --short HEAD 2>/dev/null || true)
+if [[ $branch != main ]]; then
+  printf 'Refusing to update: %s is on %s, not main.\n' "$repo" "${branch:-a detached HEAD}" >&2
   exit 1
 fi
 
@@ -14,16 +22,21 @@ run_build() {
   if command -v nom >/dev/null 2>&1; then "$@" 2>&1 | nom; else "$@"; fi
 }
 
-printf 'Updating the root NixOS channel...\n'
-sudo nix-channel --update nixos
-printf 'Running repository validation...\n'
-./scripts/check.sh
-printf 'Building candidate system...\n'
 temporary_directory=$(mktemp -d)
 out_link="$temporary_directory/system"
 trap 'rm -rf -- "$temporary_directory"' EXIT
-run_build nix-build --out-link "$out_link" '<nixpkgs/nixos>' -A system \
-  -I "nixos-config=$repo/configuration.nix"
+
+# Nixpkgs is pinned in nixpkgs.json, so an update is a reviewed commit (see
+# scripts/bump-nixpkgs.sh). Bring in reviewed main, never a local merge.
+printf 'Fast-forwarding to the reviewed main branch...\n'
+git -c core.fsmonitor=false -c core.hooksPath=/dev/null pull --ff-only
+# The checkout, not the Nix store, provides this file at runtime.
+# shellcheck source=/dev/null
+source "$repo/scripts/release-environment.sh"
+printf 'Running repository validation...\n'
+./scripts/check.sh
+printf 'Building candidate system...\n'
+run_build nix-build --out-link "$out_link" '<nixpkgs/nixos>' -A system
 candidate=$(readlink -f "$out_link")
 printf 'Candidate package changes:\n'
 nvd diff /run/current-system "$candidate"

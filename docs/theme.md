@@ -6,8 +6,10 @@ text, and distinct amber/red warning states. It uses maintained Breeze
 components rather than a theme-store stack, excessive transparency, or a new
 theme engine.
 
-Fern remains the exact default and canonical source palette in
-`config/theme/palette.nix`: `#0B0D0C` deep canvas,
+Fern is the default. Every theme lives in `config/theme/palettes.nix`: its name,
+description, whether `helix-theme random` may pick it, and eight colour roles
+(accent, bright accent, deep accent, selection, and four surface steps), plus
+the neutral `base` colours shared by all themes. Fern's values: `#0B0D0C` deep canvas,
 `#181C19` primary surface, `#232824` raised surface, `#303832` hover surface,
 `#3A443C` border,
 `#E4E8E5` primary text, `#AEB8B1` secondary text, `#7E8981` muted text,
@@ -59,7 +61,10 @@ dark preference; no global GTK or Qt environment override is set.
 
 Ghostty has four repository-owned profiles: Main, Moss, Slate, and
 Ember. In Plasma, launch **Ghostty Profile** or press
-`Meta+Shift+Return` to switch the default font and palette live. Every new
+`Meta+Shift+Return` to switch the default font and palette live. Main follows
+the current Helix theme, so `helix-theme` updates it; a Moss, Slate or Ember
+choice is recorded in `~/.config/ghostty/profile-name` and survives theme
+changes and logins until Main is chosen again. Every new
 Ghostty surface after the first one—including a split, tab, or window—opens the
 same compact colour chooser before Bash starts. This runs inside the new PTY,
 so it works in Plasma and the optional Hyprland session without compositor
@@ -95,6 +100,20 @@ repository-owned colour override when the AdwSteamGtk settings schema is
 available. Launch AdwSteamGtk from Plasma to change or uninstall the skin.
 Store, Community, and profile web pages remain controlled by Steam and cannot
 be recoloured by this mechanism.
+
+## How themes are rendered
+
+`packages/helix-theme-family.nix` passes `palettes.nix` as JSON to
+`scripts/generate-theme-family.py`, which renders the templates in
+`config/theme/templates`. Templates mark each themed value explicitly as
+`@role@`, `@role:lower@`, `@role:bare@` (hex without `#`, as Fuzzel uses),
+`@role:rgb@` or `@role:rgb_spaced@`, plus `@scheme@` and `@name@`, so a colour
+that merely equals a Fern value is never rewritten. `helix-theme`'s list,
+accepted names, scheme names and random pool are all derived from
+`palettes.nix`; adding a theme means adding one entry there. Ghostty Main is the
+Fern rendering of the Ghostty template, and the per-surface colour sequences
+are generated from each Ghostty profile file. Every chooser and prompt runs
+through `helix-menu`, which uses the current theme's Fuzzel configuration.
 
 ## Ownership and mutable state
 

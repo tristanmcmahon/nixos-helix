@@ -7,24 +7,24 @@
 }
 
 window#waybar {
-  background: #232824;
+  background: @surfaceRaised@;
   color: #e4e8e5;
-  border-bottom: 1px solid #3a443c;
+  border-bottom: 1px solid @border:lower@;
 }
 
 #workspaces button {
   padding: 4px 9px;
   color: #aeb8b1;
-  background: #181c19;
+  background: @surface:lower@;
 }
 
-#workspaces button:hover { background: #303832; color: #e4e8e5; }
-#workspaces button.active { background: #315e3e; color: #e4e8e5; }
+#workspaces button:hover { background: @surfaceHover@; color: #e4e8e5; }
+#workspaces button.active { background: @selection:lower@; color: #e4e8e5; }
 #workspaces button.urgent { background: #d77a78; color: #0b0d0c; }
 
 #clock, #network, #pulseaudio, #battery, #tray {
   padding: 0 10px;
-  background: #232824;
+  background: @surfaceRaised@;
   color: #e4e8e5;
 }
 
@@ -33,7 +33,7 @@ window#waybar {
 #battery.critical { color: #d77a78; }
 
 tooltip {
-  background: #303832;
+  background: @surfaceHover@;
   color: #e4e8e5;
-  border: 1px solid #3a443c;
+  border: 1px solid @border:lower@;
 }

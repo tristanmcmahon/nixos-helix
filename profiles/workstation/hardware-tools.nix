@@ -1,6 +1,11 @@
-{ pkgs, ... }:
-
 {
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+
+lib.mkIf config.helix.workstation.enable {
   # These clients inspect hardware; none enables a monitoring or server daemon.
   environment.systemPackages = with pkgs; [
     pciutils

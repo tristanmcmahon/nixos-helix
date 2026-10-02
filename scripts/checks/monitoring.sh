@@ -9,7 +9,11 @@ python3 -m json.tool "$monitoring_dashboard" >/dev/null
 grep -qF '"uid": "helix-overview"' "$monitoring_dashboard"
 grep -qF '"from": "now-24h"' "$monitoring_dashboard"
 [[ -x $system_closure/sw/bin/helix-monitor ]]
-"$system_closure/sw/bin/helix-monitor" --help | grep -qF 'dashboard|fans|commission|inventory|restore|status'
+# Check each subcommand separately so adding one does not break the gate.
+monitor_usage=$("$system_closure/sw/bin/helix-monitor" --help)
+for monitor_subcommand in dashboard netdata fans commission inventory restore status; do
+  [[ $monitor_usage =~ (\[|\|)$monitor_subcommand(\||\]) ]]
+done
 [[ -x $system_closure/sw/bin/helix-fan-commission ]]
 monitoring_launcher=$system_closure/sw/share/applications/helix-monitor.desktop
 [[ -r $monitoring_launcher ]]

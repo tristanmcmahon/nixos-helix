@@ -1,12 +1,19 @@
 { pkgs, ... }:
 
 let
-  stateDirectory = "/home/tristan/.local/state/openclaw";
+  helix = import ../config/helix.nix;
+  stateDirectory = "${helix.home}/.local/state/openclaw";
   workspaceDirectory = "${stateDirectory}/workspace";
   runtimeConfigFile = "${stateDirectory}/config/openclaw.json";
-  repositoryDirectory = "/home/tristan/Projects/nixos-helix";
+  repositoryDirectory = helix.checkout;
+  repositoryExecutableMetadata = [
+    ".git"
+    ".vscode"
+    ".zed"
+    ".claude"
+  ];
   emulationDirectory = "/mnt/games_nvme/emulation";
-  secretFile = "/home/tristan/.config/openclaw/gateway.env";
+  secretFile = "${helix.configHome}/openclaw/gateway.env";
 
   openclawConfig = (pkgs.formats.json { }).generate "openclaw.json" {
     gateway = {
@@ -47,8 +54,8 @@ let
     tools = {
       # The service sandbox below is the filesystem boundary: only OpenClaw's
       # state, the Helix repository, and the SSD emulation tree are writable.
-      # The NAS is independently mounted read-only and reinforced here with a
-      # read-only systemd path. This lets the agent inspect real machine state
+      # Infernalnexus is read-only inside this sandbox; outside it, only the
+      # ROM share is mounted read-only. This lets the agent inspect real machine state
       # and edit the declarative configuration without granting host-wide
       # writes.
       fs.workspaceOnly = false;
@@ -61,15 +68,17 @@ let
   };
 in
 {
+  helix.health.criticalUserUnits = [ "openclaw-gateway.service" ];
+
   systemd.user.services.openclaw-gateway = {
     description = "OpenClaw local gateway";
     wantedBy = [ "default.target" ];
     after = [ "network.target" ];
 
-    unitConfig.ConditionUser = "tristan";
+    unitConfig.ConditionUser = helix.user;
 
     environment = {
-      HOME = "/home/tristan";
+      HOME = helix.home;
       # OpenClaw writes a last-known-good backup beside its config, which fails
       # with EROFS when the config is read directly from /nix/store. Each start
       # copies the generated config into the state directory, so Nix remains
@@ -121,7 +130,14 @@ in
         repositoryDirectory
         emulationDirectory
       ];
-      ReadOnlyPaths = [ "-/mnt/infernalnexus" ];
+      # These repository paths configure programs that later run as tristan
+      # outside this sandbox: Git hooks and core.fsmonitor (run by
+      # helix-update's git status), editor language-server paths, and Claude
+      # Code hooks. The agent may edit tracked configuration but not these.
+      ReadOnlyPaths = [
+        "-/mnt/infernalnexus"
+      ]
+      ++ map (path: "-${repositoryDirectory}/${path}") repositoryExecutableMetadata;
       InaccessiblePaths = [
         "-/etc/nixos/secrets"
         "-/run/docker.sock"

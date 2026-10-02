@@ -1,6 +1,8 @@
 _:
 
 {
+  helix.health.criticalUnits = [ "sshd.service" ];
+
   services.openssh = {
     enable = true;
     openFirewall = true;

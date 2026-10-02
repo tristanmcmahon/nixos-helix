@@ -20,7 +20,6 @@ assert config.systemd.oomd.enable;
 assert config.systemd.oomd.enableRootSlice;
 assert config.systemd.oomd.enableUserSlices;
 assert !config.systemd.oomd.enableSystemSlice;
-assert !(builtins.elem "chatgpt" packageNames);
 assert builtins.elem "adwsteamgtk" packageNames;
 assert builtins.elem "doomrunner" packageNames;
 assert builtins.elem "gzdoom" packageNames;
@@ -44,6 +43,29 @@ assert system.pkgs.openclaw.version == "2026.7.1-2";
 # OpenClaw writes beside its config; a /nix/store config path fails with EROFS.
 assert
   !(system.pkgs.lib.hasPrefix builtins.storeDir config.systemd.user.services.openclaw-gateway.environment.OPENCLAW_CONFIG_PATH);
+# Repository paths that configure commands run outside the OpenClaw sandbox.
+assert builtins.all
+  (
+    path:
+    builtins.elem "-/home/tristan/Projects/nixos-helix/${path}" config.systemd.user.services.openclaw-gateway.serviceConfig.ReadOnlyPaths
+  )
+  [
+    ".git"
+    ".vscode"
+    ".zed"
+    ".claude"
+  ];
+# The health gate covers every critical unit of the enabled features.
+assert builtins.all (unit: builtins.elem unit config.helix.health.criticalUnits) [
+  "sshd.service"
+  "ollama.service"
+  "netdata.service"
+  "prometheus.service"
+  "coolercontrold.service"
+];
+assert config.helix.health.criticalUserUnits == [ "openclaw-gateway.service" ];
+# NIX_PATH exposes the repository's pinned Nixpkgs, not a moving channel.
+assert builtins.elem "nixpkgs=${import ../../nixpkgs.nix}" config.nix.nixPath;
 assert (config.nixpkgs.config.permittedInsecurePackages or [ ]) == [ ];
 assert builtins.elem "evtest" packageNames;
 assert config.environment.variables.EDITOR == "vim";

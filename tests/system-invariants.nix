@@ -3,8 +3,8 @@ let
   inherit (system) config;
   lib = system.pkgs.lib;
   release = import ../release.nix;
-  localSsds = import ../system/local-ssds.nix;
-  themePalette = import ../config/theme/palette.nix;
+  localSsds = (import ../config/helix.nix).ssds;
+  themePalette = (import ../config/theme/palettes.nix).base;
   mountOptions = [
     "noatime"
     "nofail"

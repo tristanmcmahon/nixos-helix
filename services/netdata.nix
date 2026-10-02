@@ -42,6 +42,8 @@ let
 in
 {
   config = lib.mkIf config.helix.monitoring.enable {
+    helix.health.criticalUnits = [ "netdata.service" ];
+
     services.netdata = {
       enable = true;
       package = pkgs.netdata.override {

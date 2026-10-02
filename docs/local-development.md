@@ -10,7 +10,7 @@ cd ~/Projects/nixos-helix
 ```
 
 The helper selects an explicit `HELIX_NIXPKGS_PATH` when provided, otherwise
-the installed root NixOS channel, and refuses a release other than the `26.05`
+the release pinned in `nixpkgs.json`, and refuses a release other than the `26.05`
 contract. This prevents ambient user `NIX_PATH` state from changing evaluation.
 Run a single command in the same environment with:
 
@@ -19,7 +19,7 @@ Run a single command in the same environment with:
 ```
 
 The installed workstation development environment is separately owned by
-`profiles/development.nix` and `packages/development.nix`. That maintained
+`profiles/development.nix` (`helix.development.enable`). That maintained
 system profile contains VS Code, Zed, the Helix editor, hamLLM, GitHub CLI, Git
 LFS, Codex, Claude Code and its Zed ACP adapter, Node.js, `nil`, compilers,
 runtimes, and the other daily development tools. Do not expand the
@@ -154,9 +154,9 @@ Run the complete non-activating validation suite with:
 
 The formatter, Deadnix, and Statix checks exclude only the generated
 `hardware-configuration.nix`. Maintained modules remain fully checked, and the
-formatter uses temporary copies without rewriting source files. The suite
-evaluates repository invariants and builds the canonical NixOS 26.05
-configuration with its 26.05 compatibility floor. Checking and building do not
+formatter uses temporary copies without rewriting source files. The default suite
+evaluates repository invariants against NixOS 26.05 without building; only
+`--full` builds the canonical configuration and its closure checks. Checking and building do not
 activate; dry activation previews changes, `test` changes the running system,
 and `switch` also changes the persistent boot selection. Reboot and destructive
 reinstall remain separate human actions.
