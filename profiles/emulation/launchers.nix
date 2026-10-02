@@ -19,8 +19,6 @@ let
       inherit name;
       runtimeInputs = [ pkgs.coreutils ];
       text = ''
-        set -eu
-
         ${prepare}/bin/helix-emulation-prepare >/dev/null
 
         state_root=${lib.escapeShellArg "${stateRoot}/${emulator}"}
@@ -63,8 +61,6 @@ let
     name = "helix-retroarch";
     runtimeInputs = [ pkgs.coreutils ];
     text = ''
-      set -eu
-
       ${prepare}/bin/helix-emulation-prepare >/dev/null
 
       state_root=${lib.escapeShellArg "${stateRoot}/retroarch"}
