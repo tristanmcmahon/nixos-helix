@@ -13,11 +13,11 @@ host framework. A narrow repository-owned overlay
 selects the immutably pinned first-party OpenClaw package.
 
 The active configuration includes workstation, development, gaming, console emulation,
-a separate hamCade arcade integration, and local LLM profiles, plus a local-only hardware-monitoring stack. Ollama runs
+a separate hamCade arcade integration, and local LLM profiles, plus a Netdata child that streams metrics to Infernalnexus. Ollama runs
 on `127.0.0.1:11434`; SSH is the only service intentionally exposed through the
 firewall. Hardware support includes PipeWire, Bluetooth, native DualSense
 support, redistributable firmware, NVIDIA open kernel modules, ckb-next for the
-Corsair K70, long-history monitoring, and fan control.
+Corsair K70, and fan control.
 
 ## Repository layout
 
