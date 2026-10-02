@@ -31,14 +31,21 @@ OpenClaw comes from `openclaw/nix-openclaw` revision
 Its first-party `nix/packages` definition pins stable OpenClaw 2026.7.1-2. The
 configuration asserts a minimum of 2026.6.9, and retains Nix mode, loopback-only
 network access, Ollama, secret-file handling, and the existing systemd sandbox.
+Inside that sandbox the Helix checkout is writable, but `.git`, `.vscode`,
+`.zed` and `.claude` are read-only because they configure commands that run as
+`tristan` outside it. OpenClaw can edit tracked files; committing stays a
+human step. `helix-update` also disables `core.fsmonitor` and hooks for its
+clean-tree check. If an update fails before the new generation is switched,
+it restores the previous root channel generation.
 
 Routine GitHub CI runs static checks and Nix evaluation/invariants against the
 NixOS 26.05 channel. It deliberately does not build the complete CUDA-enabled
 workstation closure or compile MAME on every pull request.
 
 The expensive closure checks live behind `scripts/check.sh --full` and the
-`Release CI` workflow. Hosted Release CI is manual-dispatch only so release
-branch maintenance cannot accidentally start a large workstation closure build.
+`Release CI` workflow. Hosted Release CI runs on manual dispatch and weekly on
+`main`; pushes, including release branch maintenance, never start the large
+workstation closure build.
 It does not modify Helix.
 
 

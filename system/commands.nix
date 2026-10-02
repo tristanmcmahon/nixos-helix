@@ -23,6 +23,7 @@ let
       deadnix
       gawk
       git
+      gnused
       nix
       nix-output-monitor
       nixfmt

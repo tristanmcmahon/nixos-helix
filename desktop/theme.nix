@@ -100,7 +100,13 @@ let
       install -m 0644 "$source/mako.conf" "$XDG_CONFIG_HOME/mako/helix.conf"
       install -m 0644 "$source/fuzzel.ini" "$XDG_CONFIG_HOME/fuzzel/helix.ini"
       install -m 0644 "$source/steam.css" "$XDG_CONFIG_HOME/AdwSteamGtk/custom.css"
-      install -m 0644 "$source/ghostty.ghostty" "$XDG_CONFIG_HOME/ghostty/profile.ghostty"
+      # ghostty-profile owns the Ghostty profile. Main follows the Helix theme;
+      # an explicit Moss, Slate or Ember choice must survive theme changes.
+      ghostty_choice=main
+      [[ -r $XDG_CONFIG_HOME/ghostty/profile-name ]] && read -r ghostty_choice < "$XDG_CONFIG_HOME/ghostty/profile-name"
+      if [[ $ghostty_choice == main ]]; then
+        install -m 0644 "$source/ghostty.ghostty" "$XDG_CONFIG_HOME/ghostty/profile.ghostty"
+      fi
       python3 /etc/helix/theme/apply-theme-settings.py merge-ini \
         /etc/helix/theme/gtk-3.0-settings.ini "$XDG_CONFIG_HOME/gtk-3.0/settings.ini"
       python3 /etc/helix/theme/apply-theme-settings.py merge-ini \

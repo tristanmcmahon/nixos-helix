@@ -43,7 +43,7 @@ sudo nix-env --profile /nix/var/nix/profiles/system --list-generations
 sudo nixos-rebuild switch --rollback
 ```
 
-Automatic Nix garbage collection uses a 30-day age policy, so recent rollback
+Automatic Nix garbage collection deletes generations older than 14 days, so recent rollback
 generations remain available without a repository-owned generation manager.
 The generated hardware configuration contains no swap, so hibernation is not
 supported unless swap is deliberately designed later.

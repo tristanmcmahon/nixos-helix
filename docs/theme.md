@@ -59,7 +59,10 @@ dark preference; no global GTK or Qt environment override is set.
 
 Ghostty has four repository-owned profiles: Main, Moss, Slate, and
 Ember. In Plasma, launch **Ghostty Profile** or press
-`Meta+Shift+Return` to switch the default font and palette live. Every new
+`Meta+Shift+Return` to switch the default font and palette live. Main follows
+the current Helix theme, so `helix-theme` updates it; a Moss, Slate or Ember
+choice is recorded in `~/.config/ghostty/profile-name` and survives theme
+changes and logins until Main is chosen again. Every new
 Ghostty surface after the first one—including a split, tab, or window—opens the
 same compact colour chooser before Bash starts. This runs inside the new PTY,
 so it works in Plasma and the optional Hyprland session without compositor

@@ -154,9 +154,9 @@ Run the complete non-activating validation suite with:
 
 The formatter, Deadnix, and Statix checks exclude only the generated
 `hardware-configuration.nix`. Maintained modules remain fully checked, and the
-formatter uses temporary copies without rewriting source files. The suite
-evaluates repository invariants and builds the canonical NixOS 26.05
-configuration with its 26.05 compatibility floor. Checking and building do not
+formatter uses temporary copies without rewriting source files. The default suite
+evaluates repository invariants against NixOS 26.05 without building; only
+`--full` builds the canonical configuration and its closure checks. Checking and building do not
 activate; dry activation previews changes, `test` changes the running system,
 and `switch` also changes the persistent boot selection. Reboot and destructive
 reinstall remain separate human actions.

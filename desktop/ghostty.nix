@@ -83,7 +83,7 @@ let
     ];
     text = ''
       selection=$(printf '%s\n' \
-        'Main   · JetBrains Mono · graphite / fern' \
+        'Main   · JetBrains Mono · follows the Helix theme' \
         'Moss   · Maple Mono     · softer green' \
         'Slate  · Iosevka        · cool graphite' \
         'Ember  · Monaspace Neon · warm graphite' |
@@ -97,8 +97,16 @@ let
         *) exit 0 ;;
       esac
 
-      install -m 0644 "/etc/helix/ghostty/profiles/$profile.ghostty" \
-        "$HOME/.config/ghostty/profile.ghostty"
+      config_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/ghostty"
+      mkdir -p "$config_dir"
+      source_profile=/etc/helix/ghostty/profiles/$profile.ghostty
+      # Main follows the current Helix theme; helix-theme keeps it in step.
+      current_theme_profile="''${XDG_CONFIG_HOME:-$HOME/.config}/helix/theme/current/ghostty.ghostty"
+      if [[ $profile == main && -r $current_theme_profile ]]; then
+        source_profile=$current_theme_profile
+      fi
+      install -m 0644 "$source_profile" "$config_dir/profile.ghostty"
+      printf '%s\n' "$profile" > "$config_dir/profile-name"
 
       # Ghostty's GTK build reloads configuration on SIGUSR2. Prefer the
       # systemd-owned process when available, with a direct signal fallback.

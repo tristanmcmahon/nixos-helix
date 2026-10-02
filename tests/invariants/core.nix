@@ -44,6 +44,18 @@ assert system.pkgs.openclaw.version == "2026.7.1-2";
 # OpenClaw writes beside its config; a /nix/store config path fails with EROFS.
 assert
   !(system.pkgs.lib.hasPrefix builtins.storeDir config.systemd.user.services.openclaw-gateway.environment.OPENCLAW_CONFIG_PATH);
+# Repository paths that configure commands run outside the OpenClaw sandbox.
+assert builtins.all
+  (
+    path:
+    builtins.elem "-/home/tristan/Projects/nixos-helix/${path}" config.systemd.user.services.openclaw-gateway.serviceConfig.ReadOnlyPaths
+  )
+  [
+    ".git"
+    ".vscode"
+    ".zed"
+    ".claude"
+  ];
 assert (config.nixpkgs.config.permittedInsecurePackages or [ ]) == [ ];
 assert builtins.elem "evtest" packageNames;
 assert config.environment.variables.EDITOR == "vim";

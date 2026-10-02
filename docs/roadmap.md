@@ -27,6 +27,9 @@ and independent.
 
 ## Defects
 
+All five defects and the weekly Release CI schedule from Phase 0 were fixed on
+2026-10-02. The `--full` gate still needs one confirming run.
+
 1. **The `--full` release gate has failed since #74.**
    `scripts/checks/monitoring.sh:12` greps `helix-monitor --help` for
    `dashboard|fans|commission|…`, but #74 changed the usage string to
