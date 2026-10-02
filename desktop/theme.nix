@@ -1,7 +1,6 @@
 { lib, pkgs, ... }:
 
 let
-  helix = import ../config/helix.nix;
   palettes = import ../config/theme/palettes.nix;
   palette = palettes.base;
   themes = palettes.order;
@@ -69,7 +68,6 @@ let
         index=$((RANDOM % ''${#eligible[@]}))
         selected="''${eligible[$index]}"
         ;;
-      --apply-current) ;;
       --help|-h|"") printf 'Usage: helix-theme {list|current|random|${themePattern}}\n'; exit 0 ;;
       *) printf 'Unknown Helix theme: %s\n' "$1" >&2; exit 2 ;;
       esac
@@ -210,18 +208,5 @@ in
         NoDisplay=true
       '';
     };
-  systemd.user.services.helix-graphite-fern-theme = {
-    description = "Apply Tristan's persisted Helix theme";
-    wantedBy = [ "graphical-session.target" ];
-    after = [ "graphical-session-pre.target" ];
-    unitConfig.ConditionUser = helix.user;
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = "${helixTheme}/bin/helix-theme --apply-current";
-      Environment = [
-        "HOME=${helix.home}"
-        "XDG_CONFIG_HOME=${helix.configHome}"
-      ];
-    };
-  };
+
 }

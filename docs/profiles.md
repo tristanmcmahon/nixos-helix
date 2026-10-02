@@ -78,7 +78,9 @@ Nix declares this baseline model set:
 
 The native NixOS `ollama-model-loader` starts after and binds to
 `ollama.service`. It pulls every declared tag in parallel when the loader starts
-and retries failed pulls with bounded backoff. Existing Ollama blobs and
+and retries failed pulls with bounded backoff. It stays active after a
+successful run, so pulls happen once per boot or Ollama restart rather than on
+every rebuild. Existing Ollama blobs and
 manifests remain mutable data in the same model store; they never enter the Nix
 store. `syncModels = false` means manually pulled experimental models are
 preserved rather than treated as undeclared state to delete.

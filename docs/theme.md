@@ -117,8 +117,9 @@ through `helix-menu`, which uses the current theme's Fuzzel configuration.
 
 ## Ownership and mutable state
 
-`desktop/theme.nix` owns packaging, SDDM, deployment, the early persisted-theme
-user service, and the KDE login autostart that rotates among civilized themes.
+`desktop/theme.nix` owns packaging, SDDM, deployment, and the KDE login
+autostart that rotates among civilized themes; each login applies exactly one
+theme.
 `desktop/hyprland.nix` owns the matching ordered Hyprland login rotation and
 surface startup. Theme application updates selected KDE keys and merges only
 repository-owned GTK keys. `desktop/ghostty.nix` deploys Ghostty;
@@ -132,8 +133,6 @@ settings the current architecture already handles cleanly.
 Inspect or force the current theme with:
 
 ```bash
-systemctl --user status helix-graphite-fern-theme.service
-journalctl --user -u helix-graphite-fern-theme.service
 helix-theme current
 helix-theme random
 helix-apply-theme --force

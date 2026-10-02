@@ -70,6 +70,10 @@ in
         requires = [ "helix-ollama-model-storage.service" ];
         after = [ "helix-ollama-model-storage.service" ];
       };
+      # The loader exits after pulling, so every activation used to start it
+      # again and re-pull all declared tags. Staying active keeps it to once
+      # per boot, and again whenever ollama.service restarts (it BindsTo it).
+      ollama-model-loader.serviceConfig.RemainAfterExit = true;
       helix-ollama-model-storage = helixLib.mkMountedDirectory {
         description = "Create the Ollama model store on GAMES_NVME";
         inherit (helix.gamesNvme) mountPoint;

@@ -3,6 +3,8 @@ let
   inherit (context) config lib system;
 in
 assert config.services.ollama.enable;
+# Model pulls happen once per boot or Ollama restart, not on every rebuild.
+assert config.systemd.services.ollama-model-loader.serviceConfig.RemainAfterExit;
 assert config.services.ollama.host == "127.0.0.1";
 assert !config.services.ollama.openFirewall;
 assert config.services.ollama.package == system.pkgs.ollama-cuda;

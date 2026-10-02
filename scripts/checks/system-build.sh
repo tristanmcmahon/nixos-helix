@@ -8,14 +8,13 @@ system_closure=$(nix-build --no-out-link '<nixpkgs/nixos>' -A system \
 
 # One evaluation of the canonical configuration supplies every other artifact.
 printf 'Building inspected artifacts from the canonical configuration...\n'
-mapfile -t artifacts < <(nix-build --no-out-link tests/artifacts.nix \
-  -A hyprlandConfig -A sessionData -A onepasswordGui -A onepasswordCli)
-hyprland_config=${artifacts[0]}
-session_data=${artifacts[1]}
+artifacts=$(nix-build --no-out-link tests/artifacts.nix)
+hyprland_config=$(readlink -f "$artifacts/hyprland.conf")
+session_data=$(readlink -f "$artifacts/session-data")
 # shellcheck disable=SC2034 # Used by the sourced applications checks.
-onepassword_gui=${artifacts[2]}
+onepassword_gui=$(readlink -f "$artifacts/1password-gui")
 # shellcheck disable=SC2034 # Used by the sourced applications checks.
-onepassword_cli=${artifacts[3]}
+onepassword_cli=$(readlink -f "$artifacts/1password-cli")
 
 printf 'Checking Helix health and update command surfaces...\n'
 "$system_closure/sw/bin/helix-health" --help | grep -qF -- '--check'

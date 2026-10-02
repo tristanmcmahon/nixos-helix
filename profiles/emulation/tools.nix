@@ -15,8 +15,6 @@ let
       pkgs.util-linux
     ];
     text = ''
-      set -eu
-
       verify_cifs() {
         mount_path=$1
         expected_source=$2
@@ -45,8 +43,6 @@ let
       pkgs.gnused
     ];
     text = ''
-      set -eu
-
       ${requireNas}/bin/helix-emulation-require-nas
 
       rom_root=${lib.escapeShellArg romRoot}
@@ -82,11 +78,8 @@ let
     runtimeInputs = [
       pkgs.coreutils
       pkgs.findutils
-      discover
     ];
     text = ''
-      set -eu
-
       ${requireNas}/bin/helix-emulation-require-nas
 
       root=${lib.escapeShellArg emulationRoot}
@@ -182,7 +175,6 @@ let
       printf 'Exposed %s BIOS/firmware candidate directories under %s\n' \
         "$bios_index" "$root/bios/sources"
 
-      helix-emulation-discover >/dev/null
       printf 'Prepared NAS-backed emulation tree at %s\n' "$root"
     '';
   };
@@ -191,8 +183,6 @@ let
     name = "helix-emulation-scrape";
     runtimeInputs = [ pkgs.skyscraper ];
     text = ''
-      set -eu
-
       ${prepare}/bin/helix-emulation-prepare >/dev/null
 
       platform=''${1:-}
@@ -238,7 +228,6 @@ let
     name = "helix-emulation-status";
     runtimeInputs = [ pkgs.coreutils ];
     text = ''
-      set -eu
       printf 'Helix emulation module: enabled\n'
       printf 'Read-only ROM root: %s\n' ${lib.escapeShellArg romRoot}
       printf 'SSD emulation root: %s\n' ${lib.escapeShellArg emulationRoot}

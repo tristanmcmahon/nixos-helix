@@ -45,7 +45,8 @@ assert builtins.hasAttr "addon@darkreader.org" config.programs.firefox.policies.
 assert config.programs.firefox.preferences."ui.systemUsesDarkTheme" == 1;
 assert config.services.displayManager.sddm.theme == "helix-graphite-fern";
 assert config.programs.dconf.enable;
-assert config.systemd.user.services.helix-graphite-fern-theme.unitConfig.ConditionUser == "tristan";
+# Login applies the theme once, from the session rotation, not twice.
+assert !(config.systemd.user.services ? helix-graphite-fern-theme);
 assert config.systemd.user.services.helix-ghostty-config.unitConfig.ConditionUser == "tristan";
 assert builtins.elem "HOME=/home/tristan"
   config.systemd.user.services.helix-ghostty-config.serviceConfig.Environment;

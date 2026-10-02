@@ -69,11 +69,8 @@ for theme_runtime_command in gsettings python3 plasma-apply-colorscheme \
   done
   ((found_runtime_command))
 done
-theme_unit=$system_closure/etc/systemd/user/helix-graphite-fern-theme.service
-[[ -r $theme_unit ]]
-grep -qF 'ConditionUser=tristan' "$theme_unit"
-grep -qF 'HOME=/home/tristan' "$theme_unit"
-grep -qF 'XDG_CONFIG_HOME=/home/tristan/.config' "$theme_unit"
+# Each login applies exactly one theme, from the session's rotation.
+[[ ! -e $system_closure/etc/systemd/user/helix-graphite-fern-theme.service ]]
 ghostty_unit=$system_closure/etc/systemd/user/helix-ghostty-config.service
 [[ -r $ghostty_unit ]]
 grep -qF 'ConditionUser=tristan' "$ghostty_unit"
