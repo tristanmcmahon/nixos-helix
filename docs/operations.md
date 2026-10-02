@@ -3,7 +3,7 @@
 `helix-health` is a read-only, one-screen report covering NixOS/kernel and the
 current generation, NVIDIA status, RAM/zram/swap, local disk space, failed system
 and user units, OpenClaw gateway/version, monitoring services, and the selected
-root NixOS channel and its age where available. Missing optional session data is
+pinned Nixpkgs revision. Missing optional session data is
 shown as a warning rather than aborting the report. `helix-health --check` is
 the non-interactive runtime gate: it verifies the NVIDIA driver, GAMES_NVME, and
 the critical SSH, Ollama, monitoring, cooling, and available user-session
@@ -14,8 +14,8 @@ not part of this gate because NAS availability must not determine workstation
 boot health.
 
 `helix-update` is the deliberate attended update path. It only operates on
-`/home/tristan/Projects/nixos-helix`, refuses any dirty or untracked work tree,
-updates only the root `nixos` channel, runs `scripts/check.sh`, builds a
+`/home/tristan/Projects/nixos-helix` on `main`, refuses any dirty or untracked
+work tree, fast-forwards to reviewed `main`, runs `scripts/check.sh`, builds a
 candidate, displays `nvd diff`, and test-activates it. The candidate's own
 `helix-health --check` must pass before it is registered in the system profile and
 selected for boot; a failed health gate restores the previous running generation
@@ -37,11 +37,19 @@ Inside that sandbox the Helix checkout is writable, but `.git`, `.vscode`,
 `.zed` and `.claude` are read-only because they configure commands that run as
 `tristan` outside it. OpenClaw can edit tracked files; committing stays a
 human step. `helix-update` also disables `core.fsmonitor` and hooks for its
-clean-tree check. If an update fails before the new generation is switched,
-it restores the previous root channel generation.
+Git commands.
+
+## Nixpkgs pin
+
+Nixpkgs is pinned in `nixpkgs.json` to an immutable NixOS release tarball and
+its hash, so a commit fully determines the system that CI, rebuilds and
+`helix-update` build, and any past generation can be rebuilt from its commit.
+To update, run `./scripts/bump-nixpkgs.sh` (newest release of the series, or a
+named release), check and dry-build, and open a pull request; after it merges,
+`helix-update` applies it.
 
 Routine GitHub CI runs static checks and Nix evaluation/invariants against the
-NixOS 26.05 channel. It deliberately does not build the complete CUDA-enabled
+pinned Nixpkgs. It deliberately does not build the complete CUDA-enabled
 workstation closure or compile MAME on every pull request.
 
 The expensive closure checks live behind `scripts/check.sh --full` and the

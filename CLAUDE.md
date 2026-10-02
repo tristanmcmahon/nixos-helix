@@ -1,7 +1,8 @@
 # Working on Helix
 
 Helix is one NixOS 26.05 workstation configured declaratively with ordinary
-NixOS modules and the root `nixos` channel. There are no flakes, no Home
+NixOS modules and the Nixpkgs release pinned in `nixpkgs.json` (bump it with
+`scripts/bump-nixpkgs.sh`, in a PR). There are no flakes, no Home
 Manager and no host framework. Read `docs/architecture.md` before structural
 changes; it is the authority on ownership, state, safety and network rules.
 
@@ -41,7 +42,7 @@ changes; it is the authority on ownership, state, safety and network rules.
 
 Activation is always the user's explicit decision. Do not run
 `./scripts/rebuild.sh test` or `switch` (or `nixos-rebuild`, garbage collection,
-or channel updates) unless asked. After a requested `test`, run
+or Nixpkgs pin bumps) unless asked. After a requested `test`, run
 `helix-health --check`. Evaluation and builds do not prove hardware works; see
 `docs/hardware-validation.md`.
 

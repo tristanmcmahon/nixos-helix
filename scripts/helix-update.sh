@@ -12,36 +12,24 @@ if [[ -n $(git -c core.fsmonitor=false -c core.hooksPath=/dev/null \
   exit 1
 fi
 
+branch=$(git symbolic-ref --short HEAD 2>/dev/null || true)
+if [[ $branch != main ]]; then
+  printf 'Refusing to update: %s is on %s, not main.\n' "$repo" "${branch:-a detached HEAD}" >&2
+  exit 1
+fi
+
 run_build() {
   if command -v nom >/dev/null 2>&1; then "$@" 2>&1 | nom; else "$@"; fi
 }
 
 temporary_directory=$(mktemp -d)
 out_link="$temporary_directory/system"
-channels_profile=/nix/var/nix/profiles/per-user/root/channels
-previous_channels=$(readlink "$channels_profile")
-previous_channel_generation=$(sed -E 's/^channels-([0-9]+)-link$/\1/' <<<"$previous_channels")
-[[ $previous_channel_generation =~ ^[0-9]+$ ]] || {
-  printf 'Unexpected root channel profile link: %s\n' "$previous_channels" >&2
-  exit 1
-}
-update_completed=0
+trap 'rm -rf -- "$temporary_directory"' EXIT
 
-# A failed update must not leave the advanced channel selected for the next
-# manual rebuild. Restore the exact previous channel generation unless the new
-# system was registered and switched successfully.
-finish() {
-  if ((update_completed == 0)) && [[ $(readlink "$channels_profile") != "$previous_channels" ]]; then
-    printf 'Update did not complete; restoring root channel generation %s...\n' \
-      "$previous_channel_generation" >&2
-    sudo nix-env --profile "$channels_profile" --switch-generation "$previous_channel_generation"
-  fi
-  rm -rf -- "$temporary_directory"
-}
-trap finish EXIT
-
-printf 'Updating the root NixOS channel...\n'
-sudo nix-channel --update nixos
+# Nixpkgs is pinned in nixpkgs.json, so an update is a reviewed commit (see
+# scripts/bump-nixpkgs.sh). Bring in reviewed main, never a local merge.
+printf 'Fast-forwarding to the reviewed main branch...\n'
+git -c core.fsmonitor=false -c core.hooksPath=/dev/null pull --ff-only
 # The checkout, not the Nix store, provides this file at runtime.
 # shellcheck source=/dev/null
 source "$repo/scripts/release-environment.sh"
@@ -70,7 +58,6 @@ if ! sudo "$candidate/bin/switch-to-configuration" switch; then
   sudo "$previous/bin/switch-to-configuration" switch
   exit 1
 fi
-update_completed=1
 profile=$(readlink -f /nix/var/nix/profiles/system)
 generation=$(sudo nix-env --profile /nix/var/nix/profiles/system --list-generations |
   awk '$0 ~ /current/ { print $1 }')

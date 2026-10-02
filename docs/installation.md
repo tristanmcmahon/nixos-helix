@@ -1,8 +1,11 @@
 # Normal operation and recovery
 
-Helix uses NixOS 26.05 from the root `nixos` channel. Repository checks and
-rebuilds select the same Nixpkgs tree through `release-environment.sh` and fail
-if it reports another NixOS release.
+Helix uses the NixOS 26.05 release pinned in `nixpkgs.json`. Repository checks,
+rebuilds, CI and `helix-update` select that tree through
+`release-environment.sh` and fail if it reports another NixOS release;
+`nix.nixPath` exposes the same tree to ad-hoc Nix commands. The root channel is
+no longer used. On a fresh install, set `HELIX_NIXPKGS_PATH` to the installer's
+tree for the first build if the pin cannot be fetched yet.
 
 The tracked `hardware-configuration.nix` belongs to the currently installed
 machine. Do not run `nixos-generate-config` over this checkout. Fresh
@@ -27,7 +30,7 @@ The `dry-activate` action is available when an activation diff is useful.
 
 The current installation was created on NixOS 26.05, so
 `system.stateVersion = "26.05"` is its permanent compatibility floor. Do not
-raise it for an ordinary channel update.
+raise it for an ordinary Nixpkgs update.
 
 ## Recovery
 

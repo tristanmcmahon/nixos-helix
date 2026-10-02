@@ -64,6 +64,8 @@ assert builtins.all (unit: builtins.elem unit config.helix.health.criticalUnits)
   "coolercontrold.service"
 ];
 assert config.helix.health.criticalUserUnits == [ "openclaw-gateway.service" ];
+# NIX_PATH exposes the repository's pinned Nixpkgs, not a moving channel.
+assert builtins.elem "nixpkgs=${import ../../nixpkgs.nix}" config.nix.nixPath;
 assert (config.nixpkgs.config.permittedInsecurePackages or [ ]) == [ ];
 assert builtins.elem "evtest" packageNames;
 assert config.environment.variables.EDITOR == "vim";

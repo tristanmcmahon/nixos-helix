@@ -109,14 +109,11 @@ for unit in "${critical_units[@]}"; do
   printf '%-39s %s\n' "${unit%.service}" "$(status_word "$unit")"
 done
 
-heading 'NixOS channel'
-channel=/nix/var/nix/profiles/per-user/root/channels/nixos
-if [[ -e $channel ]]; then
-  target=$(readlink -f "$channel" 2>/dev/null || printf unknown)
-  printf 'root nixos: %s\n' "$target"
-  if [[ -e $target ]]; then
-    printf 'selected source age: %s days\n' "$(( ($(date +%s) - $(stat -c %Y "$target")) / 86400 ))"
-  fi
+heading 'Nixpkgs'
+# Nixpkgs is pinned in the repository's nixpkgs.json; nix.nixPath exposes the
+# pinned tree that built this system.
+if nixpkgs=$(nix-instantiate --find-file nixpkgs 2>/dev/null) && [[ -r $nixpkgs/.git-revision ]]; then
+  printf 'pinned revision: %s\n' "$(<"$nixpkgs/.git-revision")"
 else
-  printf 'WARNING: root nixos channel is not installed.\n'
+  printf 'WARNING: the pinned Nixpkgs is not on NIX_PATH.\n'
 fi

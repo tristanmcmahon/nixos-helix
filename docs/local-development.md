@@ -10,7 +10,7 @@ cd ~/Projects/nixos-helix
 ```
 
 The helper selects an explicit `HELIX_NIXPKGS_PATH` when provided, otherwise
-the installed root NixOS channel, and refuses a release other than the `26.05`
+the release pinned in `nixpkgs.json`, and refuses a release other than the `26.05`
 contract. This prevents ambient user `NIX_PATH` state from changing evaluation.
 Run a single command in the same environment with:
 
