@@ -1,14 +1,72 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 
 let
+  helixMenu = import ../packages/helix-menu.nix { inherit pkgs; };
   helix = import ../config/helix.nix;
   managedConfig = ../config/ghostty/config.ghostty;
-  profiles = {
-    main = ../config/ghostty/profiles/main.ghostty;
-    moss = ../config/ghostty/profiles/moss.ghostty;
-    slate = ../config/ghostty/profiles/slate.ghostty;
-    ember = ../config/ghostty/profiles/ember.ghostty;
+  palettes = import ../config/theme/palettes.nix;
+  themeFamily = import ../packages/helix-theme-family.nix { inherit pkgs; };
+
+  # Main is the Fern rendering of the theme template, so it always matches the
+  # Helix default; Moss, Slate and Ember are hand-tuned profiles.
+  profileSources = {
+    main =
+      let
+        fern = palettes.themes.fern;
+        roles = builtins.attrNames (
+          removeAttrs fern [
+            "name"
+            "description"
+            "random"
+          ]
+        );
+      in
+      lib.replaceStrings (map (role: "@${role}@") roles) (map (role: fern.${role}) roles) (
+        builtins.readFile ../config/theme/templates/ghostty.ghostty
+      );
+    moss = builtins.readFile ../config/ghostty/profiles/moss.ghostty;
+    slate = builtins.readFile ../config/ghostty/profiles/slate.ghostty;
+    ember = builtins.readFile ../config/ghostty/profiles/ember.ghostty;
   };
+  profileNames = [
+    "main"
+    "moss"
+    "slate"
+    "ember"
+  ];
+
+  # The OSC 10/11/12 (foreground, background, cursor) and OSC 4 (palette)
+  # sequences that recolour one surface, derived from a profile's own values.
+  surfaceEscapes =
+    text:
+    let
+      lines = lib.splitString "\n" text;
+      value =
+        key:
+        lib.head (
+          lib.concatMap (
+            line:
+            let
+              match = builtins.match "${key} = (#[0-9A-Fa-f]{6})" line;
+            in
+            lib.optional (match != null) (lib.head match)
+          ) lines
+        );
+      palette = lib.concatMap (
+        line:
+        let
+          match = builtins.match "palette = ([0-9]+)=(#[0-9A-Fa-f]{6})" line;
+        in
+        lib.optional (match != null) "${lib.elemAt match 0};${lib.elemAt match 1}"
+      ) lines;
+    in
+    ''
+      printf '\033]10;${value "foreground"}\033\\\033]11;${value "background"}\033\\\033]12;${value "cursor-color"}\033\\'
+      printf '\033]4;${lib.concatStringsSep ";" palette}\033\\'
+    '';
+  surfaceCases = lib.concatMapStringsSep "\n" (
+    name: "${name})\n${surfaceEscapes profileSources.${name}};;"
+  ) profileNames;
 
   ghosttySurfaceProfile = pkgs.writeShellApplication {
     name = "ghostty-surface-profile";
@@ -17,22 +75,7 @@ let
       profile=''${1:-}
 
       case "$profile" in
-        main)
-          printf '\033]10;#E4E8E5\033\\\033]11;#0B0D0C\033\\\033]12;#81C995\033\\'
-          printf '\033]4;0;#0B0D0C;1;#D77A78;2;#67B87A;3;#D6AD63;4;#76A8B5;5;#A890B8;6;#72B6A1;7;#D6DCD8;8;#7E8981;9;#E29491;10;#81C995;11;#E2BF7E;12;#91BCC6;13;#BDA6C9;14;#8CCABA;15;#F1F4F2\033\\'
-          ;;
-        moss)
-          printf '\033]10;#E0E7E2\033\\\033]11;#0D110E\033\\\033]12;#8FC79B\033\\'
-          printf '\033]4;0;#0D110E;1;#D27C79;2;#72B77F;3;#CFAB6B;4;#7BA4AD;5;#A28FAE;6;#76AA98;7;#D1D9D3;8;#78867D;9;#E09490;10;#8FC79B;11;#DEBC81;12;#91B7BE;13;#B8A5C0;14;#8FC3B1;15;#EEF2EF\033\\'
-          ;;
-        slate)
-          printf '\033]10;#E2E7E8\033\\\033]11;#0C0F11\033\\\033]12;#87B7C0\033\\'
-          printf '\033]4;0;#0C0F11;1;#D47D7B;2;#70B58A;3;#D0AD6D;4;#79A9B6;5;#A18FAC;6;#72B0A6;7;#D5DDDE;8;#778286;9;#E19693;10;#86C29A;11;#DCBD82;12;#93BDC7;13;#B5A4BF;14;#8BC4BA;15;#F0F4F4\033\\'
-          ;;
-        ember)
-          printf '\033]10;#E8E3DC\033\\\033]11;#100F0D\033\\\033]12;#D4B071\033\\'
-          printf '\033]4;0;#100F0D;1;#D77F79;2;#78AF7F;3;#D4B071;4;#7F9FAC;5;#A491A5;6;#77A99A;7;#D9D3CB;8;#837D74;9;#E39992;10;#8CC18F;11;#E2C084;12;#96B4BE;13;#BAA5B7;14;#8EBCAF;15;#F3EFE9\033\\'
-          ;;
+        ${surfaceCases}
         *)
           printf 'unknown Ghostty surface profile: %s\n' "$profile" >&2
           exit 2
@@ -47,7 +90,7 @@ let
   ghosttySurfaceShell = pkgs.writeShellApplication {
     name = "ghostty-surface-shell";
     runtimeInputs = [
-      pkgs.fuzzel
+      helixMenu
       ghosttySurfaceProfile
     ];
     text = ''
@@ -56,7 +99,7 @@ let
         'Moss  · softer green' \
         'Slate · cool graphite' \
         'Ember · warm graphite' |
-        fuzzel --config /etc/helix/theme/fuzzel.ini --dmenu --prompt='New Ghostty surface: ' || true)
+        helix-menu --dmenu --prompt='New Ghostty surface: ' || true)
 
       case "$selection" in
         Main*) profile=main ;;
@@ -78,7 +121,7 @@ let
     name = "ghostty-profile";
     runtimeInputs = [
       pkgs.coreutils
-      pkgs.fuzzel
+      helixMenu
       pkgs.procps
       pkgs.systemd
     ];
@@ -88,7 +131,7 @@ let
         'Moss   · Maple Mono     · softer green' \
         'Slate  · Iosevka        · cool graphite' \
         'Ember  · Monaspace Neon · warm graphite' |
-        fuzzel --config /etc/helix/theme/fuzzel.ini --dmenu --prompt='Ghostty profile: ' || true)
+        helix-menu --dmenu --prompt='Ghostty profile: ' || true)
 
       case "$selection" in
         Main*) profile=main ;;
@@ -135,10 +178,10 @@ in
   environment = {
     etc = {
       "helix/ghostty/config.ghostty".source = managedConfig;
-      "helix/ghostty/profiles/main.ghostty".source = profiles.main;
-      "helix/ghostty/profiles/moss.ghostty".source = profiles.moss;
-      "helix/ghostty/profiles/slate.ghostty".source = profiles.slate;
-      "helix/ghostty/profiles/ember.ghostty".source = profiles.ember;
+      "helix/ghostty/profiles/main.ghostty".source = "${themeFamily}/generated/fern/ghostty.ghostty";
+      "helix/ghostty/profiles/moss.ghostty".source = ../config/ghostty/profiles/moss.ghostty;
+      "helix/ghostty/profiles/slate.ghostty".source = ../config/ghostty/profiles/slate.ghostty;
+      "helix/ghostty/profiles/ember.ghostty".source = ../config/ghostty/profiles/ember.ghostty;
     };
 
     systemPackages = [

@@ -54,8 +54,10 @@ for module in sorted(maintained - reachable):
 active_edges: dict[pathlib.Path, list[pathlib.Path]] = {}
 for parent, child in edges:
     active_edges.setdefault(child, []).append(parent)
+# Package definitions under packages/ may be shared; modules must be unique.
+packages_dir = (root / "packages").resolve()
 for child, parents in sorted(active_edges.items()):
-    if len(parents) > 1:
+    if len(parents) > 1 and packages_dir not in child.parents:
         locations = ", ".join(str(parent.relative_to(root)) for parent in parents)
         failures.append(f"duplicate module import: {child.relative_to(root)} via {locations}")
 

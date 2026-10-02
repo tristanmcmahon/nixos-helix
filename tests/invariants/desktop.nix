@@ -4,6 +4,8 @@ let
 in
 assert config.services.desktopManager.plasma6.enable;
 assert config.services.displayManager.sddm.enable;
+# Hot Dog Stand stays opt-in: helix-theme random never selects it.
+assert !(import ../../config/theme/palettes.nix).themes.hotdog.random;
 assert
   config.services.displayManager.generic.execCmd != ""
   && builtins.match ".*[Ss][Dd][Dd][Mm].*" config.services.displayManager.generic.execCmd != null;

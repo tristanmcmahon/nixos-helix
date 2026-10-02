@@ -1,0 +1,24 @@
+/* Graphite + Fern overrides for Adwaita-for-Steam. */
+:root {
+  --adw-bg-rgb: 11, 13, 12;
+  --adw-window-bg-rgb: @surface:rgb_spaced@;
+  --adw-view-bg-rgb: 11, 13, 12;
+  --adw-headerbar-bg-rgb: @surface:rgb_spaced@;
+  --adw-sidebar-bg-rgb: @surfaceRaised:rgb_spaced@;
+  --adw-secondary-sidebar-bg-rgb: @surfaceRaised:rgb_spaced@;
+  --adw-card-bg-rgb: @surfaceRaised:rgb_spaced@;
+  --adw-popover-bg-rgb: @surfaceHover:rgb_spaced@;
+  --adw-dialog-bg-rgb: @surfaceRaised:rgb_spaced@;
+  --adw-border-rgb: @border:rgb_spaced@;
+
+  --adw-fg-rgb: 228, 232, 229;
+  --adw-dim-fg-rgb: 174, 184, 177;
+  --adw-disabled-fg-rgb: 126, 137, 129;
+
+  --adw-accent-bg-rgb: @selection:rgb_spaced@;
+  --adw-accent-fg-rgb: 228, 232, 229;
+  --adw-accent-rgb: @accent:rgb_spaced@;
+  --adw-success-rgb: @accentBright:rgb_spaced@;
+  --adw-warning-rgb: 214, 173, 99;
+  --adw-error-rgb: 215, 122, 120;
+}

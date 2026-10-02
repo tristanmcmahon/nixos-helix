@@ -15,7 +15,25 @@ SPEC = importlib.util.spec_from_file_location("theme_settings", ROOT / "scripts/
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 
-colors_path = ROOT / "config/theme/HelixGraphiteFern.colors"
+# Render the whole family once from palettes.nix; Fern assets are checked below.
+GENERATED_DIRECTORY = tempfile.TemporaryDirectory()
+generated = pathlib.Path(GENERATED_DIRECTORY.name)
+palettes_json = generated / "palettes.json"
+palettes_json.write_bytes(
+    subprocess.run(
+        ["nix-instantiate", "--eval", "--strict", "--json", str(ROOT / "config/theme/palettes.nix")],
+        check=True,
+        capture_output=True,
+    ).stdout
+)
+subprocess.run(
+    [sys.executable, str(ROOT / "scripts/generate-theme-family.py"), str(palettes_json), str(ROOT / "config/theme"), str(generated / "out")],
+    check=True,
+)
+generated = generated / "out"
+fern = generated / "fern"
+
+colors_path = fern / "HelixGraphiteFern.colors"
 colors = configparser.ConfigParser()
 colors.optionxform = str
 colors.read(colors_path)
@@ -44,7 +62,7 @@ assert colors["Colors:Window"]["BackgroundNormal"] == "24,28,25"
 assert colors["Colors:View"]["BackgroundNormal"] == "11,13,12"
 assert colors["Colors:Selection"]["BackgroundNormal"] == "49,94,62"
 
-wallpaper = ROOT / "config/theme/wallpaper.svg"
+wallpaper = fern / "wallpaper.svg"
 element_tree.parse(wallpaper)
 wallpaper_text = wallpaper.read_text(encoding="utf-8")
 assert "http://www.w3.org/2000/svg" in wallpaper_text
@@ -56,27 +74,25 @@ for gtk_version in ("3.0", "4.0"):
     assert gtk_settings["Settings"]["gtk-theme-name"] == "Breeze-Dark"
     assert gtk_settings["Settings"]["gtk-application-prefer-dark-theme"] == "true"
 
-waybar = (ROOT / "config/theme/waybar.css").read_text(encoding="utf-8")
+waybar = (fern / "waybar.css").read_text(encoding="utf-8")
 assert waybar.count("{") == waybar.count("}") and "#232824" in waybar
 
-mako = (ROOT / "config/theme/mako.conf").read_text(encoding="utf-8")
+mako = (fern / "mako.conf").read_text(encoding="utf-8")
 for key in ("background-color", "text-color", "border-color", "default-timeout"):
     assert f"{key}=" in mako
 
 fuzzel = configparser.ConfigParser()
-fuzzel.read(ROOT / "config/theme/fuzzel.ini")
+fuzzel.read(fern / "fuzzel.ini")
 assert {"main", "colors", "border"}.issubset(fuzzel.sections())
 for key in ("background", "text", "input", "selection", "border"):
     assert len(fuzzel["colors"][key]) == 8
 
-steam = (ROOT / "config/theme/steam.css").read_text(encoding="utf-8")
+steam = (fern / "steam.css").read_text(encoding="utf-8")
 assert steam.count("{") == steam.count("}")
 for value in ("11, 13, 12", "24, 28, 25", "35, 40, 36", "103, 184, 122"):
     assert value in steam
 
 theme_module = (ROOT / "desktop/theme.nix").read_text(encoding="utf-8")
-assert "pool=(fern petrol plum oxide amber rosewood)" in theme_module
-assert "pool=(fern petrol plum oxide amber rosewood hotdog)" not in theme_module
 assert "Exec=${helixTheme}/bin/helix-theme random" in theme_module
 assert "Usage: helix-theme {list|current|random|" in theme_module
 
@@ -84,32 +100,28 @@ hyprland_module = (ROOT / "desktop/hyprland.nix").read_text(encoding="utf-8")
 assert "helix-hyprland-theme-start" in hyprland_module
 assert "/run/current-system/sw/bin/helix-theme random" in hyprland_module
 
-with tempfile.TemporaryDirectory() as generated_directory:
-    subprocess.run(
-        [sys.executable, str(ROOT / "scripts/generate-theme-family.py"), str(ROOT / "config/theme"), str(ROOT / "config/ghostty/profiles/main.ghostty"), generated_directory],
-        check=True,
-    )
-    generated = pathlib.Path(generated_directory)
-    names = ("fern", "petrol", "plum", "oxide", "amber", "rosewood", "hotdog")
-    for name in names:
-        assets = generated / name
-        assert assets.is_dir()
-        assert (assets / "wallpaper.svg").is_file()
-        assert (assets / "waybar.css").is_file()
-        assert (assets / "mako.conf").is_file()
-        assert (assets / "fuzzel.ini").is_file()
-        assert (assets / "steam.css").is_file()
-        assert (assets / "ghostty.ghostty").is_file()
-        element_tree.parse(assets / "wallpaper.svg")
-        schemes = list(assets.glob("*.colors"))
-        assert len(schemes) == 1
-        parsed = configparser.ConfigParser()
-        parsed.optionxform = str
-        parsed.read(schemes[0])
-        assert required_groups.issubset(parsed.sections())
-    assert (generated / "fern/HelixGraphiteFern.colors").read_bytes() == colors_path.read_bytes()
-    assert "95, 168, 163" in (generated / "petrol/steam.css").read_text(encoding="utf-8")
-    assert "255, 0, 0" in (generated / "hotdog/steam.css").read_text(encoding="utf-8")
+# Every theme renders complete, parseable assets.
+names = ("fern", "petrol", "plum", "oxide", "amber", "rosewood", "hotdog")
+for name in names:
+    assets = generated / name
+    assert assets.is_dir()
+    assert (assets / "wallpaper.svg").is_file()
+    assert (assets / "waybar.css").is_file()
+    assert (assets / "mako.conf").is_file()
+    assert (assets / "fuzzel.ini").is_file()
+    assert (assets / "steam.css").is_file()
+    assert (assets / "ghostty.ghostty").is_file()
+    element_tree.parse(assets / "wallpaper.svg")
+    schemes = list(assets.glob("*.colors"))
+    assert len(schemes) == 1
+    parsed = configparser.ConfigParser()
+    parsed.optionxform = str
+    parsed.read(schemes[0])
+    assert required_groups.issubset(parsed.sections())
+# Fuzzel follows each theme rather than staying Fern.
+assert "prompt=5fa8a3ff" in (generated / "petrol/fuzzel.ini").read_text(encoding="utf-8")
+assert "95, 168, 163" in (generated / "petrol/steam.css").read_text(encoding="utf-8")
+assert "255, 0, 0" in (generated / "hotdog/steam.css").read_text(encoding="utf-8")
 
 
 with tempfile.TemporaryDirectory() as temporary_directory:

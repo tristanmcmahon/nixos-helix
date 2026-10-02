@@ -86,7 +86,7 @@ done
 [[ -x $system_closure/sw/bin/adwaita-steam-gtk ]]
 [[ -x $system_closure/sw/bin/helix-apply-steam-theme ]]
 "$system_closure/sw/bin/helix-apply-steam-theme" --help | grep -qF 'Close Steam first'
-grep -qF -- '--adw-accent-rgb: 103, 184, 122' config/theme/steam.css
+grep -qF -- '--adw-accent-rgb: 103, 184, 122' "$system_closure/etc/helix/theme/steam.css"
 [[ -r $system_closure/sw/share/themes/Breeze-Dark/settings.ini ]]
 [[ -r $system_closure/sw/share/icons/breeze-dark/index.theme ]]
 grep -qF 'swaybg --image /home/tristan/.config/helix/theme/current/wallpaper.svg' "$hyprland_config"
@@ -97,7 +97,7 @@ ghostty_config=config/ghostty/config.ghostty
 ghostty_appearance=$ghostty_config
 ghostty_validation_config=$ghostty_config
 if grep -qF 'config-file = /home/tristan/.config/ghostty/profile.ghostty' "$ghostty_config"; then
-  ghostty_appearance=config/ghostty/profiles/main.ghostty
+  ghostty_appearance=$system_closure/etc/helix/ghostty/profiles/main.ghostty
   ghostty_validation_profile=$temporary_directory/ghostty-profile.ghostty
   ghostty_validation_config=$temporary_directory/ghostty-config.ghostty
   cp -- "$ghostty_appearance" "$ghostty_validation_profile"
