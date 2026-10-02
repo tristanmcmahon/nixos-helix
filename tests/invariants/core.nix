@@ -55,6 +55,15 @@ assert builtins.all
     ".zed"
     ".claude"
   ];
+# The health gate covers every critical unit of the enabled features.
+assert builtins.all (unit: builtins.elem unit config.helix.health.criticalUnits) [
+  "sshd.service"
+  "ollama.service"
+  "netdata.service"
+  "prometheus.service"
+  "coolercontrold.service"
+];
+assert config.helix.health.criticalUserUnits == [ "openclaw-gateway.service" ];
 assert (config.nixpkgs.config.permittedInsecurePackages or [ ]) == [ ];
 assert builtins.elem "evtest" packageNames;
 assert config.environment.variables.EDITOR == "vim";

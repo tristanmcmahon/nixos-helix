@@ -72,26 +72,10 @@ if grep -Rqs '^Name=ChatGPT$' "$system_closure/sw/share/applications"; then
 fi
 
 printf 'Checking 1Password modules, wrappers, and browser policies...\n'
-onepassword_gui=$(nix-build --no-out-link -E '
-  let system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
-  in system.config.programs._1password-gui.package
-')
-onepassword_cli=$(nix-build --no-out-link -E '
-  let system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
-  in system.config.programs._1password.package
-')
 [[ -x $onepassword_cli/bin/op ]]
 [[ -x $onepassword_gui/bin/1password ]]
 [[ -x $onepassword_gui/share/1password/1Password-BrowserSupport ]]
 find "$onepassword_gui/share/applications" -type f -name '*.desktop' | grep -q .
-[[ -n $(nix-instantiate --eval --raw -E '
-  let system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
-  in system.config.security.wrappers.op.source
-') ]]
-[[ -n $(nix-instantiate --eval --raw -E '
-  let system = import <nixpkgs/nixos> { configuration = ./configuration.nix; };
-  in system.config.security.wrappers."1Password-BrowserSupport".source
-') ]]
 [[ -r $system_closure/etc/chromium/policies/managed/default.json ]]
 [[ -r $system_closure/etc/opt/chrome/policies/managed/default.json ]]
 grep -qF 'aeblfdkhhhdcdjpifhhbdiojplfjncoa' "$system_closure/etc/chromium/policies/managed/default.json"

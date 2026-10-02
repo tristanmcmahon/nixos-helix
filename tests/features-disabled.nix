@@ -34,6 +34,8 @@ assert !(config.systemd.services ? helix-doom-storage) && absent "gzdoom";
 assert !config.services.ollama.enable && !(config.systemd.services ? helix-ollama-model-storage);
 # emulation
 assert !(config.systemd.services ? helix-emulation-storage);
+# Only the always-on units remain in the health gate.
+assert config.helix.health.criticalUnits == [ "sshd.service" ];
 # The recovery base survives with every feature disabled.
 assert builtins.all (name: builtins.elem name packageNames) [
   "git"

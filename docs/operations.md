@@ -7,7 +7,9 @@ root NixOS channel and its age where available. Missing optional session data is
 shown as a warning rather than aborting the report. `helix-health --check` is
 the non-interactive runtime gate: it verifies the NVIDIA driver, GAMES_NVME, and
 the critical SSH, Ollama, monitoring, cooling, and available user-session
-OpenClaw services, returning nonzero on failure. Infernalnexus is deliberately
+OpenClaw services, returning nonzero on failure. Its unit list is generated from
+`helix.health.criticalUnits` and `criticalUserUnits`, which each feature
+appends to, so disabling a feature also removes it from the gate. Infernalnexus is deliberately
 not part of this gate because NAS availability must not determine workstation
 boot health.
 

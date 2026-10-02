@@ -58,6 +58,8 @@ in
 
     # The service's CUDA build doubles as the user-facing CLI; Nix deduplicates
     # the shared store closure.
+    helix.health.criticalUnits = [ "ollama.service" ];
+
     environment.systemPackages = [
       config.services.ollama.package
       updateModels

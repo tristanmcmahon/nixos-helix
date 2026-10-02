@@ -68,6 +68,8 @@ let
   };
 in
 {
+  helix.health.criticalUserUnits = [ "openclaw-gateway.service" ];
+
   systemd.user.services.openclaw-gateway = {
     description = "OpenClaw local gateway";
     wantedBy = [ "default.target" ];
