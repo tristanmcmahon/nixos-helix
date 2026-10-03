@@ -30,6 +30,8 @@ done
 
 temporary_directory=$(mktemp -d)
 trap 'rm -rf -- "$temporary_directory"' EXIT
+# Many checks are bare tests; name the one that failed instead of exiting silently.
+trap 'printf "check failed: %s line %s: %s\n" "${BASH_SOURCE[0]}" "$LINENO" "$BASH_COMMAND" >&2' ERR
 
 # shellcheck source=scripts/checks/static.sh
 source "$repo_root/scripts/checks/static.sh"

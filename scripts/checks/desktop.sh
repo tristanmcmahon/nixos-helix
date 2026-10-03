@@ -81,10 +81,14 @@ done
 grep -qF -- '--adw-accent-rgb: 103, 184, 122' "$system_closure/etc/helix/theme/steam.css"
 [[ -r $system_closure/sw/share/themes/Breeze-Dark/settings.ini ]]
 [[ -r $system_closure/sw/share/icons/breeze-dark/index.theme ]]
-grep -qF 'swaybg --image /home/tristan/.config/helix/theme/current/wallpaper.svg' "$hyprland_config"
-grep -qF 'waybar --style /home/tristan/.config/helix/theme/current/waybar.css' "$hyprland_config"
-grep -qF 'mako --config /home/tristan/.config/helix/theme/current/mako.conf' "$hyprland_config"
+# Hyprland starts its themed surfaces through one helper, after the login draw.
+grep -qxF 'exec-once = helix-hyprland-theme-start' "$hyprland_config"
 grep -qF 'fuzzel --config /home/tristan/.config/helix/theme/current/fuzzel.ini' "$hyprland_config"
+hyprland_theme_start=$system_closure/sw/bin/helix-hyprland-theme-start
+require_executable "$hyprland_theme_start"
+require_contains "$hyprland_theme_start" 'swaybg --image /home/tristan/.config/helix/theme/current/wallpaper.svg'
+require_contains "$hyprland_theme_start" 'waybar --style /home/tristan/.config/helix/theme/current/waybar.css'
+require_contains "$hyprland_theme_start" 'mako --config /home/tristan/.config/helix/theme/current/mako.conf'
 # Validate the managed Ghostty config with every built profile it may include,
 # substituting a temporary path for the per-user profile file.
 ghostty_validation_profile=$temporary_directory/ghostty-profile.ghostty
@@ -94,7 +98,9 @@ sed "s|^config-file = .*|config-file = $ghostty_validation_profile|" \
 grep -qxF "config-file = $ghostty_validation_profile" "$ghostty_validation_config"
 ghostty_profile_count=0
 for ghostty_profile in "$system_closure"/etc/helix/ghostty/profiles/*.ghostty; do
-  cp -- "$ghostty_profile" "$ghostty_validation_profile"
+  # Store files are read-only; install gives the copy a writable mode so the
+  # next profile can replace it.
+  install -m 0644 -- "$ghostty_profile" "$ghostty_validation_profile"
   "$system_closure/sw/bin/ghostty" +validate-config \
     --config-file="$ghostty_validation_config"
   ghostty_profile_count=$((ghostty_profile_count + 1))
