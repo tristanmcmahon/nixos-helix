@@ -2,9 +2,22 @@
 
 Release notes for Helix. Operating guides live in `docs/`.
 
-## v0.3.0-alpha.6 (candidate)
+## Unreleased
 
-Release candidate on `main`; tag it after the Helix qualification below passes.
+### Changed
+
+- Release CI is manual-only: GitHub-hosted runners cannot build the CUDA and
+  MAME closures in time, so the `--full` gate runs on Helix before tagging.
+
+### Fixed
+
+- The `--full` gate's desktop checks: the Hyprland theme helper and the
+  Ghostty profile validation; `check.sh` now names any failing check (#94).
+
+## v0.3.0-alpha.6
+
+Tagged on 2026-10-03 at `6abaaf3`. The `--full` gate passed on Helix once #94
+corrected two stale checks; that change touched only the check scripts.
 
 ### Operator notes
 
@@ -34,7 +47,6 @@ Release candidate on `main`; tag it after the Helix qualification below passes.
 - Ghostty: eight profiles (Tide, Dusk, Sand and Frost added); new splits,
   tabs and windows get a random profile; `ghostty-theme` recolours the current
   surface on demand (#93).
-
 - Host facts live in `config/helix.nix`; repeated patterns in `lib/helix.nix`;
   the reinstall scripts read the same facts (#86, #92).
 - Themes render from `config/theme/palettes.nix` and explicit templates; Fuzzel
@@ -53,9 +65,9 @@ Release candidate on `main`; tag it after the Helix qualification below passes.
 - The `--full` release gate (broken since #74), the Ghostty profile reset at
   login, `helix-update` channel handling, and documentation drift (#86).
 - SSH from Ghostty splits, tabs and new windows sends `xterm-256color` again,
-  fixing Backspace/Delete on mister and Infernalnexus (regressed with the
-  per-surface colours; an invariant now guards it).
-- The reinstall preflight and install procedure use the Nixpkgs pin.
+  fixing Backspace/Delete on mister and Infernalnexus; it regressed with the
+  per-surface colours, and an invariant now guards it (#93).
+- The reinstall preflight and install procedure use the Nixpkgs pin (#93).
 
 ## v0.3.0-alpha.5
 
