@@ -31,6 +31,10 @@ Release candidate on `main`; tag it after the Helix qualification below passes.
 
 ### Changed
 
+- Ghostty: eight profiles (Tide, Dusk, Sand and Frost added); new splits,
+  tabs and windows get a random profile; `ghostty-theme` recolours the current
+  surface on demand (#93).
+
 - Host facts live in `config/helix.nix`; repeated patterns in `lib/helix.nix`;
   the reinstall scripts read the same facts (#86, #92).
 - Themes render from `config/theme/palettes.nix` and explicit templates; Fuzzel

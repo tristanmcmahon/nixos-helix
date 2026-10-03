@@ -7,64 +7,62 @@ let
   palettes = import ../config/theme/palettes.nix;
   themeFamily = import ../packages/helix-theme-family.nix { inherit pkgs; };
 
-  # Main is the Fern rendering of the theme template, so it always matches the
-  # Helix default; Moss, Slate and Ember are hand-tuned profiles.
-  profileSources = {
-    main =
-      let
-        fern = palettes.themes.fern;
-        roles = builtins.attrNames (
-          removeAttrs fern [
-            "name"
-            "description"
-            "random"
-          ]
-        );
-      in
-      lib.replaceStrings (map (role: "@${role}@") roles) (map (role: fern.${role}) roles) (
-        builtins.readFile ../config/theme/templates/ghostty.ghostty
-      );
-    moss = builtins.readFile ../config/ghostty/profiles/moss.ghostty;
-    slate = builtins.readFile ../config/ghostty/profiles/slate.ghostty;
-    ember = builtins.readFile ../config/ghostty/profiles/ember.ghostty;
-  };
-  # One table drives both choosers; the first word of each menu line is the
-  # profile name.
-  profileMenu = [
+  # One table drives the profile menu, the per-surface random choice, the
+  # installed profile files and the generated colour sequences. Main is the
+  # Fern rendering of the theme template, so it always matches the Helix
+  # default; the others are hand-tuned files in config/ghostty/profiles.
+  profiles = [
     {
       name = "main";
-      surface = "Main  · graphite / fern";
-      profile = "Main   · JetBrains Mono · follows the Helix theme";
+      label = "Main   · JetBrains Mono    · follows the Helix theme";
     }
     {
       name = "moss";
-      surface = "Moss  · softer green";
-      profile = "Moss   · Maple Mono     · softer green";
+      label = "Moss   · Maple Mono        · softer green";
     }
     {
       name = "slate";
-      surface = "Slate · cool graphite";
-      profile = "Slate  · Iosevka        · cool graphite";
+      label = "Slate  · Iosevka           · cool graphite";
     }
     {
       name = "ember";
-      surface = "Ember · warm graphite";
-      profile = "Ember  · Monaspace Neon · warm graphite";
+      label = "Ember  · Monaspace Neon    · warm graphite";
+    }
+    {
+      name = "tide";
+      label = "Tide   · Monaspace Argon   · marine blue-teal";
+    }
+    {
+      name = "dusk";
+      label = "Dusk   · Monaspace Xenon   · muted violet";
+    }
+    {
+      name = "sand";
+      label = "Sand   · Monaspace Krypton · warm ochre";
+    }
+    {
+      name = "frost";
+      label = "Frost  · Monaspace Radon   · cold silver-blue";
     }
   ];
-  profileNames = map (entry: entry.name) profileMenu;
-  # Shell that shows a menu of `field` labels and sets $profile to the chosen
-  # name, or to the empty string when cancelled.
-  chooseProfile = field: prompt: ''
-    selection=$(printf '%s\n' ${lib.escapeShellArgs (map (entry: entry.${field}) profileMenu)} |
-      helix-menu --dmenu --prompt=${lib.escapeShellArg prompt} || true)
-    profile=''${selection%% *}
-    profile=''${profile,,}
-    case $profile in
-      ${lib.concatStringsSep "|" profileNames}) ;;
-      *) profile= ;;
-    esac
-  '';
+  profileNames = map (profile: profile.name) profiles;
+  profileFile = name: ../config/ghostty/profiles + "/${name}.ghostty";
+  mainProfileText =
+    let
+      fern = palettes.themes.fern;
+      roles = builtins.attrNames (
+        removeAttrs fern [
+          "name"
+          "description"
+          "random"
+        ]
+      );
+    in
+    lib.replaceStrings (map (role: "@${role}@") roles) (map (role: fern.${role}) roles) (
+      builtins.readFile ../config/theme/templates/ghostty.ghostty
+    );
+  profileText =
+    name: if name == "main" then mainProfileText else builtins.readFile (profileFile name);
 
   # The OSC 10/11/12 (foreground, background, cursor) and OSC 4 (palette)
   # sequences that recolour one surface, derived from a profile's own values.
@@ -96,7 +94,7 @@ let
       printf '\033]4;${lib.concatStringsSep ";" palette}\033\\'
     '';
   surfaceCases = lib.concatMapStringsSep "\n" (
-    name: "${name})\n${surfaceEscapes profileSources.${name}};;"
+    name: "${name})\n${surfaceEscapes (profileText name)};;"
   ) profileNames;
 
   ghosttySurfaceProfile = pkgs.writeShellApplication {
@@ -115,21 +113,17 @@ let
     '';
   };
 
-  # Ghostty applies command to every surface after the first one. Running the
-  # chooser inside that fresh PTY makes per-surface colours compositor-neutral
-  # and avoids compositor-specific PID or timing heuristics.
+  # Ghostty applies command to every surface after the first one: each new
+  # split, tab or window gets a random profile's colours inside its own PTY,
+  # which is compositor-neutral and needs no PID or timing heuristics. The
+  # default profile (ghostty-profile) still decides the first surface and the
+  # font.
   ghosttySurfaceShell = pkgs.writeShellApplication {
     name = "ghostty-surface-shell";
-    runtimeInputs = [
-      helixMenu
-      ghosttySurfaceProfile
-    ];
+    runtimeInputs = [ ghosttySurfaceProfile ];
     text = ''
-      ${chooseProfile "surface" "New Ghostty surface: "}
-      if [[ -n "$profile" ]]; then
-        ghostty-surface-profile "$profile"
-      fi
-
+      profiles=(${lib.escapeShellArgs profileNames})
+      ghostty-surface-profile "''${profiles[RANDOM % ''${#profiles[@]}]}"
       exec ${pkgs.bashInteractive}/bin/bash
     '';
   };
@@ -143,7 +137,14 @@ let
       pkgs.systemd
     ];
     text = ''
-      ${chooseProfile "profile" "Ghostty profile: "}
+      selection=$(printf '%s\n' ${lib.escapeShellArgs (map (profile: profile.label) profiles)} |
+        helix-menu --dmenu --prompt='Ghostty profile: ' || true)
+      profile=''${selection%% *}
+      profile=''${profile,,}
+      case $profile in
+        ${lib.concatStringsSep "|" profileNames}) ;;
+        *) profile= ;;
+      esac
       [[ -n $profile ]] || exit 0
 
       config_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/ghostty"
@@ -164,16 +165,51 @@ let
     '';
   };
 
+  # Recolour only the current split or tab: run inside it, with a profile name
+  # or with no argument to choose from the menu. The default profile and font
+  # are unchanged; that is ghostty-profile's job.
+  ghosttyTheme = pkgs.writeShellApplication {
+    name = "ghostty-theme";
+    runtimeInputs = [
+      helixMenu
+      ghosttySurfaceProfile
+    ];
+    text = ''
+      case ''${1:-} in
+      --help | -h)
+        printf 'Usage: ghostty-theme [%s]\n' ${lib.escapeShellArg (lib.concatStringsSep "|" profileNames)}
+        printf 'Recolour the current Ghostty split or tab; no argument opens a menu.\n'
+        exit 0
+        ;;
+      "")
+        selection=$(printf '%s\n' ${lib.escapeShellArgs (map (profile: profile.label) profiles)} |
+          helix-menu --dmenu --prompt='This surface: ' || true)
+        profile=''${selection%% *}
+        profile=''${profile,,}
+        [[ -n $profile ]] || exit 0
+        ;;
+      *)
+        profile=$1
+        ;;
+      esac
+      case $profile in
+        ${lib.concatStringsSep "|" profileNames}) ghostty-surface-profile "$profile" ;;
+        *)
+          printf 'Unknown Ghostty profile: %s\n' "$profile" >&2
+          exit 2
+          ;;
+      esac
+    '';
+  };
+
   ghosttyProfileLauncher = pkgs.makeDesktopItem {
     name = "ghostty-profile";
     desktopName = "Ghostty Profile";
     comment = "Switch the Ghostty font and colour profile";
     exec = "${ghosttyProfile}/bin/ghostty-profile";
     icon = "com.mitchellh.ghostty";
-    categories = [
-      "System"
-      "Utility"
-    ];
+    # One main category, so Plasma lists the launcher once.
+    categories = [ "Utility" ];
     extraConfig = {
       "X-KDE-Shortcuts" = "Meta+Shift+Return";
     };
@@ -183,17 +219,21 @@ in
   environment = {
     etc = {
       "helix/ghostty/config.ghostty".source = managedConfig;
-      "helix/ghostty/profiles/main.ghostty".source = "${themeFamily}/generated/fern/ghostty.ghostty";
-      "helix/ghostty/profiles/moss.ghostty".source = ../config/ghostty/profiles/moss.ghostty;
-      "helix/ghostty/profiles/slate.ghostty".source = ../config/ghostty/profiles/slate.ghostty;
-      "helix/ghostty/profiles/ember.ghostty".source = ../config/ghostty/profiles/ember.ghostty;
-    };
+    }
+    // lib.listToAttrs (
+      map (name: {
+        name = "helix/ghostty/profiles/${name}.ghostty";
+        value.source =
+          if name == "main" then "${themeFamily}/generated/fern/ghostty.ghostty" else profileFile name;
+      }) profileNames
+    );
 
     systemPackages = [
       ghosttyProfile
       ghosttyProfileLauncher
       ghosttySurfaceProfile
       ghosttySurfaceShell
+      ghosttyTheme
     ];
   };
 

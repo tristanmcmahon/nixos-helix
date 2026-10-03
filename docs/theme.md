@@ -59,17 +59,24 @@ SDDM remains packaged Breeze with the Graphite + Fern wallpaper and loading
 colour. GTK 3/4 use maintained Breeze-Dark, Breeze Dark icons, and the native
 dark preference; no global GTK or Qt environment override is set.
 
-Ghostty has four repository-owned profiles: Main, Moss, Slate, and
-Ember. In Plasma, launch **Ghostty Profile** or press
-`Meta+Shift+Return` to switch the default font and palette live. Main follows
-the current Helix theme, so `helix-theme` updates it; a Moss, Slate or Ember
-choice is recorded in `~/.config/ghostty/profile-name` and survives theme
-changes and logins until Main is chosen again. Every new
-Ghostty surface after the first one—including a split, tab, or window—opens the
-same compact colour chooser before Bash starts. This runs inside the new PTY,
-so it works in Plasma and the optional Hyprland session without compositor
-window/PID timing hooks. Cancelling the chooser simply keeps the current
-default. A matching Konsole colour scheme/profile is installed and selected
+Ghostty has eight repository-owned profiles, each a palette and a font: Main
+(JetBrains Mono), Moss (Maple Mono), Slate (Iosevka), Ember, Tide, Dusk, Sand
+and Frost (Monaspace Neon, Argon, Xenon, Krypton and Radon). One table in
+`desktop/ghostty.nix` drives everything below; add a profile by adding a file
+in `config/ghostty/profiles` and a table entry.
+
+- **Default profile:** in Plasma, launch **Ghostty Profile** or press
+  `Meta+Shift+Return` to switch the default font and palette live. Main follows
+  the current Helix theme, so `helix-theme` updates it; any other choice is
+  recorded in `~/.config/ghostty/profile-name` and survives theme changes and
+  logins until Main is chosen again.
+- **New surfaces:** every split, tab or window after the first gets a random
+  profile's colours before Bash starts. This runs inside the new PTY, so it
+  works in Plasma and the optional Hyprland session without compositor hooks.
+  The font stays the default profile's.
+- **This surface:** run `ghostty-theme` inside any split or tab to pick its
+  colours from the menu, or `ghostty-theme NAME` directly. Ghostty's right-click
+  menu cannot be extended with custom entries, so this is a command. A matching Konsole colour scheme/profile is installed and selected
 when the applicator runs in Plasma. VS Code uses built-in Default Dark Modern
 syntax colours with owned workbench surface, selection, focus, and status
 colours. Browser chrome uses the graphite base where policy supports it. Dark
@@ -79,7 +86,7 @@ The optional Hyprland session shares the wallpaper and palette through its
 Waybar, Mako, and Fuzzel files. A repository-owned startup helper performs the
 login theme draw before launching those surfaces so they all see the same
 selection. Its workspaces and normal session behaviour are unchanged; the
-Ghostty surface chooser is shared with Plasma. Obsidian remains per-vault:
+random Ghostty surface colours work the same way as in Plasma. Obsidian remains per-vault:
 select its Dark base colour scheme when necessary.
 
 Steam does not inherit KDE colours. NixOS therefore installs the maintained

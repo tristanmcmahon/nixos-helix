@@ -1,0 +1,29 @@
+# Helix Ghostty profile: Tide
+# Deep marine graphite with restrained blue-teal accents.
+
+background = #0B0F14
+foreground = #DFE6EC
+cursor-color = #7FB8D6
+cursor-text = #0B0F14
+selection-background = #24465A
+selection-foreground = #DFE6EC
+
+palette = 0=#0B0F14
+palette = 1=#D17C80
+palette = 2=#6DB59A
+palette = 3=#D2AE6C
+palette = 4=#6FA6CB
+palette = 5=#A592C4
+palette = 6=#66B3BE
+palette = 7=#D3DCE3
+palette = 8=#76848F
+palette = 9=#DE9497
+palette = 10=#84C6AC
+palette = 11=#DEC085
+palette = 12=#8BBADB
+palette = 13=#BAA9D4
+palette = 14=#80C4CD
+palette = 15=#EFF3F6
+
+font-family = Monaspace Argon
+font-size = 13.5

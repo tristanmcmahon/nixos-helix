@@ -85,17 +85,22 @@ grep -qF 'swaybg --image /home/tristan/.config/helix/theme/current/wallpaper.svg
 grep -qF 'waybar --style /home/tristan/.config/helix/theme/current/waybar.css' "$hyprland_config"
 grep -qF 'mako --config /home/tristan/.config/helix/theme/current/mako.conf' "$hyprland_config"
 grep -qF 'fuzzel --config /home/tristan/.config/helix/theme/current/fuzzel.ini' "$hyprland_config"
-# Validate the managed Ghostty config together with the built Main profile it
-# includes, substituting a temporary path for the per-user profile file.
+# Validate the managed Ghostty config with every built profile it may include,
+# substituting a temporary path for the per-user profile file.
 ghostty_validation_profile=$temporary_directory/ghostty-profile.ghostty
 ghostty_validation_config=$temporary_directory/ghostty-config.ghostty
-cp -- "$system_closure/etc/helix/ghostty/profiles/main.ghostty" "$ghostty_validation_profile"
 sed "s|^config-file = .*|config-file = $ghostty_validation_profile|" \
   config/ghostty/config.ghostty > "$ghostty_validation_config"
 grep -qxF "config-file = $ghostty_validation_profile" "$ghostty_validation_config"
-"$system_closure/sw/bin/ghostty" +validate-config \
-  --config-file="$ghostty_validation_config"
-for ghostty_helper in ghostty-profile ghostty-surface-profile ghostty-surface-shell; do
+ghostty_profile_count=0
+for ghostty_profile in "$system_closure"/etc/helix/ghostty/profiles/*.ghostty; do
+  cp -- "$ghostty_profile" "$ghostty_validation_profile"
+  "$system_closure/sw/bin/ghostty" +validate-config \
+    --config-file="$ghostty_validation_config"
+  ghostty_profile_count=$((ghostty_profile_count + 1))
+done
+((ghostty_profile_count == 8))
+for ghostty_helper in ghostty-profile ghostty-surface-profile ghostty-surface-shell ghostty-theme; do
   [[ -x $system_closure/sw/bin/$ghostty_helper ]]
 done
 ghostty_profile_launcher=$system_closure/sw/share/applications/ghostty-profile.desktop

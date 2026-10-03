@@ -56,7 +56,15 @@ assert builtins.all (name: builtins.elem name packageNames) [
   "ghostty-profile"
   "ghostty-surface-profile"
   "ghostty-surface-shell"
+  "ghostty-theme"
 ];
+# Eight Ghostty profiles are installed, one per hand-tuned file plus Main.
+assert
+  builtins.length (
+    builtins.filter (name: builtins.match "helix/ghostty/profiles/.*\\.ghostty" name != null) (
+      builtins.attrNames config.environment.etc
+    )
+  ) == 8;
 assert !(builtins.elem "ghostty-split-profile" packageNames);
 assert !(builtins.hasAttr "GTK_THEME" config.environment.variables);
 assert !(builtins.hasAttr "QT_STYLE_OVERRIDE" config.environment.variables);
