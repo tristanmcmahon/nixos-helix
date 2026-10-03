@@ -9,6 +9,19 @@ let
   infernalnexus = import ../config/infernalnexus.nix;
 in
 {
+  # Shell prologue for commands that take no arguments: --help describes the
+  # command and anything else is refused before it can change any state.
+  noArguments = name: summary: ''
+    if [[ $# -gt 0 ]]; then
+      if [[ $# -eq 1 && ( $1 == --help || $1 == -h ) ]]; then
+        printf 'Usage: %s\n%s\n' ${lib.escapeShellArg name} ${lib.escapeShellArg summary}
+        exit 0
+      fi
+      printf 'Usage: %s (takes no arguments; see --help)\n' ${lib.escapeShellArg name} >&2
+      exit 2
+    fi
+  '';
+
   # A oneshot that creates a directory on an optional disk, only after
   # positively verifying the disk is mounted. Without the mount it is skipped,
   # so a missing disk can never cause writes to the root filesystem.

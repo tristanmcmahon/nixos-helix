@@ -1,6 +1,10 @@
 { pkgs, ... }:
 
 let
+  helixLib = import ../lib/helix.nix {
+    inherit (pkgs) lib;
+    inherit pkgs;
+  };
   helix = import ../config/helix.nix;
   gitCredentialRepair = pkgs.writeShellApplication {
     name = "helix-git-credential-repair";
@@ -10,6 +14,7 @@ let
       git
     ];
     text = ''
+      ${helixLib.noArguments "helix-git-credential-repair" "Point GitHub HTTPS credentials at the PATH-resolved gh helper."}
       target="$HOME/.gitconfig"
       xdg_target="$HOME/.config/git/config"
 

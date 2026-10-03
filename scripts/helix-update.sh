@@ -2,7 +2,28 @@
 
 set -euo pipefail
 
-repo=/home/tristan/Projects/nixos-helix
+case $# in
+0) ;;
+1)
+  if [[ $1 == --help || $1 == -h ]]; then
+    printf 'Usage: helix-update\n'
+    printf 'Fast-forward to reviewed main, validate, build, diff, test-activate,\n'
+    printf 'health-check and switch. Nixpkgs updates arrive as pull requests that\n'
+    printf 'change nixpkgs.json (scripts/bump-nixpkgs.sh).\n'
+    exit 0
+  fi
+  printf 'Usage: helix-update [--help]\n' >&2
+  exit 2
+  ;;
+*)
+  printf 'Usage: helix-update [--help]\n' >&2
+  exit 2
+  ;;
+esac
+
+# system/commands.nix prepends helix_checkout from config/helix.nix.
+# shellcheck disable=SC2154
+repo=${helix_checkout:?helix-update must be run as the installed command}
 cd "$repo"
 
 # Never let repository-local Git configuration run commands here.

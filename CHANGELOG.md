@@ -2,27 +2,53 @@
 
 Release notes for Helix. Operating guides live in `docs/`.
 
-## Unreleased
+## v0.3.0-alpha.6 (candidate)
 
-- Claude Code and its Zed agent adapter in the development profile, with
-  `helix-zed-agent-setup` and `CLAUDE.md` (#84).
-- OpenClaw: Node with bundled SQLite (rejects the WAL-reset-affected shared
-  SQLite) and a writable runtime config copy (#84, #85).
-- Roadmap Phases 0–5 (#86): defect fixes, `config/helix.nix` host facts and
-  `lib/helix.nix` helpers, `helix.<feature>.enable` for every feature, a
-  generated health gate, the palette-driven theme pipeline (Fuzzel now follows
-  the theme), and Nixpkgs pinned in `nixpkgs.json`.
-- Roadmap Phase 6: nightly restic backups to Infernalnexus, the reinstall suite
-  behind `scripts/helix-reinstall.sh`, one vendor provenance manifest, and an
-  explicit unfree-package allowlist.
+Release candidate on `main`; tag it after the Helix qualification below passes.
 
-- Local Prometheus/Grafana history retired; the Infernalnexus Netdata parent
-  is Helix's metrics history. Login applies the theme once, rebuilds no longer
-  re-pull Ollama models, zram tuning, and a 20-entry boot menu (#89).
+### Operator notes
 
-- Netdata runs as a lightweight child, Ollama uses flash attention with an
-  8-bit KV cache, duplicated closure checks are pruned, reinstall scripts read
-  host facts from `config/`, and Zen Browser is removed.
+- **Nixpkgs is pinned** in `nixpkgs.json`. The root channel is no longer used.
+  Update with `./scripts/bump-nixpkgs.sh` in a pull request; `helix-update`
+  now fast-forwards to reviewed `main` (on `main` only) and builds its pin.
+- **Backups**: create the restic password once (see `docs/backup.md`) and keep
+  a copy in 1Password. Never regenerate it after the first backup.
+- **Removed**: Zen Browser, the local Prometheus/Grafana history (history now
+  lives on the Infernalnexus Netdata parent; `/var/lib/prometheus2` and
+  `/var/lib/grafana` can be deleted by hand), and the dormant ChatGPT package.
+- **Unfree software** is allowed by name in `configuration.nix`; a new unfree
+  package fails evaluation until it is listed.
+- **Reinstall tools** run through `./scripts/helix-reinstall.sh`.
+
+### Added
+
+- Claude Code and its Zed agent adapter, `helix-zed-agent-setup`, and
+  `CLAUDE.md` (#84).
+- Nightly restic backups to Infernalnexus (#87, #88).
+- `helix.<feature>.enable` options for every feature, with a test that disables
+  them all (#86).
+- `CHANGELOG.md`, `vendor/sources.json` with `scripts/vendor-sync.sh` (#87).
+
+### Changed
+
+- Host facts live in `config/helix.nix`; repeated patterns in `lib/helix.nix`;
+  the reinstall scripts read the same facts (#86, #92).
+- Themes render from `config/theme/palettes.nix` and explicit templates; Fuzzel
+  menus now follow the theme (#86).
+- The health gate is generated from each feature's critical units (#86).
+- Netdata is a lightweight streaming child; Ollama uses flash attention with an
+  8-bit KV cache (#90, #91, #92).
+- Login applies the theme once; rebuilds no longer re-pull Ollama models; zram
+  tuning; at most 20 boot entries (#89).
+- `--full` evaluates once and no longer repeats evaluation invariants (#86, #92).
+
+### Fixed
+
+- OpenClaw: Node with bundled SQLite, a writable runtime config copy, and a
+  read-only `.git`/editor config inside its sandbox (#84, #85, #86).
+- The `--full` release gate (broken since #74), the Ghostty profile reset at
+  login, `helix-update` channel handling, and documentation drift (#86).
+- The reinstall preflight and install procedure use the Nixpkgs pin.
 
 ## v0.3.0-alpha.5
 
