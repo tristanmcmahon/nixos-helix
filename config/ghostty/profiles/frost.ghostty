@@ -1,0 +1,29 @@
+# Helix Ghostty profile: Frost
+# Cold silver graphite with pale blue accents.
+
+background = #0D1012
+foreground = #E8EDF0
+cursor-color = #A9C7D8
+cursor-text = #0D1012
+selection-background = #33444F
+selection-foreground = #E8EDF0
+
+palette = 0=#0D1012
+palette = 1=#CF8288
+palette = 2=#7EB59E
+palette = 3=#CDB27A
+palette = 4=#8AACC6
+palette = 5=#A99BC2
+palette = 6=#86B9C2
+palette = 7=#D8DFE3
+palette = 8=#7C878E
+palette = 9=#DB9AA0
+palette = 10=#94C5B0
+palette = 11=#DAC291
+palette = 12=#A1BED4
+palette = 13=#BCB0D1
+palette = 14=#9CC9D0
+palette = 15=#F2F5F7
+
+font-family = Monaspace Radon
+font-size = 13.5

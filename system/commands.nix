@@ -42,7 +42,10 @@ let
       shellcheck
       statix
     ];
-    text = builtins.readFile ../scripts/helix-update.sh;
+    text = ''
+      helix_checkout=${lib.escapeShellArg (import ../config/helix.nix).checkout}
+    ''
+    + builtins.readFile ../scripts/helix-update.sh;
   };
 in
 {

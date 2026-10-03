@@ -22,6 +22,7 @@ let
     name = "helix-ollama-update-models";
     runtimeInputs = [ config.services.ollama.package ];
     text = ''
+      ${helixLib.noArguments "helix-ollama-update-models" "Pull the latest version of every declared Ollama model tag."}
       if ! ollama list >/dev/null; then
         printf 'Ollama is unavailable at %s. Start the service before refreshing models.\n' \
           "''${OLLAMA_HOST:-http://127.0.0.1:11434}" >&2

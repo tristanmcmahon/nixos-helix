@@ -5,11 +5,12 @@ set -euo pipefail
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 # shellcheck source=scripts/reinstall/facts.sh
 source "$(dirname -- "${BASH_SOURCE[0]}")/facts.sh"
-root_channel=/nix/var/nix/profiles/per-user/root/channels/nixos
-expected_release=$(nix-instantiate --eval --raw -E "(import $repo_root/release.nix).nixosRelease")
+# The same pinned Nixpkgs selection as every other entry point; it fails
+# loudly if the pin cannot be fetched or reports another release.
+# shellcheck source=scripts/release-environment.sh
+source "$repo_root/scripts/release-environment.sh" >/dev/null
 state_version=$(nix-instantiate --eval --raw -E "(import $repo_root/release.nix).stateVersion")
-selected_release=$(NIX_PATH="nixpkgs=$root_channel" nix-instantiate --eval --raw -E \
-  '(import <nixpkgs> {}).lib.trivial.release' 2>/dev/null || printf unavailable)
+pinned_release=$(nix-instantiate --eval --raw -E "(builtins.fromJSON (builtins.readFile $repo_root/nixpkgs.json)).release")
 
 printf '%s\n' \
   'HELIX REINSTALL PREFLIGHT — READ ONLY' \
@@ -22,9 +23,9 @@ printf 'Branch:           %s\n' "$(git -C "$repo_root" symbolic-ref --quiet --sh
 printf 'Commit:           %s\n' "$(git -C "$repo_root" rev-parse HEAD)"
 printf 'Origin:           %s\n' "$(git -C "$repo_root" remote get-url origin 2>/dev/null || printf '(missing)')"
 printf 'Origin/main:      %s\n' "$(git -C "$repo_root" rev-parse origin/main 2>/dev/null || printf '(missing)')"
-printf 'Root channel:     %s\n' "$root_channel"
-printf 'Selected release: %s\n' "$selected_release"
-printf 'Expected release: %s\n' "$expected_release"
+printf 'Nixpkgs pin:      %s\n' "$pinned_release"
+printf 'Selected release: %s\n' "$HELIX_SELECTED_RELEASE"
+printf 'Expected release: %s\n' "$HELIX_EXPECTED_RELEASE"
 printf 'State version:    %s\n' "$state_version"
 [[ $repo_root == "$helix_checkout" ]] || {
   printf 'FAIL: this is not the canonical Helix checkout.\n' >&2
@@ -33,10 +34,6 @@ printf 'State version:    %s\n' "$state_version"
 [[ $(git -C "$repo_root" remote get-url origin 2>/dev/null) == \
   https://github.com/tristanmcmahon/nixos-helix.git ]] || {
   printf 'FAIL: origin is not the expected Helix repository.\n' >&2
-  exit 1
-}
-[[ $selected_release == "$expected_release" ]] || {
-  printf 'FAIL: the root channel does not select the expected release.\n' >&2
   exit 1
 }
 if [[ -n $(git -C "$repo_root" status --short) ]]; then

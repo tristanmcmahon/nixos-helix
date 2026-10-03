@@ -1,0 +1,29 @@
+# Helix Ghostty profile: Dusk
+# Low-light graphite with muted violet accents.
+
+background = #0F0D12
+foreground = #E6E1EA
+cursor-color = #B39AD0
+cursor-text = #0F0D12
+selection-background = #3E3350
+selection-foreground = #E6E1EA
+
+palette = 0=#0F0D12
+palette = 1=#D47E86
+palette = 2=#79B48B
+palette = 3=#CFAB70
+palette = 4=#8199CC
+palette = 5=#B39AD0
+palette = 6=#76AEB4
+palette = 7=#D9D3DE
+palette = 8=#817A88
+palette = 9=#E0979E
+palette = 10=#8FC59F
+palette = 11=#DCBD88
+palette = 12=#99AEDA
+palette = 13=#C6B1DD
+palette = 14=#8DC0C5
+palette = 15=#F2EFF4
+
+font-family = Monaspace Xenon
+font-size = 13.5

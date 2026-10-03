@@ -23,14 +23,14 @@ Follow this order without skipping a gate:
 1. Pass the pre-wipe bootstrap gate below.
 2. Run the canonical backup.
 3. Manually inspect and verify its completed set.
-4. Save and manually review `hardware-inventory.sh` output.
+4. Save and manually review `./scripts/helix-reinstall.sh inventory` output.
 5. Record the current full `origin/main` commit.
 6. Create and verify official NixOS 26.05 graphical installation media.
 7. Boot that media explicitly in UEFI mode.
 8. In GParted, visually identify each device by model, serial, and capacity.
 9. Manually create the layout below, checking the target before each change.
 10. Clone the canonical repository and check out the approved commit.
-11. Run the read-only `check-install-storage.sh` and inspect its evidence.
+11. Run the read-only `./scripts/helix-reinstall.sh check-storage` and inspect its evidence.
 12. Mount only HELIX_ROOT at `/mnt` and HELIX_EFI at `/mnt/boot`.
 13. Run `nixos-generate-config --root /mnt`.
 14. Continue the configuration, continuity, install, and postflight workflow below.
@@ -182,11 +182,13 @@ overwrite the canonical checkout merely to install. The canonical
 Before `nixos-install`, verify `/mnt`, its EFI mount, all generated UUIDs, the
 explicit target disk, and that no unrelated disk is below `/mnt`. The ordinary
 `configuration.nix` is also the installer entry point. From the temporary
-checkout using the 26.05 source, run:
+checkout, run the following. It installs exactly the Nixpkgs pinned in
+`nixpkgs.json`, the tree CI validated, rather than whatever release the
+installer media carries:
 
 ```bash
 cd /tmp/nixos-helix-install
-export HELIX_NIXPKGS_PATH="$(nix-instantiate --find-file nixpkgs)"
+export HELIX_NIXPKGS_PATH="$(bash -c 'source scripts/release-environment.sh >/dev/null && printf %s "$HELIX_SELECTED_NIXPKGS"')"
 ./scripts/dev-shell.sh --run './scripts/check.sh'
 nixos-rebuild dry-build \
   -I "nixpkgs=$HELIX_NIXPKGS_PATH" \
@@ -198,10 +200,10 @@ sudo env HELIX_NIXPKGS_PATH="$HELIX_NIXPKGS_PATH" \
   -I "nixos-config=$PWD/configuration.nix"
 ```
 
-`release-environment.sh` validates and prints this explicit source, ignores an
+`release-environment.sh` fetches the pin (verifying its hash), ignores an
 ambient user `NIX_PATH`, and refuses a source whose release differs from
-`release.nix`. The same tree therefore drives checks, the dry build, and install
-without changing a channel.
+`release.nix`. The same tree therefore drives checks, the dry build, and the
+install. The installed system's `nix.nixPath` then points at the same pin.
 
 The final command installs to the already reviewed and mounted `/mnt`; it does
 not partition or format a disk. Recheck the mount topology immediately before
@@ -336,6 +338,6 @@ installed root and EFI filesystems beneath `/mnt`, inspect logs under
 `nixos-enter --root /mnt`. Re-run `nixos-install` against the existing mounted
 target or reinstall systemd-boot only after rechecking the EFI mount. Restore
 the preserved generated hardware configuration if UUIDs were recorded
-incorrectly. Use `restore-after-reinstall.sh` against the same canonical archive
+incorrectly. Use `./scripts/helix-reinstall.sh restore` against the same canonical archive
 set for user and secret data; do not bypass its validation with direct extraction.
 Do not delete the backup or installation media during recovery.

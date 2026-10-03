@@ -8,6 +8,7 @@
 }:
 
 let
+  helixLib = import ../../lib/helix.nix { inherit lib pkgs; };
   requireNas = pkgs.writeShellApplication {
     name = "helix-emulation-require-nas";
     runtimeInputs = [
@@ -15,6 +16,7 @@ let
       pkgs.util-linux
     ];
     text = ''
+      ${helixLib.noArguments "helix-emulation-require-nas" "Exit non-zero unless the read-only ROM share is mounted from Infernalnexus."}
       verify_cifs() {
         mount_path=$1
         expected_source=$2
@@ -43,6 +45,7 @@ let
       pkgs.gnused
     ];
     text = ''
+      ${helixLib.noArguments "helix-emulation-discover" "List the ROM collection's systems and BIOS candidates."}
       ${requireNas}/bin/helix-emulation-require-nas
 
       rom_root=${lib.escapeShellArg romRoot}
@@ -80,6 +83,7 @@ let
       pkgs.findutils
     ];
     text = ''
+      ${helixLib.noArguments "helix-emulation-prepare" "Refresh the NAS-backed ROM and BIOS links under GAMES_NVME."}
       ${requireNas}/bin/helix-emulation-require-nas
 
       root=${lib.escapeShellArg emulationRoot}
@@ -183,8 +187,6 @@ let
     name = "helix-emulation-scrape";
     runtimeInputs = [ pkgs.skyscraper ];
     text = ''
-      ${prepare}/bin/helix-emulation-prepare >/dev/null
-
       platform=''${1:-}
       source=''${2:-screenscraper}
       case "$platform" in
@@ -199,6 +201,8 @@ let
           exit 2
           ;;
       esac
+
+      ${prepare}/bin/helix-emulation-prepare >/dev/null
 
       input=${lib.escapeShellArg "${emulationRoot}/roms"}/"$platform"
       media=${lib.escapeShellArg "${emulationRoot}/tools/downloaded_media"}/"$platform"
@@ -228,6 +232,7 @@ let
     name = "helix-emulation-status";
     runtimeInputs = [ pkgs.coreutils ];
     text = ''
+      ${helixLib.noArguments "helix-emulation-status" "Show the emulation paths, mounts and emulator state."}
       printf 'Helix emulation module: enabled\n'
       printf 'Read-only ROM root: %s\n' ${lib.escapeShellArg romRoot}
       printf 'SSD emulation root: %s\n' ${lib.escapeShellArg emulationRoot}

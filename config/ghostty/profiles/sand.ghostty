@@ -1,0 +1,29 @@
+# Helix Ghostty profile: Sand
+# Warm neutral graphite with soft ochre accents.
+
+background = #11100C
+foreground = #ECE6DA
+cursor-color = #D8B577
+cursor-text = #11100C
+selection-background = #4C4430
+selection-foreground = #ECE6DA
+
+palette = 0=#11100C
+palette = 1=#D7826F
+palette = 2=#93B072
+palette = 3=#D8B577
+palette = 4=#82A0B4
+palette = 5=#B597A8
+palette = 6=#7EAE9C
+palette = 7=#DDD6C8
+palette = 8=#867F70
+palette = 9=#E29A88
+palette = 10=#A7C28A
+palette = 11=#E4C68D
+palette = 12=#98B3C4
+palette = 13=#C7ABBA
+palette = 14=#95C0B0
+palette = 15=#F5F0E6
+
+font-family = Monaspace Krypton
+font-size = 13.5
