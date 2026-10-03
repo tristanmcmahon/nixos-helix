@@ -98,7 +98,9 @@ sed "s|^config-file = .*|config-file = $ghostty_validation_profile|" \
 grep -qxF "config-file = $ghostty_validation_profile" "$ghostty_validation_config"
 ghostty_profile_count=0
 for ghostty_profile in "$system_closure"/etc/helix/ghostty/profiles/*.ghostty; do
-  cp -- "$ghostty_profile" "$ghostty_validation_profile"
+  # Store files are read-only; install gives the copy a writable mode so the
+  # next profile can replace it.
+  install -m 0644 -- "$ghostty_profile" "$ghostty_validation_profile"
   "$system_closure/sw/bin/ghostty" +validate-config \
     --config-file="$ghostty_validation_config"
   ghostty_profile_count=$((ghostty_profile_count + 1))
