@@ -237,6 +237,21 @@ in
     ];
   };
 
+  # Ghostty injects its Bash integration only into a shell it launches
+  # directly, which is the first surface; later surfaces run
+  # ghostty-surface-shell and would otherwise lose the ssh-env wrapper, sending
+  # TERM=xterm-ghostty to hosts without that terminfo (Backspace and Delete
+  # break on mister and Infernalnexus). Load it here for those shells, but
+  # never twice: __ghostty_bash_flags exists while injection sources bashrc.
+  programs.bash.interactiveShellInit = ''
+    if [[ -n ''${GHOSTTY_RESOURCES_DIR:-} && -z ''${__ghostty_bash_flags+set} ]] &&
+      ! declare -F __ghostty_precmd >/dev/null &&
+      [[ -r $GHOSTTY_RESOURCES_DIR/shell-integration/bash/ghostty.bash ]]; then
+      export GHOSTTY_SHELL_FEATURES=''${GHOSTTY_SHELL_FEATURES:-ssh-env}
+      builtin source "$GHOSTTY_RESOURCES_DIR/shell-integration/bash/ghostty.bash"
+    fi
+  '';
+
   # Deploy the repository-owned baseline as a regular file. The selected
   # appearance profile is writable state and is only initialised to Main once,
   # so rebuilding the system does not reset the user's current choice.

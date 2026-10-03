@@ -3,6 +3,11 @@ let
   inherit (context) config packageNames themePalette;
 in
 assert config.services.desktopManager.plasma6.enable;
+# Every Ghostty surface, not only the first, needs Ghostty's ssh wrapper, or
+# SSH sends TERM=xterm-ghostty and Backspace/Delete break on remote hosts.
+assert
+  builtins.match ".*shell-integration/bash/ghostty\\.bash.*" config.programs.bash.interactiveShellInit
+  != null;
 assert config.services.displayManager.sddm.enable;
 # Hot Dog Stand stays opt-in: helix-theme random never selects it.
 assert !(import ../../config/theme/palettes.nix).themes.hotdog.random;

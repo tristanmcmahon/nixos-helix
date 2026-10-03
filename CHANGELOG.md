@@ -52,6 +52,9 @@ Release candidate on `main`; tag it after the Helix qualification below passes.
   read-only `.git`/editor config inside its sandbox (#84, #85, #86).
 - The `--full` release gate (broken since #74), the Ghostty profile reset at
   login, `helix-update` channel handling, and documentation drift (#86).
+- SSH from Ghostty splits, tabs and new windows sends `xterm-256color` again,
+  fixing Backspace/Delete on mister and Infernalnexus (regressed with the
+  per-surface colours; an invariant now guards it).
 - The reinstall preflight and install procedure use the Nixpkgs pin.
 
 ## v0.3.0-alpha.5
