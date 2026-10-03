@@ -1,6 +1,7 @@
 { lib, pkgs, ... }:
 
 let
+  helixLib = import ../lib/helix.nix { inherit lib pkgs; };
   helixMenu = import ../packages/helix-menu.nix { inherit pkgs; };
   inherit ((import ../config/theme/palettes.nix).themes) fern;
   helix = import ../config/helix.nix;
@@ -12,6 +13,7 @@ let
       pkgs.waybar
     ];
     text = ''
+      ${helixLib.noArguments "helix-hyprland-theme-start" "Choose the login theme and start Hyprland's wallpaper, bar and notifications."}
       /run/current-system/sw/bin/helix-theme random || true
       swaybg --image ${helix.configHome}/helix/theme/current/wallpaper.svg --mode fill &
       waybar --style ${helix.configHome}/helix/theme/current/waybar.css &
@@ -96,6 +98,7 @@ let
       pkgs.hyprland
     ];
     text = ''
+      ${helixLib.noArguments "helix-hyprland-exit" "Ask whether to log out of the Hyprland session (bound in Hyprland)."}
       answer=$(printf 'Cancel\nLog out\n' |
         helix-menu --dmenu --prompt='Hyprland: ')
       if [[ $answer == 'Log out' ]]; then

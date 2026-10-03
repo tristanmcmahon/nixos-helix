@@ -16,6 +16,7 @@ let
       pkgs.util-linux
     ];
     text = ''
+      ${helixLib.noArguments "helix-emulation-require-nas" "Exit non-zero unless the read-only ROM share is mounted from Infernalnexus."}
       verify_cifs() {
         mount_path=$1
         expected_source=$2

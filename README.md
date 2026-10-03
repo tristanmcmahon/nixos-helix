@@ -26,11 +26,13 @@ lib/                       helpers for repeated module patterns
 hardware/                  device and driver policy
 desktop/                   Plasma, Hyprland, browsers, applications, and theme
 system/                    boot, users, networking, NAS, and storage
-services/                  OpenSSH, monitoring, and routine native maintenance
+services/                  OpenSSH, Netdata, backups, OpenClaw, and maintenance
 profiles/                  optional features behind helix.<feature>.enable options
 packages/                  base package set and custom package definitions
 shell/                     interactive shell and Git client integration
-scripts/                   checks, rebuilds, inventory, backup, and recovery
+scripts/                   checks, rebuilds, updates, and the reinstall suite
+tests/                     evaluation invariants and feature-disabled tests
+vendor/                    byte-for-byte sibling snapshots (vendor/sources.json)
 docs/                      focused operating guides
 ```
 
@@ -57,7 +59,9 @@ Release qualification uses the explicit expensive gate:
 ./scripts/dev-shell.sh --run './scripts/check.sh --full'
 ```
 
-Normal pull-request CI does not rebuild the CUDA-enabled Ollama or MAME closures.
+Pull-request CI runs static checks and evaluation against the pinned Nixpkgs;
+it does not rebuild the CUDA-enabled Ollama or MAME closures. Release CI runs
+the `--full` gate weekly on `main` and on manual dispatch.
 
 After reviewing a change, temporary and persistent activation remain explicit:
 
@@ -73,13 +77,20 @@ or use `sudo nixos-rebuild switch --rollback` from a working generation.
 Native weekly garbage collection deletes generations older than 14 days, and
 weekly store optimisation hard-links identical store files.
 
-For normal maintenance, `helix-health` prints a compact workstation report and
-`helix-update` fast-forwards to reviewed `main`, then validates, builds, diffs,
-tests and switches. Nixpkgs updates are pull requests made with
-`./scripts/bump-nixpkgs.sh`. `helix-update` never runs garbage collection. `helix-git-credential-repair`
-repairs GitHub HTTPS authentication without pinning `gh` to a garbage-collectable
-Nix store path. Use `helix-theme list`,
-`helix-theme current`, or `helix-theme NAME` to inspect and switch appearance.
+For normal maintenance:
+
+- `helix-health` prints a compact workstation report; `helix-health --check` is
+  the runtime gate.
+- `helix-update` fast-forwards to reviewed `main`, then validates, builds,
+  diffs, tests and switches. It never runs garbage collection. Nixpkgs updates
+  are pull requests made with `./scripts/bump-nixpkgs.sh`.
+- Restic backs up home, secrets and machine identity to Infernalnexus nightly;
+  see [docs/backup.md](docs/backup.md).
+- `helix-git-credential-repair` repairs GitHub HTTPS authentication without
+  pinning `gh` to a garbage-collectable store path.
+- `helix-theme list|current|random|NAME` inspects and switches appearance.
+
+Every `helix-*` command accepts `--help`.
 
 ## Installed-system compatibility
 
@@ -103,7 +114,7 @@ for disaster recovery and any deliberately planned future reinstall; see
 - [Profiles and package boundaries](docs/profiles.md)
 - [Local development](docs/local-development.md)
 - [Graphite + Fern appearance](docs/theme.md)
-- [Health, updates, GC, memory pressure, and OpenClaw pin](docs/operations.md)
+- [Health, updates, Nixpkgs and OpenClaw pins, GC, and memory](docs/operations.md)
 - [Media applications](docs/media.md)
 - [Custom package pins](docs/custom-packages.md)
 - [1Password integration](docs/onepassword.md)

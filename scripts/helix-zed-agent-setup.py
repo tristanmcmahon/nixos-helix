@@ -109,8 +109,12 @@ def configure(settings_file):
 
 
 def main(argv):
+    if len(argv) == 2 and argv[1] in ("--help", "-h"):
+        print("Usage: helix-zed-agent-setup")
+        print("Register the Nix-managed Claude Code ACP adapter in Zed's user settings.")
+        return 0
     if len(argv) > 1:
-        print("Usage: helix-zed-agent-setup", file=sys.stderr)
+        print("Usage: helix-zed-agent-setup (takes no arguments; see --help)", file=sys.stderr)
         return 2
     config_home = os.environ.get("XDG_CONFIG_HOME") or os.path.join(os.environ["HOME"], ".config")
     configure(pathlib.Path(config_home) / "zed" / "settings.json")
