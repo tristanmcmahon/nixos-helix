@@ -52,10 +52,11 @@ Routine GitHub CI runs static checks and Nix evaluation/invariants against the
 pinned Nixpkgs. It deliberately does not build the complete CUDA-enabled
 workstation closure or compile MAME on every pull request.
 
-The expensive closure checks live behind `scripts/check.sh --full` and the
-`Release CI` workflow. Hosted Release CI runs on manual dispatch and weekly on
-`main`; pushes, including release branch maintenance, never start the large
-workstation closure build.
+The expensive closure checks live behind `scripts/check.sh --full`, which is
+run on Helix before an alpha is tagged. Helix already holds the CUDA and MAME
+builds; GitHub-hosted runners cannot finish them within their time limit, so
+the `Release CI` workflow runs only on manual dispatch and no push or schedule
+starts it.
 It does not modify Helix.
 
 

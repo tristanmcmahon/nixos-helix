@@ -1,7 +1,7 @@
 # Helix NixOS configuration
 
-Current alpha: `v0.3.0-alpha.5`. `main` is the `v0.3.0-alpha.6` candidate;
-see the [changelog](CHANGELOG.md) for what changed and the operator notes.
+Current alpha: `v0.3.0-alpha.6`; see the [changelog](CHANGELOG.md) for what
+changed and the operator notes.
 
 This is the canonical configuration for Helix, a NixOS 26.05 workstation with
 Plasma 6, an optional Hyprland/UWSM session, and an NVIDIA RTX 5080. It uses
@@ -60,8 +60,10 @@ Release qualification uses the explicit expensive gate:
 ```
 
 Pull-request CI runs static checks and evaluation against the pinned Nixpkgs;
-it does not rebuild the CUDA-enabled Ollama or MAME closures. Release CI runs
-the `--full` gate weekly on `main` and on manual dispatch.
+it does not rebuild the CUDA-enabled Ollama or MAME closures. Run the `--full`
+gate on Helix before tagging an alpha: those builds are already in its store,
+while GitHub-hosted runners cannot finish them within their time limit, so the
+Release CI workflow is manual-only.
 
 After reviewing a change, temporary and persistent activation remain explicit:
 

@@ -1,11 +1,11 @@
 name: Release CI
 
+# Manual only. GitHub-hosted runners cannot build the CUDA Ollama and MAME
+# closures within the job time limit, so the weekly schedule only ever
+# produced cancelled runs. The release gate runs on Helix before tagging,
+# where those builds are already in the store.
 on:
   workflow_dispatch:
-  # Weekly on the default branch only, so a broken release gate is noticed
-  # within a week; pushes to release branches still never start this build.
-  schedule:
-    - cron: "17 14 * * 6"
 
 permissions:
   contents: read

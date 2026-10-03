@@ -27,8 +27,11 @@ and independent.
 
 ## Defects
 
-All five defects and the weekly Release CI schedule from Phase 0 were fixed on
-2026-10-02. The `--full` gate still needs one confirming run.
+All five defects from Phase 0 were fixed on 2026-10-02, and the `--full` gate
+first passed end to end on Helix on 2026-10-03 (#94). The weekly hosted Release
+CI schedule was added and later removed: GitHub-hosted runners cannot build the
+CUDA and MAME closures within their time limit, so the gate runs on Helix
+before tagging.
 
 Status on 2026-10-02: Phases 0–5 are implemented, except the named-invariant
 reporter and the bulk pruning of implementation-mirroring assertions (current
