@@ -46,6 +46,17 @@ let
     }
   ];
   profileNames = map (profile: profile.name) profiles;
+  # Shared by both menus: choose_profile PROMPT prints the chosen profile name
+  # (the label's first word, lower-cased), or nothing if the menu is dismissed.
+  chooseProfileFunction = ''
+    choose_profile() {
+      local selection
+      selection=$(printf '%s\n' ${lib.escapeShellArgs (map (profile: profile.label) profiles)} |
+        helix-menu --dmenu --prompt="$1" || true)
+      selection=''${selection%% *}
+      printf '%s\n' "''${selection,,}"
+    }
+  '';
   profileFile = name: ../config/ghostty/profiles + "/${name}.ghostty";
   mainProfileText =
     let
@@ -137,10 +148,8 @@ let
       pkgs.systemd
     ];
     text = ''
-      selection=$(printf '%s\n' ${lib.escapeShellArgs (map (profile: profile.label) profiles)} |
-        helix-menu --dmenu --prompt='Ghostty profile: ' || true)
-      profile=''${selection%% *}
-      profile=''${profile,,}
+      ${chooseProfileFunction}
+      profile=$(choose_profile 'Ghostty profile: ')
       case $profile in
         ${lib.concatStringsSep "|" profileNames}) ;;
         *) profile= ;;
@@ -175,6 +184,7 @@ let
       ghosttySurfaceProfile
     ];
     text = ''
+      ${chooseProfileFunction}
       case ''${1:-} in
       --help | -h)
         printf 'Usage: ghostty-theme [%s]\n' ${lib.escapeShellArg (lib.concatStringsSep "|" profileNames)}
@@ -182,10 +192,7 @@ let
         exit 0
         ;;
       "")
-        selection=$(printf '%s\n' ${lib.escapeShellArgs (map (profile: profile.label) profiles)} |
-          helix-menu --dmenu --prompt='This surface: ' || true)
-        profile=''${selection%% *}
-        profile=''${profile,,}
+        profile=$(choose_profile 'This surface: ')
         [[ -n $profile ]] || exit 0
         ;;
       *)

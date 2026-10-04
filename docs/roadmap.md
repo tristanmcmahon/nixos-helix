@@ -29,9 +29,9 @@ and independent.
 
 All five defects from Phase 0 were fixed on 2026-10-02, and the `--full` gate
 first passed end to end on Helix on 2026-10-03 (#94). The weekly hosted Release
-CI schedule was added and later removed: GitHub-hosted runners cannot build the
-CUDA and MAME closures within their time limit, so the gate runs on Helix
-before tagging.
+CI schedule was added and later removed: the hosted run timed out compiling
+OpenClaw's bundled-SQLite Node.js, which no binary cache provides, so the gate
+runs on Helix before tagging.
 
 Status on 2026-10-02: Phases 0–5 are implemented, except the named-invariant
 reporter and the bulk pruning of implementation-mirroring assertions (current

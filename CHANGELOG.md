@@ -6,8 +6,14 @@ Release notes for Helix. Operating guides live in `docs/`.
 
 ### Changed
 
-- Release CI is manual-only: GitHub-hosted runners cannot build the CUDA and
-  MAME closures in time, so the `--full` gate runs on Helix before tagging.
+- Release CI is manual-only, and the `--full` gate runs on Helix before
+  tagging (#95). #95 blamed the CUDA and MAME closures; the run log shows the
+  hosted job timed out compiling OpenClaw's bundled-SQLite Node.js, which no
+  binary cache provides.
+- OpenClaw's bundled-SQLite Node.js skips Node's own test suite, and the
+  gateway build now fails if its Node links a SQLite older than 3.51.3.
+- The `--full` closure-command checks share one helper that reads each
+  closure once; the Ghostty menus share one chooser.
 
 ### Fixed
 

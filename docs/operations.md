@@ -53,9 +53,12 @@ pinned Nixpkgs. It deliberately does not build the complete CUDA-enabled
 workstation closure or compile MAME on every pull request.
 
 The expensive closure checks live behind `scripts/check.sh --full`, which is
-run on Helix before an alpha is tagged. Helix already holds the CUDA and MAME
-builds; GitHub-hosted runners cannot finish them within their time limit, so
-the `Release CI` workflow runs only on manual dispatch and no push or schedule
+run on Helix before an alpha is tagged. Its closure uses CPU Ollama and leaves
+out emulation and hamCade, but still includes OpenClaw's source-built Node.js
+(see `packages/openclaw-gateway-npm.nix`), which no binary cache provides.
+Helix builds it once and reuses it until one of its inputs changes, which a
+Nixpkgs bump can do; a GitHub-hosted runner timed out compiling it, so the
+`Release CI` workflow runs only on manual dispatch and no push or schedule
 starts it.
 It does not modify Helix.
 

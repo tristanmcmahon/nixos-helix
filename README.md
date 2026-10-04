@@ -60,10 +60,11 @@ Release qualification uses the explicit expensive gate:
 ```
 
 Pull-request CI runs static checks and evaluation against the pinned Nixpkgs;
-it does not rebuild the CUDA-enabled Ollama or MAME closures. Run the `--full`
-gate on Helix before tagging an alpha: those builds are already in its store,
-while GitHub-hosted runners cannot finish them within their time limit, so the
-Release CI workflow is manual-only.
+it does not build the system closure. Run the `--full` gate on Helix before
+tagging an alpha. The closure includes a source build of Node.js (OpenClaw needs
+a bundled SQLite) that no binary cache provides. Helix builds it once and reuses
+it until one of its inputs changes, which a Nixpkgs bump can do; a GitHub-hosted
+runner timed out compiling it, so the Release CI workflow is manual-only.
 
 After reviewing a change, temporary and persistent activation remain explicit:
 
