@@ -46,6 +46,20 @@ or Nixpkgs pin bumps) unless asked. After a requested `test`, run
 `helix-health --check`. Evaluation and builds do not prove hardware works; see
 `docs/hardware-validation.md`.
 
+## Working loop
+
+Before handing work back, iterate without being asked:
+
+1. Implement the change.
+2. Validate: `check.sh`, evaluation, and builds of the touched packages.
+3. Review your own diff adversarially (`/code-review` at high effort):
+   correctness, regressions, stale checks or docs, simpler alternatives.
+4. Fix what the review finds and validate again. Measure claimed gains and
+   revert changes that do not earn their complexity. Repeat until a pass
+   finds nothing worth changing.
+5. Hand back once: what changed, what was verified and how, what only Helix
+   can verify (with the exact command), and anything still uncertain.
+
 ## Conventions
 
 - Nix is formatted with `nixfmt` and linted with `deadnix` and `statix`. Shell
