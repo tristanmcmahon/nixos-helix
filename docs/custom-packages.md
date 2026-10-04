@@ -21,9 +21,11 @@ package at a time, build it against the maintained NixOS release, run
   gateway runs on Node 22 built with Node's bundled SQLite rather than the
   nixpkgs shared SQLite 3.51.2, which OpenClaw rejects because of the WAL-reset
   corruption bug. The override applies only while nixpkgs shares a SQLite older
-  than 3.51.3, so it retires itself and the cached Node returns automatically. ACPX,
-  extended tools, the batteries bundle, source/version pins and dependency
-  hashes still come from that immutable upstream revision.
+  than 3.51.3, so it retires itself and the cached Node returns automatically.
+  That Node build skips Node's own test suite, and the gateway build fails if
+  its Node links a SQLite older than 3.51.3 (one `minimumSqlite` value drives
+  both). ACPX, extended tools, the batteries bundle, source/version pins and
+  dependency hashes still come from that immutable upstream revision.
 
 ## Manual update procedure
 

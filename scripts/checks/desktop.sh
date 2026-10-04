@@ -55,19 +55,9 @@ if "$system_closure/sw/bin/helix-apply-theme" --invalid >/dev/null 2>&1; then
   exit 1
 fi
 theme_helper=$(readlink -f "$system_closure/sw/bin/helix-apply-theme")
-mapfile -t theme_closure < <(nix-store -qR "$theme_helper")
-for theme_runtime_command in gsettings python3 plasma-apply-colorscheme \
+require_closure_commands "$theme_helper" gsettings python3 plasma-apply-colorscheme \
   plasma-apply-desktoptheme plasma-apply-cursortheme plasma-apply-wallpaperimage \
-  kwriteconfig6 install; do
-  found_runtime_command=0
-  for closure_path in "${theme_closure[@]}"; do
-    if [[ -x $closure_path/bin/$theme_runtime_command ]]; then
-      found_runtime_command=1
-      break
-    fi
-  done
-  ((found_runtime_command))
-done
+  kwriteconfig6 install
 # Each login applies exactly one theme, from the session's rotation.
 [[ ! -e $system_closure/etc/systemd/user/helix-graphite-fern-theme.service ]]
 [[ -r $system_closure/etc/systemd/user/helix-ghostty-config.service ]]

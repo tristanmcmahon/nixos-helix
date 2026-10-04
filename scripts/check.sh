@@ -33,6 +33,24 @@ trap 'rm -rf -- "$temporary_directory"' EXIT
 # Many checks are bare tests; name the one that failed instead of exiting silently.
 trap 'printf "check failed: %s line %s: %s\n" "${BASH_SOURCE[0]}" "$LINENO" "$BASH_COMMAND" >&2' ERR
 
+# Fail unless the runtime closure of $1 provides bin/<command> for every
+# remaining argument. The closure is queried once.
+require_closure_commands() {
+  local root=$1 command closure_path closure_output
+  shift
+  local -a closure
+  # A failed store query stops here rather than reading as a missing command.
+  closure_output=$(nix-store -qR "$root")
+  mapfile -t closure <<<"$closure_output"
+  for command in "$@"; do
+    for closure_path in "${closure[@]}"; do
+      [[ -x $closure_path/bin/$command ]] && continue 2
+    done
+    printf 'Runtime closure of %s lacks command: %s\n' "$root" "$command" >&2
+    exit 1
+  done
+}
+
 # shellcheck source=scripts/checks/static.sh
 source "$repo_root/scripts/checks/static.sh"
 

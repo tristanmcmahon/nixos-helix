@@ -21,10 +21,10 @@ printf 'Checking Helix health and update command surfaces...\n'
 grep -qF 'helix-health' "$system_closure/sw/bin/helix-update"
 grep -qF 'nix-env --profile /nix/var/nix/profiles/system --set "$candidate"' \
   "$system_closure/sw/bin/helix-update"
-# hamCade is intentionally omitted from this disposable closure because its
-# libretro MAME dependency is prohibitively expensive to compile in hosted CI.
-# Canonical hamCade enablement and launcher presence are asserted during the
-# evaluation phase before this build.
+# hamCade and emulation are left out of this disposable closure because their
+# libretro MAME builds are expensive to compile; build-configuration.nix lists
+# the overrides. Canonical hamCade enablement and launcher presence are
+# asserted during the evaluation phase before this build.
 
 printf 'Checking Vim and modern-bash in the built default system...\n'
 ./scripts/test-modern-bash.sh "$system_closure"

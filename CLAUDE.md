@@ -37,7 +37,7 @@ changes; it is the authority on ownership, state, safety and network rules.
 ```bash
 ./scripts/dev-shell.sh --run './scripts/check.sh'   # static checks + evaluation + invariants
 ./scripts/rebuild.sh dry-build                       # build the candidate
-./scripts/dev-shell.sh --run './scripts/check.sh --full'   # release gate (CUDA/MAME closures)
+./scripts/dev-shell.sh --run './scripts/check.sh --full'   # release gate (builds the system closure)
 ```
 
 Activation is always the user's explicit decision. Do not run

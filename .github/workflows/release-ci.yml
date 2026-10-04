@@ -1,9 +1,9 @@
 name: Release CI
 
-# Manual only. GitHub-hosted runners cannot build the CUDA Ollama and MAME
-# closures within the job time limit, so the weekly schedule only ever
-# produced cancelled runs. The release gate runs on Helix before tagging,
-# where those builds are already in the store.
+# Manual only. The release closure includes OpenClaw's source-built Node.js
+# (bundled SQLite), which no binary cache provides; compiling it hit the job
+# time limit, so the weekly schedule only produced cancelled runs. The release
+# gate runs on Helix before tagging, where that build is already in the store.
 on:
   workflow_dispatch:
 
