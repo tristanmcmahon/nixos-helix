@@ -6,6 +6,10 @@ Release notes for Helix. Operating guides live in `docs/`.
 
 ### Changed
 
+- Nixpkgs pin moved to `nixos-26.05.11150.825e2028c29b`: kernel 6.18.53 to
+  6.18.55; the NVIDIA driver (595.71.05), Mesa, Plasma, Node and SQLite are
+  unchanged.
+
 - Release CI is manual-only, and the `--full` gate runs on Helix before
   tagging (#95). #95 blamed the CUDA and MAME closures; the run log shows the
   hosted job timed out compiling OpenClaw's bundled-SQLite Node.js, which no
