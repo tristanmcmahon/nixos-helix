@@ -6,6 +6,9 @@ Release notes for Helix. Operating guides live in `docs/`.
 
 ### Changed
 
+- Nix builds run at idle CPU priority, so large local builds no longer make
+  the desktop, games or local models stutter.
+
 - Nixpkgs pin moved to `nixos-26.05.11150.825e2028c29b`: kernel 6.18.53 to
   6.18.55; the NVIDIA driver (595.71.05), Mesa, Plasma, Node and SQLite are
   unchanged.

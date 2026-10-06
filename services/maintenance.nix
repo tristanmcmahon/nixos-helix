@@ -26,5 +26,12 @@ _:
       automatic = true;
       dates = [ "weekly" ];
     };
+
+    # Builds use only spare CPU, so a large local build (OpenClaw's Node, the
+    # NVIDIA module after a kernel bump) cannot make the desktop, a game or a
+    # local model stutter. On an otherwise idle machine they run at full speed.
+    # The matching I/O class is not set: NVMe uses no I/O scheduler, so it
+    # would have no effect.
+    daemonCPUSchedPolicy = "idle";
   };
 }
