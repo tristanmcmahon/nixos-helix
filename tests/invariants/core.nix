@@ -12,6 +12,8 @@ assert config.system.stateVersion == release.stateVersion;
 assert config.nix.gc.automatic;
 assert config.nix.gc.options == "--delete-older-than 14d";
 assert config.nix.optimise.automatic;
+# Local builds must never starve interactive work.
+assert config.nix.daemonCPUSchedPolicy == "idle";
 assert config.zramSwap.enable;
 assert config.zramSwap.algorithm == "zstd";
 assert config.zramSwap.memoryPercent == 50;
