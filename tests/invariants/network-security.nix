@@ -20,6 +20,13 @@ assert !config.services.openssh.settings.PasswordAuthentication;
 assert !config.services.openssh.settings.KbdInteractiveAuthentication;
 assert config.networking.hosts."192.168.1.2" == [ "mister" ];
 assert config.networking.hosts."${infernalnexus.host}" == [ "infernalnexus" ];
+# Only the NAS is exempt from the post-quantum key exchange warning.
+assert
+  let
+    lines = builtins.split "\n" config.programs.ssh.extraConfig;
+  in
+  builtins.elem "Host infernalnexus ${infernalnexus.host}" lines
+  && builtins.elem "  WarnWeakCrypto no-pq-kex" lines;
 assert config.helix.networking.pihole.enable;
 assert config.helix.networking.pihole.address == infernalnexus.host;
 assert config.networking.networkmanager.enable;
