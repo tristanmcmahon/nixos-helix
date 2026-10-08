@@ -20,28 +20,30 @@ temporary_directory=$(mktemp -d)
 trap 'rm -rf -- "$temporary_directory"' EXIT
 git -C "$repo_root" show "$base:nixpkgs.json" > "$temporary_directory/base.json"
 
-# The configuration takes the default kernel and Nixpkgs' stable NVIDIA driver
-# for it, so these package-set attributes are what Helix runs.
+# The kernel, NVIDIA driver and Ollama build come from the Helix
+# configuration evaluated against each pin, so the table follows the
+# configuration's own choices; the rest are plain package versions.
 versions() {
   nix-instantiate --eval --strict --json -E "
     let
       pin = builtins.fromJSON (builtins.readFile $1);
-      pkgs = import (builtins.fetchTarball { inherit (pin) url sha256; }) {
-        config.allowUnfree = true;
-      };
-      kernel = pkgs.linuxPackages;
+      nixpkgs = builtins.fetchTarball { inherit (pin) url sha256; };
+      pkgs = import nixpkgs { config.allowUnfree = true; };
+      helix = (import (nixpkgs + \"/nixos\") {
+        configuration = $repo_root/configuration.nix;
+      }).config;
       openclaw = pkgs.callPackage $repo_root/packages/openclaw-node.nix { };
     in {
       release = pin.release;
-      kernel = kernel.kernel.version;
-      nvidia = kernel.nvidiaPackages.stable.version;
+      kernel = helix.boot.kernelPackages.kernel.version;
+      nvidia = helix.hardware.nvidia.package.version;
       mesa = pkgs.mesa.version;
       plasma = pkgs.kdePackages.plasma-workspace.version;
       systemd = pkgs.systemd.version;
       firefox = pkgs.firefox.version;
       # Helix runs the CUDA build, which is unfree, so no binary cache has it.
-      ollama = pkgs.ollama-cuda.version;
-      ollamaDerivation = builtins.unsafeDiscardStringContext pkgs.ollama-cuda.drvPath;
+      ollama = helix.services.ollama.package.version;
+      ollamaDerivation = builtins.unsafeDiscardStringContext helix.services.ollama.package.drvPath;
       node = pkgs.nodejs_22.version;
       sqlite = pkgs.sqlite.version;
       ghostty = pkgs.ghostty.version;
