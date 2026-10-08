@@ -58,7 +58,8 @@ paths with `--target /`, then run `./scripts/rebuild.sh switch`.
 
 ## hamology service-state backups
 
-`services/hamology-backup.nix` is a thin user timer: around 04:23 it runs
+`services/hamology-backup.nix` is a thin system timer that runs as `tristan`
+(no login needed, and no user lingering): around 04:23 it runs
 `~/Projects/hamology/scripts/hamology-backup --unattended --keep 2`, which
 backs up Infernalnexus's service state on the NAS itself
 (`/volume1/nas1/data/backups`) and keeps the two newest verified archives.
@@ -67,9 +68,10 @@ verified (see its `docs/operations.md`). Authorise the NAS once:
 
 ```bash
 cd ~/Projects/hamology && scripts/hamology-backup --install-unattended
-systemctl --user start hamology-backup.service   # first run
-journalctl --user -u hamology-backup.service
+sudo systemctl start hamology-backup.service   # first run
+journalctl -u hamology-backup.service
 ```
 
-The run never prompts: it needs an SSH key usable without a passphrase prompt
-(or a loaded agent) and fails visibly if the NAS is offline or not authorised.
+The run never prompts and has no desktop SSH agent: it needs an SSH key usable
+without a passphrase, and fails visibly (a failed unit in `helix-health`) if the
+NAS is offline or not authorised.
