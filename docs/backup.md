@@ -60,8 +60,9 @@ paths with `--target /`, then run `./scripts/rebuild.sh switch`.
 
 `services/hamology-backup.nix` is a thin user timer: around 04:23 it runs
 `~/Projects/hamology/scripts/hamology-backup --unattended --keep 2`, which
-copies Infernalnexus's service state to `~/Backups/hamology` and keeps the two
-newest verified archives. hamology owns what is captured and how it is
+backs up Infernalnexus's service state on the NAS itself
+(`/volume1/nas1/data/backups`) and keeps the two newest verified archives.
+Nothing is copied to Helix. hamology owns what is captured and how it is
 verified (see its `docs/operations.md`). Authorise the NAS once:
 
 ```bash
