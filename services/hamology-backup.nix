@@ -43,6 +43,8 @@ in
     };
   };
 
+  helix.failureAlerts.userUnits = [ "hamology-backup.service" ];
+
   systemd.user.timers.hamology-backup = {
     description = "Nightly hamology backup";
     wantedBy = [ "timers.target" ];

@@ -4,15 +4,24 @@ Release notes for Helix. Operating guides live in `docs/`.
 
 ## Unreleased
 
+### Added
+
+- Failure alerts: the nightly backups and weekly Nix maintenance raise a
+  desktop notification when they fail, and each login reports failures that
+  happened while logged out (`helix.failureAlerts`).
+
 ### Changed
 
+- Helix backups live beside hamology's in the NAS's `data/backups`
+  (`helix-restic`, `helix-reinstall`) and keep the two newest copies, like
+  hamology. Move the existing backups once first (`docs/backup.md`).
+- The dev shell provides `ssh-keygen`, so `check.sh` runs the reinstall
+  restore test anywhere.
 - Nix builds run at idle CPU priority, so large local builds no longer make
   the desktop, games or local models stutter.
-
 - Nixpkgs pin moved to `nixos-26.05.11150.825e2028c29b`: kernel 6.18.53 to
   6.18.55; the NVIDIA driver (595.71.05), Mesa, Plasma, Node and SQLite are
   unchanged.
-
 - Release CI is manual-only, and the `--full` gate runs on Helix before
   tagging (#95). #95 blamed the CUDA and MAME closures; the run log shows the
   hosted job timed out compiling OpenClaw's bundled-SQLite Node.js, which no

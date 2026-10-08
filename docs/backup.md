@@ -63,8 +63,9 @@ The first run after the move prunes the repository to the two newest
 snapshots; the older daily, weekly and monthly snapshots are deleted for good.
 
 Until the password file exists the unit is skipped, not failed. If the NAS is
-offline the run fails, appears among failed units in `helix-health`, and runs
-again after the next boot.
+offline the run fails, raises a desktop alert (see
+[operations.md](operations.md#failure-alerts)), appears among failed units in
+`helix-health`, and runs again after the next boot.
 
 ## Restore drill
 

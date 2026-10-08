@@ -27,6 +27,8 @@ Helix uses native persistent weekly Nix GC with the existing one-hour randomized
 delay and deletes generations older than 14 days. Store optimisation stays
 weekly. The 32 GiB workstation uses zstd zram at 50% RAM and priority 100; no
 disk swap is created. systemd-oomd watches root and user slices, not system.slice.
+Nix builds run at idle CPU priority, so a large local build cannot make the
+desktop, a game or a local model stutter.
 
 OpenClaw comes from `openclaw/nix-openclaw` revision
 `d3760a6f103642f11e24bc01ee9aec80a0153774`, fetched with a fixed unpacked hash.
@@ -38,6 +40,28 @@ Inside that sandbox the Helix checkout is writable, but `.git`, `.vscode`,
 `tristan` outside it. OpenClaw can edit tracked files; committing stays a
 human step. `helix-update` also disables `core.fsmonitor` and hooks for its
 Git commands.
+
+## Failure alerts
+
+Unattended units raise a critical desktop notification when they fail: the
+nightly restic and hamology backups and weekly Nix GC and store optimisation.
+`services/failure-alerts.nix` attaches `OnFailure=helix-failure-alert@%n` to
+every unit in `helix.failureAlerts.units` or `userUnits`; each feature
+registers its own, as for the health gate. The notification names the unit,
+quotes the end of its log and gives the `journalctl` command for details. A
+failure while nobody is logged in is reported at the next graphical login, and
+at every login after that until the unit succeeds or the failure is
+acknowledged:
+
+```bash
+systemctl reset-failed restic-backups-helix.service   # or systemctl --user ...
+```
+
+To see an alert without breaking anything:
+
+```bash
+sudo systemctl start helix-failure-alert@alert-test.service
+```
 
 ## Nixpkgs pin
 

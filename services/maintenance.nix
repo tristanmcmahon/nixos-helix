@@ -1,6 +1,12 @@
 _:
 
 {
+  # Weekly maintenance runs unattended, so its failures raise an alert.
+  helix.failureAlerts.units = [
+    "nix-gc.service"
+    "nix-optimise.service"
+  ];
+
   # Firmware updates remain explicitly initiated through fwupdmgr.
   services.fwupd.enable = true;
 

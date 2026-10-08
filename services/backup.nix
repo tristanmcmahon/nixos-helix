@@ -63,6 +63,8 @@ in
     };
   };
 
+  helix.failureAlerts.units = [ "restic-backups-helix.service" ];
+
   # restic is also the restore tool.
   environment.systemPackages = [ pkgs.restic ];
 }
