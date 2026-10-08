@@ -7,6 +7,10 @@ set -euo pipefail
 declare helix_user
 declare -a watched_units watched_user_units
 
+# Set once a wait for a notification server has timed out, so a login with
+# several failed units waits once, not once per unit.
+no_server=0
+
 usage() {
   printf 'Usage: helix-failure-alert UNIT | --pending\n'
   printf 'Raise a desktop notification for a failed unit, or, with --pending,\n'
@@ -20,6 +24,10 @@ usage() {
 notify() {
   local title=$1 body=$2 uid bus attempt
   local -a as_user=()
+  if ((no_server)); then
+    printf '%s: no notification server answered; reported at next login.\n' "$title"
+    return 0
+  fi
   if ((EUID == 0)); then
     uid=$(id -u "$helix_user")
     bus=/run/user/$uid/bus
@@ -42,21 +50,26 @@ notify() {
     fi
     ((attempt < 6)) && sleep 5
   done
+  no_server=1
   printf '%s: no notification server answered; reported at next login.\n' "$title"
 }
 
-# Name the failed unit, quote the end of its own output (not systemd's
-# generic "Failed with result" lines) and say where to look.
+# Name the failed unit and systemd's verdict (exit-code, timeout, oom-kill),
+# quote the end of that run's own output and say where to look. OnFailure
+# passes the failed run's identity as MONITOR_*; the login check asks systemd,
+# which keeps it while the unit stays failed.
 report() {
-  local scope=$1 unit=$2 lines inspect
-  if [[ $scope == user ]]; then
-    lines=$(journalctl --user "_SYSTEMD_USER_UNIT=$unit" --lines=3 --output=cat --no-pager 2>/dev/null || true)
-    inspect="journalctl --user -u $unit"
-  else
-    lines=$(journalctl "_SYSTEMD_UNIT=$unit" --lines=3 --output=cat --no-pager 2>/dev/null || true)
-    inspect="journalctl -u $unit"
+  local scope=$1 unit=$2 invocation result lines='' body
+  local -a scoped=()
+  [[ $scope == user ]] && scoped=(--user)
+  invocation=${MONITOR_INVOCATION_ID:-$(systemctl "${scoped[@]}" show --property=InvocationID --value "$unit" 2>/dev/null || true)}
+  result=${MONITOR_SERVICE_RESULT:-$(systemctl "${scoped[@]}" show --property=Result --value "$unit" 2>/dev/null || true)}
+  if [[ -n $invocation ]]; then
+    lines=$(journalctl "${scoped[@]}" "_SYSTEMD_INVOCATION_ID=$invocation" --lines=3 \
+      --output=cat --no-pager 2>/dev/null || true)
   fi
-  notify "$unit failed" "${lines:-No log lines are readable here.}"$'\n'"Details: $inspect"
+  body=${result:+Result: $result$'\n'}${lines:-No output from the failed run is readable here.}
+  notify "$unit failed" "$body"$'\n'"Details: journalctl ${scoped[*]}${scoped:+ }-u $unit"
 }
 
 pending() {

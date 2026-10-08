@@ -34,6 +34,12 @@ while IFS='=' read -r helix_fact_name helix_fact_value; do
     ;;
   esac
 done <<<"$helix_facts"
+# Archives must land on the verified NAS mount, never beside it.
+[[ $helix_backup_root == "$helix_nas_mount"/* ]] || {
+  printf 'FAIL: the reinstall backup root %s is not on the NAS mount %s.\n' \
+    "$helix_backup_root" "$helix_nas_mount" >&2
+  exit 1
+}
 # shellcheck disable=SC2034 # Consumed by the sourcing script.
 readonly helix_user helix_home helix_checkout helix_games_uuid helix_nas_mount \
   helix_nas_source helix_backup_root

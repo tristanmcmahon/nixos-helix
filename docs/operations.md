@@ -47,8 +47,11 @@ Unattended units raise a critical desktop notification when they fail: the
 nightly restic and hamology backups and weekly Nix GC and store optimisation.
 `services/failure-alerts.nix` attaches `OnFailure=helix-failure-alert@%n` to
 every unit in `helix.failureAlerts.units` or `userUnits`; each feature
-registers its own, as for the health gate. The notification names the unit,
-quotes the end of its log and gives the `journalctl` command for details. A
+registers its own, as for the health gate. The notification names the unit and
+systemd's verdict (exit code, timeout, out of memory), quotes the end of the
+failed run's own output and gives the `journalctl` command for details. It is
+only sent to a notification server that is already running, so it never starts
+one (mako would otherwise displace Plasma's). A
 failure while nobody is logged in is reported at the next graphical login, and
 at every login after that until the unit succeeds or the failure is
 acknowledged:
@@ -78,8 +81,8 @@ New Zealand, or on manual dispatch): it pins the newest release, runs
 `automation/nixpkgs-bump` with a table of the versions that matter on Helix
 (`scripts/nixpkgs-version-summary.sh`), including whether OpenClaw's Node and
 the NVIDIA module will rebuild. Testing it on Helix, merging and switching stay
-manual. A newer release updates that pull request, unless someone has pushed
-their own commits to it, which are never overwritten. Closing it without
+manual. A newer release updates that pull request, unless it changes more than
+`nixpkgs.json` (someone's fix), which is never overwritten or closed. Closing it without
 merging skips that release; the next one opens a new pull request. It needs **Settings → Actions → General → Allow GitHub Actions to
 create and approve pull requests** enabled once; without it the run fails
 visibly at the pull-request step.
