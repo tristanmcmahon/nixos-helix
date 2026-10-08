@@ -39,8 +39,8 @@ The service never creates the repository itself, so a wrong or unmigrated path
 fails visibly instead of quietly starting an empty one.
 
 Never regenerate the password once the repository exists. A run that reports
-"wrong password" followed by "config file already exists" means the password
-file no longer matches the repository: restore the saved password, or, if it
+"wrong password or no key found" means the password file no longer matches the
+repository: restore the saved password, or, if it
 is lost, move `helix-restic` aside (its snapshots cannot be decrypted), then run
 `sudo restic-helix init` and the service again to start a new repository.
 
@@ -55,8 +55,10 @@ Move them once, before switching to a configuration that uses
 cd /mnt/infernalnexus/nas1
 mkdir -p data/backups/helix-reinstall
 mv -T backup/helix-restic data/backups/helix-restic
-mv backup/helix-reinstall-* data/backups/helix-reinstall/ 2>/dev/null || true
-rmdir backup   # only succeeds once it is empty
+for set in backup/helix-reinstall-*; do
+  [[ -e $set ]] && mv -T -- "$set" "data/backups/helix-reinstall/${set#backup/}"
+done
+rmdir backup   # fails, and says why, if anything is left behind
 ```
 
 The first run after the move prunes the repository to the two newest

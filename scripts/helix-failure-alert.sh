@@ -19,7 +19,7 @@ usage() {
 # failed, and the login check (--pending) reports it from the next desktop.
 notify() {
   local title=$1 body=$2 uid bus attempt
-  local -a send=(notify-send --app-name=Helix --urgency=critical --icon=dialog-error -- "$title" "$body")
+  local -a as_user=()
   if ((EUID == 0)); then
     uid=$(id -u "$helix_user")
     bus=/run/user/$uid/bus
@@ -27,27 +27,33 @@ notify() {
       printf '%s: no session for %s; reported at next login.\n' "$title" "$helix_user"
       return 0
     fi
-    send=(runuser -u "$helix_user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus" "${send[@]}")
+    as_user=(runuser -u "$helix_user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus")
   fi
-  # At login the notification server may register a few seconds after the
-  # session target, so retry briefly before giving up.
+  # Send only to a notification server that is already running. Calling it
+  # unowned would D-Bus-activate whichever daemon claims the name, and mako
+  # (installed for Hyprland) would then displace Plasma's own for the whole
+  # session. At login the desktop's server can register a few seconds after
+  # the session target, so wait briefly for it.
   for attempt in 1 2 3 4 5 6; do
-    if "${send[@]}" 2>/dev/null; then
-      return 0
+    if [[ $("${as_user[@]}" busctl --user call org.freedesktop.DBus /org/freedesktop/DBus \
+      org.freedesktop.DBus NameHasOwner s org.freedesktop.Notifications 2>/dev/null) == 'b true' ]]; then
+      "${as_user[@]}" notify-send --app-name=Helix --urgency=critical --icon=dialog-error \
+        -- "$title" "$body" && return 0
     fi
     ((attempt < 6)) && sleep 5
   done
   printf '%s: no notification server answered; reported at next login.\n' "$title"
 }
 
-# Name the failed unit, quote the end of its log and say where to look.
+# Name the failed unit, quote the end of its own output (not systemd's
+# generic "Failed with result" lines) and say where to look.
 report() {
   local scope=$1 unit=$2 lines inspect
   if [[ $scope == user ]]; then
-    lines=$(journalctl --user --unit="$unit" --lines=3 --output=cat --no-pager 2>/dev/null || true)
+    lines=$(journalctl --user "_SYSTEMD_USER_UNIT=$unit" --lines=3 --output=cat --no-pager 2>/dev/null || true)
     inspect="journalctl --user -u $unit"
   else
-    lines=$(journalctl --unit="$unit" --lines=3 --output=cat --no-pager 2>/dev/null || true)
+    lines=$(journalctl "_SYSTEMD_UNIT=$unit" --lines=3 --output=cat --no-pager 2>/dev/null || true)
     inspect="journalctl -u $unit"
   fi
   notify "$unit failed" "${lines:-No log lines are readable here.}"$'\n'"Details: $inspect"

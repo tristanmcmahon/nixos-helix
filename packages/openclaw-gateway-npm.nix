@@ -2,9 +2,7 @@
   lib,
   stdenv,
   buildNpmPackage,
-  nodejs_22,
-  nodejs-slim_22,
-  sqlite,
+  callPackage,
   makeWrapper,
   sourceInfo,
   bundledAcpx,
@@ -12,14 +10,7 @@
 }:
 
 let
-  openclaw = import ./openclaw-node.nix {
-    inherit
-      lib
-      nodejs_22
-      nodejs-slim_22
-      sqlite
-      ;
-  };
+  openclaw = callPackage ./openclaw-node.nix { };
   openclawNode = openclaw.node;
   inherit (openclaw) minimumSqlite;
   buildNpmPackageForOpenClaw = buildNpmPackage.override {

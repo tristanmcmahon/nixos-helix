@@ -71,12 +71,23 @@ jobs:
             "Weekly Nixpkgs bump by \`.github/workflows/nixpkgs-bump.yml\`; only \`nixpkgs.json\` changes. \`check.sh --quick\` passed before this was opened." \
             "$summary" \
             "Before merging, test on Helix: \`./scripts/rebuild.sh test\`, then \`helix-health --check\`.")
+          bot_email="41898282+github-actions[bot]@users.noreply.github.com"
+          pr=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
+          if [[ -n $pr ]]; then
+            # Rebuilding the branch from main would discard commits a person
+            # added (a compatibility fix, say), so leave such a branch alone.
+            others=$(gh pr view "$pr" --json commits \
+              --jq "[.commits[].authors[].email | select(. != \"$bot_email\")] | length")
+            if ((others > 0)); then
+              gh pr comment "$pr" --body "$RELEASE is out, but this branch has commits beyond the automated bump, so it was left alone. Rebase it, or close it to get a fresh pull request next week."
+              exit 0
+            fi
+          fi
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "$bot_email"
           git switch -C "$BRANCH"
           git commit --quiet -am "Bump Nixpkgs to $RELEASE"
           git push --force origin "$BRANCH"
-          pr=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
           if [[ -n $pr ]]; then
             gh pr edit "$pr" --title "Bump Nixpkgs to $RELEASE" --body "$body"
           else

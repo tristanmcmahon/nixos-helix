@@ -30,9 +30,7 @@ versions() {
         config.allowUnfree = true;
       };
       kernel = pkgs.linuxPackages;
-      openclaw = import $repo_root/packages/openclaw-node.nix {
-        inherit (pkgs) lib nodejs_22 nodejs-slim_22 sqlite;
-      };
+      openclaw = pkgs.callPackage $repo_root/packages/openclaw-node.nix { };
     in {
       release = pin.release;
       kernel = kernel.kernel.version;
@@ -41,7 +39,9 @@ versions() {
       plasma = pkgs.kdePackages.plasma-workspace.version;
       systemd = pkgs.systemd.version;
       firefox = pkgs.firefox.version;
-      ollama = pkgs.ollama.version;
+      # Helix runs the CUDA build, which is unfree, so no binary cache has it.
+      ollama = pkgs.ollama-cuda.version;
+      ollamaDerivation = builtins.unsafeDiscardStringContext pkgs.ollama-cuda.drvPath;
       node = pkgs.nodejs_22.version;
       sqlite = pkgs.sqlite.version;
       ghostty = pkgs.ghostty.version;
@@ -75,6 +75,10 @@ elif new["openclawNodeFromSource"]:
           "expect a long local build once.")
 else:
     print("OpenClaw's Node changed but comes from the binary cache: no source build.")
+if old["ollamaDerivation"] != new["ollamaDerivation"]:
+    print()
+    print("CUDA Ollama changed: no binary cache has it, so expect a long local "
+          "build.")
 if old["kernel"] != new["kernel"] or old["nvidia"] != new["nvidia"]:
     print()
     print("The kernel or NVIDIA driver changed: the NVIDIA module is rebuilt "
