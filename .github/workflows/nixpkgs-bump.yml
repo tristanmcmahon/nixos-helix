@@ -32,19 +32,36 @@ jobs:
         id: bump
         run: |
           ./scripts/bump-nixpkgs.sh
+          release=$(jq -r .release nixpkgs.json)
+          echo "release=$release" >> "$GITHUB_OUTPUT"
           if git diff --quiet -- nixpkgs.json; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "state=current" >> "$GITHUB_OUTPUT"
+          elif git fetch --quiet --depth=1 origin "$BRANCH" 2>/dev/null &&
+            git show FETCH_HEAD:nixpkgs.json | cmp -s - nixpkgs.json; then
+            # The open pull request already proposes this release; leave its
+            # branch, commits and approvals alone.
+            echo "state=proposed" >> "$GITHUB_OUTPUT"
           else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "release=$(jq -r .release nixpkgs.json)" >> "$GITHUB_OUTPUT"
+            echo "state=new" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Close a superseded pull request
+        if: steps.bump.outputs.state == 'current'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE: ${{ steps.bump.outputs.release }}
+        run: |
+          pr=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
+          if [[ -n $pr ]]; then
+            gh pr close "$pr" --delete-branch \
+              --comment "\`main\` already pins $RELEASE, the newest release."
           fi
       - name: Validate and evaluate
-        if: steps.bump.outputs.changed == 'true'
+        if: steps.bump.outputs.state == 'new'
         env:
           TMPDIR: /tmp
         run: ./scripts/dev-shell.sh --run './scripts/check.sh --quick'
       - name: Open or update the pull request
-        if: steps.bump.outputs.changed == 'true'
+        if: steps.bump.outputs.state == 'new'
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE: ${{ steps.bump.outputs.release }}

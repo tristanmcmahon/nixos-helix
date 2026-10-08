@@ -36,6 +36,8 @@ Release notes for Helix. Operating guides live in `docs/`.
 
 ### Fixed
 
+- With Infernalnexus offline the nightly backup ended as a silent dependency
+  failure, never marked failed; it now runs, fails and raises an alert.
 - The `--full` gate's desktop checks: the Hyprland theme helper and the
   Ghostty profile validation; `check.sh` now names any failing check (#94).
 

@@ -14,10 +14,11 @@ usage() {
 }
 
 # Deliver one notification. Run as root (a system unit failed), it goes to
-# helix_user's session bus; with no session it is skipped, because the login
-# check (--pending) reports the same failure once a session starts.
+# helix_user's session bus. A missing session or notification server (logged
+# out, SSH only, a desktop still starting) is not an error: the unit stays
+# failed, and the login check (--pending) reports it from the next desktop.
 notify() {
-  local title=$1 body=$2 uid bus
+  local title=$1 body=$2 uid bus attempt
   local -a send=(notify-send --app-name=Helix --urgency=critical --icon=dialog-error -- "$title" "$body")
   if ((EUID == 0)); then
     uid=$(id -u "$helix_user")
@@ -26,10 +27,17 @@ notify() {
       printf '%s: no session for %s; reported at next login.\n' "$title" "$helix_user"
       return 0
     fi
-    runuser -u "$helix_user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus" "${send[@]}"
-  else
-    "${send[@]}"
+    send=(runuser -u "$helix_user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus" "${send[@]}")
   fi
+  # At login the notification server may register a few seconds after the
+  # session target, so retry briefly before giving up.
+  for attempt in 1 2 3 4 5 6; do
+    if "${send[@]}" 2>/dev/null; then
+      return 0
+    fi
+    ((attempt < 6)) && sleep 5
+  done
+  printf '%s: no notification server answered; reported at next login.\n' "$title"
 }
 
 # Name the failed unit, quote the end of its log and say where to look.

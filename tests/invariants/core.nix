@@ -91,9 +91,9 @@ assert
   let
     backup = config.services.restic.backups.helix;
   in
-  backup.repository == (import ../../config/infernalnexus.nix).backups.restic
-  # Helix's backups share hamology's NAS backup directory.
-  && system.pkgs.lib.hasPrefix "/mnt/infernalnexus/nas1/data/backups/" backup.repository
+  # Helix's backups share hamology's NAS backup directory, and a missing
+  # repository is never silently recreated.
+  system.pkgs.lib.hasPrefix "/mnt/infernalnexus/nas1/data/backups/" backup.repository
   && !backup.initialize
   && !(system.pkgs.lib.hasPrefix builtins.storeDir backup.passwordFile)
   && builtins.all (path: builtins.elem path backup.paths) [

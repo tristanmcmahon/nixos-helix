@@ -51,11 +51,14 @@ in
 
   systemd.services.restic-backups-helix = {
     # The password is created by hand (see docs/backup.md); until it exists the
-    # unit is skipped rather than failed. The NAS is optional: if it is offline
-    # the run fails visibly in helix-health and Persistent retries next boot.
+    # unit is skipped rather than failed. The NAS is optional: Wants (not
+    # Requires) keeps the ordering after the mount, but an offline NAS lets
+    # the run start and fail, so it raises an alert and shows in helix-health
+    # instead of ending as a silent dependency failure. With initialize off, a
+    # missing mount can never create a repository on the local disk.
     unitConfig = {
       ConditionPathExists = passwordFile;
-      RequiresMountsFor = [ nas ];
+      WantsMountsFor = [ nas ];
     };
     serviceConfig = {
       Nice = 19;

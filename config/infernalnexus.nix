@@ -19,7 +19,6 @@ in
   idleTimeout = "10min";
 
   backups = {
-    root = backupRoot;
     # Nightly backups keep the two newest copies, Helix's and hamology's alike.
     keep = 2;
     restic = "${backupRoot}/helix-restic";

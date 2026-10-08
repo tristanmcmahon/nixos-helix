@@ -30,6 +30,9 @@ versions() {
         config.allowUnfree = true;
       };
       kernel = pkgs.linuxPackages;
+      openclaw = import $repo_root/packages/openclaw-node.nix {
+        inherit (pkgs) lib nodejs_22 nodejs-slim_22 sqlite;
+      };
     in {
       release = pin.release;
       kernel = kernel.kernel.version;
@@ -42,9 +45,10 @@ versions() {
       node = pkgs.nodejs_22.version;
       sqlite = pkgs.sqlite.version;
       ghostty = pkgs.ghostty.version;
-      # OpenClaw's Node is an override of this derivation, so it is rebuilt
-      # from source exactly when this path changes, whatever the version says.
-      nodeDerivation = builtins.unsafeDiscardStringContext pkgs.nodejs-slim_22.drvPath;
+      # The Node OpenClaw actually gets: a source build while Nixpkgs' SQLite
+      # is too old, the cached nodejs_22 otherwise.
+      openclawNode = builtins.unsafeDiscardStringContext openclaw.node.drvPath;
+      openclawNodeFromSource = openclaw.fromSource;
     }"
 }
 
@@ -64,12 +68,15 @@ for key in order:
     marker = "" if old[key] == new[key] else " **changed**"
     print(f"| {key} | `{old[key]}` | `{new[key]}`{marker} |")
 print()
-if old["nodeDerivation"] != new["nodeDerivation"]:
-    print("Node's inputs changed: Helix rebuilds OpenClaw's Node from source once.")
+if old["openclawNode"] == new["openclawNode"]:
+    print("OpenClaw's Node is unchanged and reused.")
+elif new["openclawNodeFromSource"]:
+    print("OpenClaw's Node changed and is built from source (bundled SQLite): "
+          "expect a long local build once.")
 else:
-    print("Node's inputs are unchanged: OpenClaw's Node is reused.")
-if old["kernel"] != new["kernel"]:
+    print("OpenClaw's Node changed but comes from the binary cache: no source build.")
+if old["kernel"] != new["kernel"] or old["nvidia"] != new["nvidia"]:
     print()
-    print("The kernel changed: the NVIDIA module is rebuilt locally and the new "
-          "kernel needs a reboot.")
+    print("The kernel or NVIDIA driver changed: the NVIDIA module is rebuilt "
+          "locally, and the new driver needs a reboot.")
 PYTHON
