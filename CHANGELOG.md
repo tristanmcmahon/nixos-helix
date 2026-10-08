@@ -6,6 +6,9 @@ Release notes for Helix. Operating guides live in `docs/`.
 
 ### Added
 
+- A weekly `Nixpkgs bump` workflow proposes the newest 26.05 release as a pull
+  request with a summary of the versions that matter on Helix. Enable "Allow
+  GitHub Actions to create and approve pull requests" once.
 - Failure alerts: the nightly backups and weekly Nix maintenance raise a
   desktop notification when they fail, and each login reports failures that
   happened while logged out (`helix.failureAlerts`).

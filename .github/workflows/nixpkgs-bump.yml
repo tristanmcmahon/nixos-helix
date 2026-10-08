@@ -1,0 +1,71 @@
+name: Nixpkgs bump
+
+# Weekly, propose the newest NixOS release of the pinned series as a pull
+# request with a version summary. It only edits nixpkgs.json: merging, the
+# Helix test and activation stay manual. One branch is reused, so a week
+# without merging updates the same pull request instead of opening another.
+on:
+  schedule:
+    # Saturday 19:37 UTC: Sunday morning in New Zealand.
+    - cron: "37 19 * * 6"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: nixpkgs-bump
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      BRANCH: automation/nixpkgs-bump
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+      - name: Pin the newest release
+        id: bump
+        run: |
+          ./scripts/bump-nixpkgs.sh
+          if git diff --quiet -- nixpkgs.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "release=$(jq -r .release nixpkgs.json)" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Validate and evaluate
+        if: steps.bump.outputs.changed == 'true'
+        env:
+          TMPDIR: /tmp
+        run: ./scripts/dev-shell.sh --run './scripts/check.sh --quick'
+      - name: Open or update the pull request
+        if: steps.bump.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE: ${{ steps.bump.outputs.release }}
+        run: |
+          summary=$(./scripts/nixpkgs-version-summary.sh)
+          body=$(printf '%s\n\n%s\n\n%s\n' \
+            "Weekly Nixpkgs bump by \`.github/workflows/nixpkgs-bump.yml\`; only \`nixpkgs.json\` changes. \`check.sh --quick\` passed before this was opened." \
+            "$summary" \
+            "Before merging, test on Helix: \`./scripts/rebuild.sh test\`, then \`helix-health --check\`.")
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -C "$BRANCH"
+          git commit --quiet -am "Bump Nixpkgs to $RELEASE"
+          git push --force origin "$BRANCH"
+          pr=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
+          if [[ -n $pr ]]; then
+            gh pr edit "$pr" --title "Bump Nixpkgs to $RELEASE" --body "$body"
+          else
+            gh pr create --base main --head "$BRANCH" --title "Bump Nixpkgs to $RELEASE" --body "$body"
+          fi
+          # A pull request opened with the workflow token starts no workflows,
+          # so run the pull-request checks on the branch explicitly.
+          gh workflow run ci.yml --ref "$BRANCH"
+          gh workflow run emulation-ci.yml --ref "$BRANCH"

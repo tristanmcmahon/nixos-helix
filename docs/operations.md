@@ -72,6 +72,16 @@ To update, run `./scripts/bump-nixpkgs.sh` (newest release of the series, or a
 named release), check and dry-build, and open a pull request; after it merges,
 `helix-update` applies it.
 
+The `Nixpkgs bump` workflow does the first half every week (Sunday morning in
+New Zealand, or on manual dispatch): it pins the newest release, runs
+`check.sh --quick`, and opens or updates one pull request from
+`automation/nixpkgs-bump` with a table of the versions that matter on Helix
+(`scripts/nixpkgs-version-summary.sh`), including whether OpenClaw's Node and
+the NVIDIA module will rebuild. Testing it on Helix, merging and switching stay
+manual. It needs **Settings → Actions → General → Allow GitHub Actions to
+create and approve pull requests** enabled once; without it the run fails
+visibly at the pull-request step.
+
 Routine GitHub CI runs static checks and Nix evaluation/invariants against the
 pinned Nixpkgs. It deliberately does not build the complete CUDA-enabled
 workstation closure or compile MAME on every pull request.
