@@ -37,8 +37,10 @@ jobs:
       pr: ${{ steps.decide.outputs.pr }}
       summary: ${{ steps.summary.outputs.summary }}
     steps:
+      # Always main, whichever branch a manual run was started from.
       - uses: actions/checkout@v7
         with:
+          ref: main
           persist-credentials: false
       - uses: cachix/install-nix-action@v31
       - name: Pin the newest release and decide what to do
@@ -49,7 +51,9 @@ jobs:
           ./scripts/bump-nixpkgs.sh
           release=$(jq -r .release nixpkgs.json)
           title="Bump Nixpkgs to $release"
-          pr=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
+          # Only pull requests this workflow opened count, never a fork's
+          # branch that happens to share the name.
+          pr=$(gh pr list --app github-actions --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
           human=0
           open_title=
           if [[ -n $pr ]]; then
@@ -64,7 +68,8 @@ jobs:
             action=none
           elif [[ -n $pr ]] && ((human > 0)); then
             action=blocked
-          elif gh pr list --head "$BRANCH" --state closed --limit 100 --json title --jq '.[].title' |
+          elif gh pr list --app github-actions --head "$BRANCH" --state closed --limit 100 \
+            --json title --jq '.[].title' |
             grep -qxF -- "$title"; then
             # A maintainer closed this release's pull request: skip it.
             action=none
@@ -95,8 +100,10 @@ jobs:
             echo "SUMMARY_EOF"
           } >> "$GITHUB_OUTPUT"
 
-  # Writes only: commits the pin computed above and talks to GitHub. Nothing
-  # from Nixpkgs or the repository runs here.
+  # Writes only, through the GitHub API: nothing is checked out and nothing
+  # from Nixpkgs or the repository runs here. The branch is created at main's
+  # exact commit and only nixpkgs.json is committed, so the workflow token
+  # never pushes a change to workflow files, which GitHub refuses.
   propose:
     needs: check
     if: needs.check.outputs.action != 'none'
@@ -107,7 +114,6 @@ jobs:
       pull-requests: write
       actions: write
     steps:
-      - uses: actions/checkout@v7
       - name: Open, update or close the pull request
         env:
           GH_TOKEN: ${{ github.token }}
@@ -119,35 +125,44 @@ jobs:
         run: |
           case $ACTION in
           close)
-            gh pr close "$PR" --delete-branch \
+            gh pr close "$PR" --repo "$GITHUB_REPOSITORY" --delete-branch \
               --comment "\`main\` already pins $RELEASE, the newest release."
             ;;
           blocked)
             note="$RELEASE is out, but this pull request changes more than nixpkgs.json, so it was left alone. Rebase it onto the new release, or close it to get a fresh pull request."
-            if ! gh pr view "$PR" --json comments --jq '.comments[].body' | grep -qF -- "$RELEASE is out"; then
-              gh pr comment "$PR" --body "$note"
+            if ! gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json comments --jq '.comments[].body' |
+              grep -qF -- "$RELEASE is out"; then
+              gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body "$note"
             fi
             ;;
           update)
-            printf '%s\n' "$PIN" | jq . > nixpkgs.json
+            api=repos/$GITHUB_REPOSITORY
+            # Each release gets its own pull request; an older automated one
+            # (no changes beyond nixpkgs.json, or the check job would have
+            # stopped) is superseded.
+            if [[ -n $PR ]]; then
+              gh pr close "$PR" --repo "$GITHUB_REPOSITORY" --delete-branch --comment "Superseded by $RELEASE."
+            fi
+            # A branch left behind by a closed pull request is replaced; its
+            # commits stay reachable from that pull request.
+            gh api -X DELETE "$api/git/refs/heads/$BRANCH" >/dev/null 2>&1 || true
+            main=$(gh api "$api/git/ref/heads/main" --jq .object.sha)
+            gh api "$api/git/refs" -f ref="refs/heads/$BRANCH" -f sha="$main" >/dev/null
+            file=$(gh api "$api/contents/nixpkgs.json?ref=$BRANCH" --jq .sha)
+            gh api -X PUT "$api/contents/nixpkgs.json" >/dev/null \
+              -f message="Bump Nixpkgs to $RELEASE" \
+              -f content="$(printf '%s\n' "$PIN" | jq . | base64 -w0)" \
+              -f sha="$file" -f branch="$BRANCH"
             body=$(printf '%s\n\n%s\n\n%s\n' \
               "Weekly Nixpkgs bump by \`.github/workflows/nixpkgs-bump.yml\`; only \`nixpkgs.json\` changes. \`check.sh --quick\` passed before this was opened." \
               "$SUMMARY" \
               "Before merging, test on Helix: \`./scripts/rebuild.sh test\`, then \`helix-health --check\`.")
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git switch -C "$BRANCH"
-            git commit --quiet -am "Bump Nixpkgs to $RELEASE"
-            git push --force origin "$BRANCH"
-            if [[ -n $PR ]]; then
-              gh pr edit "$PR" --title "Bump Nixpkgs to $RELEASE" --body "$body"
-            else
-              gh pr create --base main --head "$BRANCH" --title "Bump Nixpkgs to $RELEASE" --body "$body"
-            fi
+            gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$BRANCH" \
+              --title "Bump Nixpkgs to $RELEASE" --body "$body"
             # A pull request opened with the workflow token starts no
             # workflows, so run the pull-request checks on the branch.
-            gh workflow run ci.yml --ref "$BRANCH"
-            gh workflow run emulation-ci.yml --ref "$BRANCH"
+            gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"
+            gh workflow run emulation-ci.yml --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"
             ;;
           *)
             printf 'Unexpected action: %s\n' "$ACTION" >&2

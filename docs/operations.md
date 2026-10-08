@@ -81,8 +81,9 @@ New Zealand, or on manual dispatch): it pins the newest release, runs
 `automation/nixpkgs-bump` with a table of the versions that matter on Helix
 (`scripts/nixpkgs-version-summary.sh`), including whether OpenClaw's Node and
 the NVIDIA module will rebuild. Testing it on Helix, merging and switching stay
-manual. A newer release updates that pull request, unless it changes more than
-`nixpkgs.json` (someone's fix), which is never overwritten or closed. Closing it without
+manual. A newer release closes that pull request as superseded and opens a fresh one,
+unless it changes more than `nixpkgs.json` (someone's fix): that is never
+overwritten or closed, and gets one comment instead. Closing it without
 merging skips that release; the next one opens a new pull request. It needs **Settings → Actions → General → Allow GitHub Actions to
 create and approve pull requests** enabled once; without it the run fails
 visibly at the pull-request step.

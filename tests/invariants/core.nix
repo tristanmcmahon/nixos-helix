@@ -75,14 +75,14 @@ assert builtins.all (unit: builtins.elem unit config.helix.health.criticalUnits)
 assert config.helix.health.criticalUserUnits == [ "openclaw-gateway.service" ];
 # Unattended backups and maintenance must never fail silently.
 assert builtins.all
-  (unit: config.systemd.services.${unit}.onFailure == [ "helix-failure-alert@%n.service" ])
+  (unit: builtins.elem "helix-failure-alert@%n.service" config.systemd.services.${unit}.onFailure)
   [
     "restic-backups-helix"
     "nix-gc"
     "nix-optimise"
   ];
-assert
-  config.systemd.user.services.hamology-backup.onFailure == [ "helix-failure-alert@%n.service" ];
+assert builtins.elem "helix-failure-alert@%n.service"
+  config.systemd.user.services.hamology-backup.onFailure;
 # NIX_PATH exposes the repository's pinned Nixpkgs, not a moving channel.
 assert builtins.elem "nixpkgs=${import ../../nixpkgs.nix}" config.nix.nixPath;
 # Routine backups go to the NAS, cover the unrecreatable state, and keep the

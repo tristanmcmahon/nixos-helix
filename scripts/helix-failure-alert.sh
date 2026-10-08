@@ -3,8 +3,9 @@
 set -euo pipefail
 
 # services/failure-alerts.nix prepends these; declaring them here keeps any
-# prepended values and lets the script run standalone.
-declare helix_user
+# prepended values and lets the script run standalone, where a sudo run
+# notifies the user who invoked it.
+: "${helix_user:=${SUDO_USER:-$(id -un)}}"
 declare -a watched_units watched_user_units
 
 # Set once a wait for a notification server has timed out, so a login with
