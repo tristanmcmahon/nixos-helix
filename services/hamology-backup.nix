@@ -12,7 +12,7 @@ in
   # `hamology-backup --install-unattended`; until then runs fail visibly and
   # never prompt. Infernalnexus is optional, so nothing here gates boot.
   systemd.user.services.hamology-backup = {
-    description = "hamology off-NAS recoverable-state backup";
+    description = "hamology recoverable-state backup (kept on Infernalnexus)";
 
     unitConfig = {
       ConditionUser = user;
