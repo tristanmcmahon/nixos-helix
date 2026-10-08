@@ -39,6 +39,13 @@ assert !(builtins.elem "zen-browser" packageNames);
 assert builtins.elem "claude-code" packageNames;
 assert builtins.elem "claude-agent-acp" packageNames;
 assert builtins.elem "helix-zed-agent-setup" packageNames;
+# `zed` must open the editor, not another package's `zed` CLI.
+assert builtins.elem "zed" packageNames;
+# hamology backups run unattended and keep exactly the two newest archives.
+assert
+  config.systemd.user.services.hamology-backup.serviceConfig.ExecStart
+  == "${system.pkgs.bash}/bin/bash /home/tristan/Projects/hamology/scripts/hamology-backup --unattended --keep 2";
+assert config.systemd.user.timers.hamology-backup.timerConfig.Persistent;
 assert !(builtins.elem "codex-acp" packageNames);
 assert builtins.elem "helix-theme" packageNames;
 assert builtins.compareVersions system.pkgs.openclaw.version "2026.6.9" >= 0;

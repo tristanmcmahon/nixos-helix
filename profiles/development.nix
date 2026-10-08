@@ -16,6 +16,13 @@ let
       exec python3 ${../scripts/helix-zed-agent-setup.py} "$@"
     '';
   };
+  # Nixpkgs installs Zed as `zeditor`; `zed` is the name people type. hiPrio
+  # makes this win over any other package that also ships a `zed` binary.
+  zedAlias = lib.hiPrio (
+    pkgs.writeShellScriptBin "zed" ''
+      exec zeditor "$@"
+    ''
+  );
 in
 {
   # Editors, publishing tools, coding agents, compilers and runtimes. This adds
@@ -26,6 +33,7 @@ in
     environment.systemPackages = with pkgs; [
       vscode
       zed-editor
+      zedAlias
       helix
       gh
       git-lfs

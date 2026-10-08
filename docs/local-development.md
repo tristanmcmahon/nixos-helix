@@ -39,7 +39,7 @@ ollama ps
 ```
 
 Zed is available alongside VS Code and `hx`; the NixOS package launches it as
-`zeditor` (for example `zeditor .`), not `zed`. Zed's Ollama provider connects
+`zeditor`, and Helix adds a `zed` wrapper so `zed .` opens the editor too. Zed's Ollama provider connects
 directly to the loopback service; it does not run through hamLLM. Select an
 installed model in Zed and set its Ollama context window explicitly to match
 the service's 32768-token configuration, since editor request defaults can be

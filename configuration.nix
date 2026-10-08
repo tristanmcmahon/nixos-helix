@@ -51,6 +51,7 @@ in
     ./services/monitoring.nix
     ./services/netdata.nix
     ./services/hamsteam.nix
+    ./services/hamology-backup.nix
     ./services/openclaw.nix
     ./services/openssh.nix
 

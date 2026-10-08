@@ -41,6 +41,7 @@ fi
 [[ -x $system_closure/sw/bin/claude ]]
 [[ -x $system_closure/sw/bin/claude-agent-acp ]]
 [[ -x $system_closure/sw/bin/helix-zed-agent-setup ]]
+[[ -x $system_closure/sw/bin/zed ]]
 [[ -x $system_closure/sw/bin/ollama ]]
 [[ -x $system_closure/sw/bin/helix-ollama-update-models ]]
 [[ -r $system_closure/etc/systemd/system/ollama.service ]]

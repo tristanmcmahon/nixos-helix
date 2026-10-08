@@ -55,3 +55,20 @@ ls /tmp/restore-drill/home/tristan/Documents && sudo rm -rf /tmp/restore-drill
 `restic-helix` is the NixOS wrapper that already knows the repository and
 password. To recover a whole machine, restore into the new installation's
 paths with `--target /`, then run `./scripts/rebuild.sh switch`.
+
+## hamology service-state backups
+
+`services/hamology-backup.nix` is a thin user timer: around 04:23 it runs
+`~/Projects/hamology/scripts/hamology-backup --unattended --keep 2`, which
+copies Infernalnexus's service state to `~/Backups/hamology` and keeps the two
+newest verified archives. hamology owns what is captured and how it is
+verified (see its `docs/operations.md`). Authorise the NAS once:
+
+```bash
+cd ~/Projects/hamology && scripts/hamology-backup --install-unattended
+systemctl --user start hamology-backup.service   # first run
+journalctl --user -u hamology-backup.service
+```
+
+The run never prompts: it needs an SSH key usable without a passphrase prompt
+(or a loaded agent) and fails visibly if the NAS is offline or not authorised.
