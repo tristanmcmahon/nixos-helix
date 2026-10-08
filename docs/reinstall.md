@@ -53,7 +53,9 @@ Ventoy stick or create another secret archive.
 ## Verified backup gate
 
 The only supported reinstall backup command writes timestamped archive sets to
-the existing Infernalnexus CIFS share at `/mnt/infernalnexus/nas1/backup`:
+the existing Infernalnexus CIFS share at
+`/mnt/infernalnexus/nas1/data/backups/helix-reinstall`, beside the nightly
+restic repository and the hamology archives:
 
 ```bash
 cd /home/tristan/Projects/nixos-helix

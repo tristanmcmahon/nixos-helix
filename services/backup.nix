@@ -4,6 +4,7 @@ let
   helix = import ../config/helix.nix;
   infernalnexus = import ../config/infernalnexus.nix;
   nas = infernalnexus.shares.nas1.mountPoint;
+  inherit (infernalnexus) backups;
   passwordFile = "/etc/nixos/secrets/restic-helix";
 in
 {
@@ -11,10 +12,13 @@ in
   # recreate, kept on Infernalnexus. The reinstall scripts remain the one-shot
   # path for a planned reinstall; this is the routine safety net.
   services.restic.backups.helix = {
-    repository = "${nas}/backup/helix-restic";
+    repository = backups.restic;
     inherit passwordFile;
-    # Creating the repository on the first run is non-destructive.
-    initialize = true;
+    # The repository already exists and is never created implicitly: a
+    # missing repository (an unmigrated move, a wrong path) fails visibly
+    # instead of silently starting an empty one. docs/backup.md has the
+    # one-time init for a new repository.
+    initialize = false;
 
     paths = [
       helix.home
@@ -33,11 +37,8 @@ in
     ];
     extraBackupArgs = [ "--one-file-system" ];
 
-    pruneOpts = [
-      "--keep-daily 7"
-      "--keep-weekly 5"
-      "--keep-monthly 12"
-    ];
+    # The same retention as the hamology archives beside it.
+    pruneOpts = [ "--keep-last ${toString backups.keep}" ];
     # A light structural check after pruning; full data reads are a manual drill.
     runCheck = true;
 

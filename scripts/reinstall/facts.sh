@@ -16,6 +16,7 @@ helix_facts=$(
       \"helix_games_uuid=\${helix.gamesNvme.uuid}\"
       \"helix_nas_mount=\${nas.shares.nas1.mountPoint}\"
       \"helix_nas_source=\${nas.shares.nas1.source}\"
+      \"helix_backup_root=\${nas.backups.reinstall}\"
     ]
   "
 ) || {
@@ -24,7 +25,7 @@ helix_facts=$(
 }
 while IFS='=' read -r helix_fact_name helix_fact_value; do
   case $helix_fact_name in
-  helix_user | helix_home | helix_checkout | helix_games_uuid | helix_nas_mount | helix_nas_source)
+  helix_user | helix_home | helix_checkout | helix_games_uuid | helix_nas_mount | helix_nas_source | helix_backup_root)
     printf -v "$helix_fact_name" '%s' "$helix_fact_value"
     ;;
   *)
@@ -33,7 +34,6 @@ while IFS='=' read -r helix_fact_name helix_fact_value; do
     ;;
   esac
 done <<<"$helix_facts"
-helix_backup_root=$helix_nas_mount/backup
 # shellcheck disable=SC2034 # Consumed by the sourcing script.
 readonly helix_user helix_home helix_checkout helix_games_uuid helix_nas_mount \
   helix_nas_source helix_backup_root

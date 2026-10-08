@@ -22,7 +22,7 @@ storage_script=$repo_root/scripts/reinstall/check-storage.sh
 # destination and source the backup must refuse to deviate from.
 facts=$(bash -c 'set -euo pipefail; source "$1"; printf "%s|%s|%s\n" "$helix_backup_root" "$helix_nas_source" "$helix_checkout"' \
   _ "$repo_root/scripts/reinstall/facts.sh")
-[[ $facts == '/mnt/infernalnexus/nas1/backup|//192.168.1.8/nas1|/home/tristan/Projects/nixos-helix' ]]
+[[ $facts == '/mnt/infernalnexus/nas1/data/backups/helix-reinstall|//192.168.1.8/nas1|/home/tristan/Projects/nixos-helix' ]]
 grep -qxF "backup_root=\$helix_backup_root" "$backup_script"
 grep -qxF "expected_source=\$helix_nas_source" "$backup_script"
 grep -qF "findmnt -rn --target \"\$nas_mount\" --types cifs" "$backup_script"

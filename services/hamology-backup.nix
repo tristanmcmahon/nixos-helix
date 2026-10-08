@@ -2,6 +2,7 @@
 
 let
   helix = import ../config/helix.nix;
+  inherit ((import ../config/infernalnexus.nix).backups) keep;
   inherit (helix) user home;
   repo = "${home}/Projects/hamology";
   entrypoint = "${repo}/scripts/hamology-backup";
@@ -34,7 +35,7 @@ in
     serviceConfig = {
       Type = "oneshot";
       WorkingDirectory = repo;
-      ExecStart = "${pkgs.bash}/bin/bash ${entrypoint} --unattended --keep 2";
+      ExecStart = "${pkgs.bash}/bin/bash ${entrypoint} --unattended --keep ${toString keep}";
       Nice = 19;
       IOSchedulingClass = "idle";
       TimeoutStartSec = "3h";
