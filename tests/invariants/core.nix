@@ -41,11 +41,16 @@ assert builtins.elem "claude-agent-acp" packageNames;
 assert builtins.elem "helix-zed-agent-setup" packageNames;
 # `zed` must open the editor, not another package's `zed` CLI.
 assert builtins.elem "zed" packageNames;
-# hamology backups run unattended and keep exactly the two newest archives.
+# hamology backups run unattended as the user, keep exactly the two newest
+# archives, and do not depend on a login session.
 assert
-  config.systemd.user.services.hamology-backup.serviceConfig.ExecStart
+  config.systemd.services.hamology-backup.serviceConfig.ExecStart
   == "${system.pkgs.bash}/bin/bash /home/tristan/Projects/hamology/scripts/hamology-backup --unattended --keep 2";
-assert config.systemd.user.timers.hamology-backup.timerConfig.Persistent;
+assert config.systemd.services.hamology-backup.serviceConfig.User == "tristan";
+assert config.systemd.timers.hamology-backup.timerConfig.Persistent;
+assert !(builtins.hasAttr "hamology-backup" config.systemd.user.services);
+# No user lingering: it would start every user unit at boot without a login.
+assert config.users.users.tristan.linger != true;
 assert !(builtins.elem "codex-acp" packageNames);
 assert builtins.elem "helix-theme" packageNames;
 assert builtins.compareVersions system.pkgs.openclaw.version "2026.6.9" >= 0;
@@ -78,11 +83,10 @@ assert builtins.all
   (unit: builtins.elem "helix-failure-alert@%n.service" config.systemd.services.${unit}.onFailure)
   [
     "restic-backups-helix"
+    "hamology-backup"
     "nix-gc"
     "nix-optimise"
   ];
-assert builtins.elem "helix-failure-alert@%n.service"
-  config.systemd.user.services.hamology-backup.onFailure;
 # NIX_PATH exposes the repository's pinned Nixpkgs, not a moving channel.
 assert builtins.elem "nixpkgs=${import ../../nixpkgs.nix}" config.nix.nixPath;
 # Routine backups go to the NAS, cover the unrecreatable state, and keep the
