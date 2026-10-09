@@ -96,8 +96,7 @@ jobs:
   # from Nixpkgs or the repository runs here. The branch starts at the exact
   # commit the check job validated and only nixpkgs.json is committed, so
   # the workflow token never pushes workflow-file changes, which GitHub
-  # refuses. Every step is idempotent, so a run that stopped halfway is
-  # finished by the next one.
+  # refuses. A run that stopped halfway is redone by the next one.
   propose:
     needs: check
     if: needs.check.outputs.propose == 'true'
@@ -122,15 +121,16 @@ jobs:
             --jq "map(select(.ref == \"refs/heads/$branch\")) | length")
           if ((exists == 0)); then
             gh api "$api/git/refs" -f ref="refs/heads/$branch" -f sha="$BASE" >/dev/null
+          else
+            # Left by a run that stopped before opening the pull request (the
+            # check job found none): restart it from the commit just validated.
+            gh api -X PATCH "$api/git/refs/heads/$branch" -f sha="$BASE" -F force=true >/dev/null
           fi
-          pinned=$(gh api "$api/contents/nixpkgs.json?ref=$branch" --jq .content | base64 -d)
-          if [[ $(jq -r .release <<<"$pinned") != "$RELEASE" ]]; then
-            gh api -X PUT "$api/contents/nixpkgs.json" >/dev/null \
-              -f message="Bump Nixpkgs to $RELEASE" \
-              -f content="$(printf '%s\n' "$PIN" | jq . | base64 -w0)" \
-              -f sha="$(gh api "$api/contents/nixpkgs.json?ref=$branch" --jq .sha)" \
-              -f branch="$branch"
-          fi
+          gh api -X PUT "$api/contents/nixpkgs.json" >/dev/null \
+            -f message="Bump Nixpkgs to $RELEASE" \
+            -f content="$(printf '%s\n' "$PIN" | jq . | base64 -w0)" \
+            -f sha="$(gh api "$api/contents/nixpkgs.json?ref=$branch" --jq .sha)" \
+            -f branch="$branch"
           # A pull request opened with the workflow token starts no
           # workflows, so run the pull-request checks on the branch first.
           gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "$branch"
@@ -140,7 +140,7 @@ jobs:
           body=$(printf '%s\n\n%s\n\n%s\n' \
             "Weekly Nixpkgs bump by \`.github/workflows/nixpkgs-bump.yml\`; only \`nixpkgs.json\` changes. \`check.sh --quick\` passed before this was opened." \
             "$SUMMARY" \
-            "Before merging, test on Helix: \`./scripts/rebuild.sh test\`, then \`helix-health --check\`.")
+            "Before merging, test on Helix: \`./scripts/rebuild.sh test\`, then \`helix-health --check\`. If main has moved since, press **Update branch** first so CI runs on the merged tree.")
           if [[ -n $older ]]; then
             body+=$'\n\n'"Older bump pull requests still open: $older. Close them once this one is merged."
           fi

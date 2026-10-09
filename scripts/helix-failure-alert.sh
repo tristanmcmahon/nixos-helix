@@ -23,7 +23,7 @@ usage() {
 # out, SSH only, a desktop still starting) is not an error: the unit stays
 # failed, and the login check (--pending) reports it from the next desktop.
 notify() {
-  local title=$1 body=$2 uid bus attempt
+  local title=$1 body=$2 uid bus attempt seen=0
   local -a as_user=()
   if ((no_server)); then
     printf '%s: no notification server answered; reported at next login.\n' "$title"
@@ -46,13 +46,18 @@ notify() {
   for attempt in 1 2 3 4 5 6; do
     if [[ $("${as_user[@]}" busctl --user call org.freedesktop.DBus /org/freedesktop/DBus \
       org.freedesktop.DBus NameHasOwner s org.freedesktop.Notifications 2>/dev/null) == 'b true' ]]; then
+      seen=1
       "${as_user[@]}" notify-send --app-name=Helix --urgency=critical --icon=dialog-error \
         -- "$title" "$body" && return 0
     fi
     ((attempt < 6)) && sleep 5
   done
-  no_server=1
-  printf '%s: no notification server answered; reported at next login.\n' "$title"
+  if ((seen)); then
+    printf '%s: the notification server refused the alert; reported at next login.\n' "$title"
+  else
+    no_server=1
+    printf '%s: no notification server answered; reported at next login.\n' "$title"
+  fi
 }
 
 # Name the failed unit and systemd's verdict (exit-code, timeout, oom-kill),

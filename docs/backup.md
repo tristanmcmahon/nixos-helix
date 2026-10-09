@@ -12,8 +12,10 @@ Snapshots go to `/mnt/infernalnexus/nas1/data/backups/helix-restic`, encrypted
 and deduplicated. That is the NAS's `/volume1/nas1/data/backups`, the same
 directory as the hamology archives below; `config/infernalnexus.nix` names it
 once for every Helix backup. Like the hamology archives, only the two newest
-snapshots are kept (`backups.keep` in the same file drives both), so a file is
-recoverable for about two nights after it changes or disappears. Each run ends
+snapshots are kept (`backups.keep` in the same file drives both). That is
+normally the last two nights, so a file is recoverable for about two nights
+after it changes or disappears; a manual run counts as a snapshot and shortens
+the window. Each run ends
 with a structural `restic check`. The run starts around 03:17,
 yields to interactive work (nice 19, idle I/O) and catches up after a missed
 night. GAMES_NVME and the data SSDs are not included.
@@ -50,11 +52,14 @@ is lost, move `helix-restic` aside (its snapshots cannot be decrypted), then run
 ## Moving from the old location
 
 Until October 2026 Helix backups lived in `/mnt/infernalnexus/nas1/backup`.
-Move them once, before switching to a configuration that uses
-`data/backups`. Both moves are renames within the share, so they are instant;
+Move them once, immediately before switching to a configuration that uses
+`data/backups`, with the nightly timer stopped so the old configuration cannot
+start a fresh repository at the old path in between (the switch starts it
+again). Both moves are renames within the share, so they are instant;
 `mv -T` refuses to nest a directory inside one that already exists.
 
 ```bash
+sudo systemctl stop restic-backups-helix.timer
 cd /mnt/infernalnexus/nas1
 mkdir -p data/backups/helix-reinstall
 mv -T backup/helix-restic data/backups/helix-restic
