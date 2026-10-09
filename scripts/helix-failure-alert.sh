@@ -69,6 +69,15 @@ report() {
     lines=$(journalctl "${scoped[@]}" "_SYSTEMD_INVOCATION_ID=$invocation" --lines=3 \
       --output=cat --no-pager 2>/dev/null || true)
   fi
+  # Not every journal records the invocation for user units: fall back to the
+  # unit's own most recent output.
+  if [[ -z $lines ]]; then
+    if [[ $scope == user ]]; then
+      lines=$(journalctl --user "_SYSTEMD_USER_UNIT=$unit" --lines=3 --output=cat --no-pager 2>/dev/null || true)
+    else
+      lines=$(journalctl "_SYSTEMD_UNIT=$unit" --lines=3 --output=cat --no-pager 2>/dev/null || true)
+    fi
+  fi
   body=${result:+Result: $result$'\n'}${lines:-No output from the failed run is readable here.}
   notify "$unit failed" "$body"$'\n'"Details: journalctl ${scoped[*]}${scoped:+ }-u $unit"
 }

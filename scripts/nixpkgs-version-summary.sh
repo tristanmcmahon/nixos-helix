@@ -20,18 +20,20 @@ temporary_directory=$(mktemp -d)
 trap 'rm -rf -- "$temporary_directory"' EXIT
 git -C "$repo_root" show "$base:nixpkgs.json" > "$temporary_directory/base.json"
 
-# The kernel, NVIDIA driver and Ollama build come from the Helix
-# configuration evaluated against each pin, so the table follows the
-# configuration's own choices; the rest are plain package versions.
+# Everything comes from the Helix system evaluated against each pin: the
+# kernel, NVIDIA driver and Ollama build from its configuration, the other
+# versions from its package set.
 versions() {
   nix-instantiate --eval --strict --json -E "
     let
       pin = builtins.fromJSON (builtins.readFile $1);
       nixpkgs = builtins.fetchTarball { inherit (pin) url sha256; };
-      pkgs = import nixpkgs { config.allowUnfree = true; };
-      helix = (import (nixpkgs + \"/nixos\") {
+      system = import (nixpkgs + \"/nixos\") {
         configuration = $repo_root/configuration.nix;
-      }).config;
+      };
+      helix = system.config;
+      # Helix's own package set, with its overlays and configuration.
+      inherit (system) pkgs;
       openclaw = pkgs.callPackage $repo_root/packages/openclaw-node.nix { };
     in {
       release = pin.release;

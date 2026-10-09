@@ -16,8 +16,8 @@ permissions: {}
 
 defaults:
   run:
-    # bash -eo pipefail; GitHub's default shell has no pipefail.
-    shell: bash
+    # The repository's shell rules; GitHub's default shell has no pipefail.
+    shell: bash --noprofile --norc -euo pipefail {0}
 
 concurrency:
   group: nixpkgs-bump
@@ -54,40 +54,49 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          current=$(jq -r .release nixpkgs.json)
           ./scripts/bump-nixpkgs.sh
           release=$(jq -r .release nixpkgs.json)
           title="Bump Nixpkgs to $release"
+          api=repos/$GITHUB_REPOSITORY
+          # nixos-26.05.<N>.<rev>: N grows with every release of the series.
+          serial() {
+            local rest=${1#nixos-*.*.}
+            printf '%s\n' "${rest%%.*}"
+          }
           # Only pull requests this workflow opened count, never a fork's
           # branch that happens to share the name.
           pr=$(gh pr list --app github-actions --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
-          # A person's own pull request from this branch means the branch is
-          # theirs: never delete or rebuild it.
           others=$(gh pr list --head "$BRANCH" --state open --json isCrossRepository,author \
             --jq '[.[] | select((.isCrossRepository | not) and (.author.is_bot | not))] | length')
           closed=$(gh pr list --app github-actions --head "$BRANCH" --state closed --limit 100 \
             --json title --jq '.[].title')
-          human=0
-          open_title=
-          if [[ -n $pr ]]; then
-            # Any file beyond nixpkgs.json is a person's work on the pull request.
-            human=$(gh pr view "$pr" --json files --jq '[.files[].path | select(. != "nixpkgs.json")] | length')
-            open_title=$(gh pr view "$pr" --json title --jq .title)
+          exists=$(gh api "$api/git/matching-refs/heads/$BRANCH" \
+            --jq "map(select(.ref == \"refs/heads/$BRANCH\")) | length")
+          extra=0
+          proposed=
+          if ((exists)); then
+            # Anything the branch changes beyond nixpkgs.json is someone's work.
+            extra=$(gh api "$api/compare/main...$BRANCH" \
+              --jq '[.files[].filename | select(. != "nixpkgs.json")] | length')
+            proposed=$(gh api "$api/contents/nixpkgs.json?ref=$BRANCH" --jq .content | base64 -d | jq -r .release)
           fi
           if ((others > 0)); then
-            action=none
-          elif git diff --quiet -- nixpkgs.json; then
-            # main already pins the newest release.
-            if [[ -n $pr ]] && ((human == 0)); then action=close; else action=none; fi
-          elif [[ -n $pr && $open_title == "$title" ]]; then
-            action=none
-          elif [[ -n $pr ]] && ((human > 0)); then
-            action=blocked
+            action=none reason="a person's own pull request uses $BRANCH"
+          elif (($(serial "$release") <= $(serial "$current"))); then
+            reason="main already pins $current, as new as the channel's $release"
+            if [[ -n $pr ]] && ((extra == 0)); then action=close; else action=none; fi
+          elif ((extra > 0)); then
+            reason="$BRANCH carries changes beyond nixpkgs.json"
+            if [[ -n $pr ]]; then action=blocked; else action=none; fi
+          elif [[ -n $pr && $proposed == "$release" ]]; then
+            action=none reason="pull request #$pr already proposes $release"
           elif grep -qxF -- "$title" <<<"$closed"; then
-            # A maintainer closed this release's pull request: skip it.
-            action=none
+            action=none reason="the pull request for $release was closed: skipped"
           else
-            action=update
+            action=update reason="proposing $release"
           fi
+          printf '::notice::%s: %s\n' "$action" "$reason"
           {
             echo "action=$action"
             echo "base=$(git rev-parse HEAD)"
@@ -152,14 +161,17 @@ jobs:
           update)
             api=repos/$GITHUB_REPOSITORY
             # Each release gets its own pull request; an older automated one
-            # (no changes beyond nixpkgs.json, or the check job would have
-            # stopped) is superseded.
+            # is superseded.
             if [[ -n $PR ]]; then
               gh pr close "$PR" --repo "$GITHUB_REPOSITORY" --delete-branch --comment "Superseded by $RELEASE."
             fi
-            # A branch left behind by a closed pull request is replaced; its
-            # commits stay reachable from that pull request.
-            gh api -X DELETE "$api/git/refs/heads/$BRANCH" >/dev/null 2>&1 || true
+            # A branch left by a closed automated pull request (the check job
+            # proved it changes nothing beyond nixpkgs.json) is replaced.
+            exists=$(gh api "$api/git/matching-refs/heads/$BRANCH" \
+              --jq "map(select(.ref == \"refs/heads/$BRANCH\")) | length")
+            if ((exists)); then
+              gh api -X DELETE "$api/git/refs/heads/$BRANCH" >/dev/null
+            fi
             # The exact commit the check job validated, not main's head now.
             gh api "$api/git/refs" -f ref="refs/heads/$BRANCH" -f sha="$BASE" >/dev/null
             file=$(gh api "$api/contents/nixpkgs.json?ref=$BRANCH" --jq .sha)

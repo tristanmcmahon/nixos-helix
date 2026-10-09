@@ -56,6 +56,14 @@ in
   };
 
   config = {
+    # OnFailure is attached through systemd.services, so only services work.
+    assertions = [
+      {
+        assertion = builtins.all (lib.hasSuffix ".service") (cfg.units ++ cfg.userUnits);
+        message = "helix.failureAlerts lists only .service units.";
+      }
+    ];
+
     environment.systemPackages = [ alert ];
 
     systemd.services = onFailure cfg.units // {

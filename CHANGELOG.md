@@ -16,8 +16,10 @@ Release notes for Helix. Operating guides live in `docs/`.
 ### Changed
 
 - Helix backups live beside hamology's in the NAS's `data/backups`
-  (`helix-restic`, `helix-reinstall`) and keep the two newest copies, like
-  hamology. Move the existing backups once first (`docs/backup.md`).
+  (`helix-restic`, `helix-reinstall`), and the nightly restic repository keeps
+  the two newest snapshots, like hamology's archives (reinstall sets are still
+  kept until removed by hand). Move the existing backups once first
+  (`docs/backup.md`).
 - The dev shell provides `ssh-keygen`, so `check.sh` runs the reinstall
   restore test anywhere.
 - Nix builds run at idle CPU priority, so large local builds no longer make
