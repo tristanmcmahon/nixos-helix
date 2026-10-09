@@ -31,7 +31,10 @@ and store a copy in 1Password: without it the snapshots cannot be read.
 # existing snapshot unreadable.
 sudo sh -c 'set -o noclobber; umask 077; head -c 32 /dev/urandom | base64 > /etc/nixos/secrets/restic-helix'
 sudo cat /etc/nixos/secrets/restic-helix   # save this in 1Password now
-sudo restic-helix init                         # only for a brand-new repository
+# Only for a brand-new repository, and only on the mounted share, never on the
+# empty local directory underneath it:
+ls /mnt/infernalnexus/nas1 >/dev/null && mountpoint -q /mnt/infernalnexus/nas1 &&
+  sudo restic-helix init
 sudo systemctl start restic-backups-helix.service
 ```
 

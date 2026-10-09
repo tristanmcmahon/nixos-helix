@@ -76,17 +76,18 @@ named release), check and dry-build, and open a pull request; after it merges,
 `helix-update` applies it.
 
 The `Nixpkgs bump` workflow does the first half every week (Sunday morning in
-New Zealand, or on manual dispatch): it pins the newest release, runs
-`check.sh --quick`, and opens or updates one pull request from
-`automation/nixpkgs-bump` with a table of the versions that matter on Helix
-(`scripts/nixpkgs-version-summary.sh`), including whether OpenClaw's Node and
-the NVIDIA module will rebuild. Testing it on Helix, merging and switching stay
-manual. A newer release closes that pull request as superseded and opens a fresh one,
-unless it changes more than `nixpkgs.json` (someone's fix): that is never
-overwritten or closed, and gets one comment instead. Closing it without
-merging skips that release; the next one opens a new pull request. It needs **Settings → Actions → General → Allow GitHub Actions to
-create and approve pull requests** enabled once; without it the run fails
-visibly at the pull-request step.
+New Zealand, or on manual dispatch): when the channel has a release newer than
+the pin, it runs `check.sh --quick` and opens a pull request from
+`automation/<release>` with a table of the versions that matter on
+Helix (`scripts/nixpkgs-version-summary.sh`), including whether OpenClaw's
+Node, CUDA Ollama and the NVIDIA module will rebuild. It only adds: each
+release gets one pull request, and a release that already has one, open,
+merged or closed, is left alone, so closing a pull request skips that release.
+Older bump pull requests still open are listed in the new one for you to close.
+Testing on Helix, merging and switching stay manual. It needs **Settings →
+Actions → General → Allow GitHub Actions to create and approve pull requests**
+enabled once; until then the run fails visibly at the pull-request step and
+the next run finishes it.
 
 Routine GitHub CI runs static checks and Nix evaluation/invariants against the
 pinned Nixpkgs. It deliberately does not build the complete CUDA-enabled
