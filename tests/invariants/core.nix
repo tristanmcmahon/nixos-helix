@@ -78,6 +78,15 @@ assert builtins.all (unit: builtins.elem unit config.helix.health.criticalUnits)
   "coolercontrold.service"
 ];
 assert config.helix.health.criticalUserUnits == [ "openclaw-gateway.service" ];
+# Unattended backups and maintenance must never fail silently.
+assert builtins.all
+  (unit: builtins.elem "helix-failure-alert@%n.service" config.systemd.services.${unit}.onFailure)
+  [
+    "restic-backups-helix"
+    "hamology-backup"
+    "nix-gc"
+    "nix-optimise"
+  ];
 # NIX_PATH exposes the repository's pinned Nixpkgs, not a moving channel.
 assert builtins.elem "nixpkgs=${import ../../nixpkgs.nix}" config.nix.nixPath;
 # Routine backups go to the NAS, cover the unrecreatable state, and keep the
@@ -86,7 +95,10 @@ assert
   let
     backup = config.services.restic.backups.helix;
   in
-  system.pkgs.lib.hasPrefix "/mnt/infernalnexus/nas1/" backup.repository
+  # Helix's backups share hamology's NAS backup directory, and a missing
+  # repository is never silently recreated.
+  system.pkgs.lib.hasPrefix "/mnt/infernalnexus/nas1/data/backups/" backup.repository
+  && !backup.initialize
   && !(system.pkgs.lib.hasPrefix builtins.storeDir backup.passwordFile)
   && builtins.all (path: builtins.elem path backup.paths) [
     "/home/tristan"

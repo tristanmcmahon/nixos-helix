@@ -4,6 +4,7 @@ let
   helix = import ../config/helix.nix;
   infernalnexus = import ../config/infernalnexus.nix;
   nas = infernalnexus.shares.nas1.mountPoint;
+  inherit (infernalnexus) backups;
   passwordFile = "/etc/nixos/secrets/restic-helix";
 in
 {
@@ -11,10 +12,13 @@ in
   # recreate, kept on Infernalnexus. The reinstall scripts remain the one-shot
   # path for a planned reinstall; this is the routine safety net.
   services.restic.backups.helix = {
-    repository = "${nas}/backup/helix-restic";
+    repository = backups.restic;
     inherit passwordFile;
-    # Creating the repository on the first run is non-destructive.
-    initialize = true;
+    # The repository already exists and is never created implicitly: a
+    # missing repository (an unmigrated move, a wrong path) fails visibly
+    # instead of silently starting an empty one. docs/backup.md has the
+    # one-time init for a new repository.
+    initialize = false;
 
     paths = [
       helix.home
@@ -33,11 +37,8 @@ in
     ];
     extraBackupArgs = [ "--one-file-system" ];
 
-    pruneOpts = [
-      "--keep-daily 7"
-      "--keep-weekly 5"
-      "--keep-monthly 12"
-    ];
+    # The same retention as the hamology archives beside it.
+    pruneOpts = [ "--keep-last ${toString backups.keep}" ];
     # A light structural check after pruning; full data reads are a manual drill.
     runCheck = true;
 
@@ -50,17 +51,22 @@ in
 
   systemd.services.restic-backups-helix = {
     # The password is created by hand (see docs/backup.md); until it exists the
-    # unit is skipped rather than failed. The NAS is optional: if it is offline
-    # the run fails visibly in helix-health and Persistent retries next boot.
+    # unit is skipped rather than failed. The NAS is optional: Wants (not
+    # Requires) keeps the ordering after the mount, but an offline NAS lets
+    # the run start and fail, so it raises an alert and shows in helix-health
+    # instead of ending as a silent dependency failure. With initialize off, a
+    # missing mount can never create a repository on the local disk.
     unitConfig = {
       ConditionPathExists = passwordFile;
-      RequiresMountsFor = [ nas ];
+      WantsMountsFor = [ nas ];
     };
     serviceConfig = {
       Nice = 19;
       IOSchedulingClass = "idle";
     };
   };
+
+  helix.failureAlerts.units = [ "restic-backups-helix.service" ];
 
   # restic is also the restore tool.
   environment.systemPackages = [ pkgs.restic ];

@@ -4,6 +4,9 @@ on:
   push:
     branches: [ main ]
   pull_request:
+  # The weekly Nixpkgs bump starts this run itself: pull requests opened with
+  # the workflow token trigger no other workflows.
+  workflow_dispatch:
 
 permissions:
   contents: read

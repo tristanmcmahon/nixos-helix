@@ -2,6 +2,7 @@
 
 let
   helix = import ../config/helix.nix;
+  inherit ((import ../config/infernalnexus.nix).backups) keep;
   inherit (helix) user group home;
   repo = "${home}/Projects/hamology";
   entrypoint = "${repo}/scripts/hamology-backup";
@@ -40,13 +41,15 @@ in
       User = user;
       Group = group;
       WorkingDirectory = repo;
-      ExecStart = "${pkgs.bash}/bin/bash ${entrypoint} --unattended --keep 2";
+      ExecStart = "${pkgs.bash}/bin/bash ${entrypoint} --unattended --keep ${toString keep}";
       Nice = 19;
       IOSchedulingClass = "idle";
       TimeoutStartSec = "3h";
       NoNewPrivileges = true;
     };
   };
+
+  helix.failureAlerts.units = [ "hamology-backup.service" ];
 
   systemd.timers.hamology-backup = {
     description = "Nightly hamology backup";

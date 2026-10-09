@@ -27,6 +27,8 @@ Helix uses native persistent weekly Nix GC with the existing one-hour randomized
 delay and deletes generations older than 14 days. Store optimisation stays
 weekly. The 32 GiB workstation uses zstd zram at 50% RAM and priority 100; no
 disk swap is created. systemd-oomd watches root and user slices, not system.slice.
+Nix builds run at idle CPU priority, so a large local build cannot make the
+desktop, a game or a local model stutter.
 
 OpenClaw comes from `openclaw/nix-openclaw` revision
 `d3760a6f103642f11e24bc01ee9aec80a0153774`, fetched with a fixed unpacked hash.
@@ -39,6 +41,31 @@ Inside that sandbox the Helix checkout is writable, but `.git`, `.vscode`,
 human step. `helix-update` also disables `core.fsmonitor` and hooks for its
 Git commands.
 
+## Failure alerts
+
+Unattended units raise a critical desktop notification when they fail: the
+nightly restic and hamology backups and weekly Nix GC and store optimisation.
+`services/failure-alerts.nix` attaches `OnFailure=helix-failure-alert@%n` to
+every unit in `helix.failureAlerts.units` or `userUnits`; each feature
+registers its own, as for the health gate. The notification names the unit and
+systemd's verdict (exit code, timeout, out of memory), quotes the end of the
+failed run's own output and gives the `journalctl` command for details. It is
+only sent to a notification server that is already running, so it never starts
+one (mako would otherwise displace Plasma's). A
+failure while nobody is logged in is reported at the next graphical login, and
+at every login after that until the unit succeeds or the failure is
+acknowledged:
+
+```bash
+systemctl reset-failed restic-backups-helix.service   # or systemctl --user ...
+```
+
+To see an alert without breaking anything:
+
+```bash
+sudo systemctl start helix-failure-alert@alert-test.service
+```
+
 ## Nixpkgs pin
 
 Nixpkgs is pinned in `nixpkgs.json` to an immutable NixOS release tarball and
@@ -47,6 +74,20 @@ its hash, so a commit fully determines the system that CI, rebuilds and
 To update, run `./scripts/bump-nixpkgs.sh` (newest release of the series, or a
 named release), check and dry-build, and open a pull request; after it merges,
 `helix-update` applies it.
+
+The `Nixpkgs bump` workflow does the first half every week (Sunday morning in
+New Zealand, or on manual dispatch): when the channel has a release newer than
+the pin, it runs `check.sh --quick` and opens a pull request from
+`automation/<release>` with a table of the versions that matter on
+Helix (`scripts/nixpkgs-version-summary.sh`), including whether OpenClaw's
+Node, CUDA Ollama and the NVIDIA module will rebuild. It only adds: each
+release gets one pull request, and a release that already has one, open,
+merged or closed, is left alone, so closing a pull request skips that release.
+Older bump pull requests still open are listed in the new one for you to close.
+Testing on Helix, merging and switching stay manual. It needs **Settings →
+Actions → General → Allow GitHub Actions to create and approve pull requests**
+enabled once; until then the run fails visibly at the pull-request step and
+the next run finishes it.
 
 Routine GitHub CI runs static checks and Nix evaluation/invariants against the
 pinned Nixpkgs. It deliberately does not build the complete CUDA-enabled

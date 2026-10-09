@@ -86,7 +86,8 @@ For normal maintenance:
   the runtime gate.
 - `helix-update` fast-forwards to reviewed `main`, then validates, builds,
   diffs, tests and switches. It never runs garbage collection. Nixpkgs updates
-  are pull requests made with `./scripts/bump-nixpkgs.sh`.
+  are pull requests made with `./scripts/bump-nixpkgs.sh`; a weekly workflow
+  proposes one with a version summary.
 - Restic backs up home, secrets and machine identity to Infernalnexus nightly;
   see [docs/backup.md](docs/backup.md).
 - `helix-git-credential-repair` repairs GitHub HTTPS authentication without

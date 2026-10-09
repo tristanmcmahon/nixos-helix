@@ -4,15 +4,30 @@ Release notes for Helix. Operating guides live in `docs/`.
 
 ## Unreleased
 
+### Added
+
+- A weekly `Nixpkgs bump` workflow proposes each new 26.05 release as its own
+  pull request with a summary of the versions that matter on Helix; it never
+  closes, deletes or overwrites anything. Enable "Allow
+  GitHub Actions to create and approve pull requests" once.
+- Failure alerts: the nightly backups and weekly Nix maintenance raise a
+  desktop notification when they fail, and each login reports failures that
+  happened while logged out (`helix.failureAlerts`).
+
 ### Changed
 
+- Helix backups live beside hamology's in the NAS's `data/backups`
+  (`helix-restic`, `helix-reinstall`), and the nightly restic repository keeps
+  the two newest snapshots, like hamology's archives (reinstall sets are still
+  kept until removed by hand). Move the existing backups once first
+  (`docs/backup.md`).
+- The dev shell provides `ssh-keygen`, so `check.sh` runs the reinstall
+  restore test anywhere.
 - Nix builds run at idle CPU priority, so large local builds no longer make
   the desktop, games or local models stutter.
-
 - Nixpkgs pin moved to `nixos-26.05.11150.825e2028c29b`: kernel 6.18.53 to
   6.18.55; the NVIDIA driver (595.71.05), Mesa, Plasma, Node and SQLite are
   unchanged.
-
 - Release CI is manual-only, and the `--full` gate runs on Helix before
   tagging (#95). #95 blamed the CUDA and MAME closures; the run log shows the
   hosted job timed out compiling OpenClaw's bundled-SQLite Node.js, which no
@@ -24,6 +39,8 @@ Release notes for Helix. Operating guides live in `docs/`.
 
 ### Fixed
 
+- With Infernalnexus offline the nightly backup ended as a silent dependency
+  failure, never marked failed; it now runs, fails and raises an alert.
 - The `--full` gate's desktop checks: the Hyprland theme helper and the
   Ghostty profile validation; `check.sh` now names any failing check (#94).
 
