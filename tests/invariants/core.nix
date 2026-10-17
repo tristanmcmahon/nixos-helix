@@ -26,6 +26,8 @@ assert builtins.elem "adwsteamgtk" packageNames;
 assert builtins.elem "doomrunner" packageNames;
 assert builtins.elem "gzdoom" packageNames;
 assert builtins.elem "uzdoom" packageNames;
+assert builtins.elem "heroic" packageNames;
+assert builtins.elem "helix-fallout-london-setup" packageNames;
 assert builtins.elem "protonplus" packageNames;
 assert builtins.elem "protontricks" packageNames;
 assert builtins.elem "goverlay" packageNames;

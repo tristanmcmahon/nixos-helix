@@ -6,6 +6,9 @@ Release notes for Helix. Operating guides live in `docs/`.
 
 ### Added
 
+- Heroic and `helix-fallout-london-setup`: the script prepares install and
+  prefix directories on a data SSD and points Heroic at them, so Fallout 4 and
+  Fallout London (both GOG) can be installed there from Heroic.
 - A weekly `Nixpkgs bump` workflow proposes each new 26.05 release as its own
   pull request with a summary of the versions that matter on Helix; it never
   closes, deletes or overwrites anything. Enable "Allow

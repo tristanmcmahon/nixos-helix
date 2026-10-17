@@ -40,7 +40,10 @@ access; it is not duplicated in the system package list. The upstream
 `hid_playstation` driver and explicit absence of xpadneo are hardware policy in
 `hardware/controllers.nix`. Emulation remains outside this profile. Gamescope,
 ProtonPlus, Protontricks, MangoHud, GOverlay, and the repository-owned Doom
-tooling are present; Heroic, Lutris, and a general Wine package remain absent.
+tooling are present, as is Heroic for the GOG copies of Fallout 4 and Fallout
+London; `helix-fallout-london-setup` points Heroic's install and prefix
+directories at a data SSD (`--ssd a|b|c`, default `a`) and prints the
+remaining in-Heroic steps. Lutris and a general Wine package remain absent.
 
 Setting `helix.gaming.enable = false` returns the configuration to the
 non-gaming workstation layer; emulation asserts that gaming is enabled.
