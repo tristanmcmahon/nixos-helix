@@ -66,6 +66,22 @@ let
     ];
     text = builtins.readFile ../scripts/helix-doom-setup.sh;
   };
+  # The SSD list comes from config/helix.nix so the script never repeats it.
+  falloutLondonSetup = pkgs.writeShellApplication {
+    name = "helix-fallout-london-setup";
+    runtimeInputs = with pkgs; [
+      coreutils
+      jq
+      procps
+      util-linux
+    ];
+    text = ''
+      export HELIX_SSD_ROOTS=${
+        lib.escapeShellArg (lib.concatMapStringsSep " " (ssd: "${ssd.id}=${ssd.mountPoint}") helix.ssds)
+      }
+    ''
+    + builtins.readFile ../scripts/helix-fallout-london-setup.sh;
+  };
 in
 {
   options.helix.gaming.enable = lib.mkEnableOption "Steam, Proton tooling and Doom";
@@ -88,7 +104,9 @@ in
       doomrunner
       doomRunnerCommand
       doomSetup
+      falloutLondonSetup
       gzdoom
+      heroic
       mangohud
       protonplus
       protontricks
