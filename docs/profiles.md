@@ -68,23 +68,27 @@ vanilla Fallout 4 instead of London, and the fix is copying
 into the prefix by hand (back up the existing `Fallout4.ini` first; leave
 `Fallout4Prefs.ini` alone since it holds shared display settings).
 
-STAR WARS: Galactic Racer (Steam appid 4078430) is pinned to Valve's Proton
-Hotfix build by default, under which it dies silently after about two and a
-half minutes: its EOS Bootstrapper's `CreateProcessAsUser` call fails under
-Proton and falls back to a path that does not propagate the
-`EOS_SESSION_GUID` environment variable to the second EOS helper process it
-spawns (`EpicOnlineServicesUserHelper.exe --mode=stage`), which exits
-immediately (`EOS_SESSION_GUID environment variable is required`, code 9001)
-and leaves the game waiting on an online-services handshake that never
-completes; its own log directory never gets created. Overriding the
-compatibility tool to GE-Proton (Steam's Properties > Compatibility, or
-ProtonPlus) gets past that handshake, but the title then hits an NVIDIA Xid
-109 (`CTX SWITCH TIMEOUT`) within the first minute under both Proton Hotfix
-and GE-Proton11-9: the process, audio and EOS overlay stay alive and the GPU
-stays non-idle, but only the clear colour is ever presented, with no further
-draw calls landing. Neither `PROTON_ENABLE_NVAPI=0` nor forcing ray tracing
-off (`-noraytracing -execcmds="r.RayTracing 0"`) avoided it. The title is
-confirmed working on Windows; unresolved on Helix as of 2026-10-18.
+STAR WARS: Galactic Racer (Steam appid 4078430) does not work on Helix.
+**Abandoned as of 2026-10-20; the notes below are a dead end, not a
+workaround** — nothing here gets the game to a playable state, so do not
+re-pin its compatibility tool on the strength of this entry alone. On its
+default Proton Hotfix build it dies silently after about two and a half
+minutes: its EOS Bootstrapper's `CreateProcessAsUser` call fails under Proton
+and falls back to a path that does not propagate the `EOS_SESSION_GUID`
+environment variable to the second EOS helper process it spawns
+(`EpicOnlineServicesUserHelper.exe --mode=stage`), which exits immediately
+(`EOS_SESSION_GUID environment variable is required`, code 9001) and leaves
+the game waiting on a handshake that never completes. Overriding the
+compatibility tool to GE-Proton avoids that specific failure but is *not* a
+fix: the title then hits an NVIDIA Xid 109 (`CTX SWITCH TIMEOUT`) within the
+first minute under both Proton Hotfix and GE-Proton11-9, and the game is
+equally unplayable either way — process, audio and EOS overlay stay alive
+and the GPU stays non-idle, but only the clear colour is ever presented, with
+no further draw calls landing. Neither `PROTON_ENABLE_NVAPI=0` nor forcing
+ray tracing off (`-noraytracing -execcmds="r.RayTracing 0"`) avoided it.
+Confirmed working on Windows. Helix's compatibility tool for this app has
+been left on the Proton Hotfix default; nothing above should be reapplied
+without new evidence.
 
 Setting `helix.gaming.enable = false` returns the configuration to the
 non-gaming workstation layer; emulation asserts that gaming is enabled.
