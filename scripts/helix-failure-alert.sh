@@ -39,10 +39,10 @@ notify() {
     as_user=(runuser -u "$helix_user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$bus")
   fi
   # Send only to a notification server that is already running. Calling it
-  # unowned would D-Bus-activate whichever daemon claims the name, and mako
-  # (installed for Hyprland) would then displace Plasma's own for the whole
-  # session. At login the desktop's server can register a few seconds after
-  # the session target, so wait briefly for it.
+  # unowned would D-Bus-activate whichever daemon claims the name, which is
+  # fragile at login: the desktop's own server can register a few seconds
+  # after the session target, so wait briefly for it instead of forcing an
+  # early activation.
   for attempt in 1 2 3 4 5 6; do
     if [[ $("${as_user[@]}" busctl --user call org.freedesktop.DBus /org/freedesktop/DBus \
       org.freedesktop.DBus NameHasOwner s org.freedesktop.Notifications 2>/dev/null) == 'b true' ]]; then

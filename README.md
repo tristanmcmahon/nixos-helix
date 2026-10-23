@@ -4,7 +4,7 @@ Current alpha: `v0.3.0-alpha.6`; see the [changelog](CHANGELOG.md) for what
 changed and the operator notes.
 
 This is the canonical configuration for Helix, a NixOS 26.05 workstation with
-Plasma 6, an optional Hyprland/UWSM session, and an NVIDIA RTX 5080. It uses
+Plasma 6 and an NVIDIA RTX 5080. It uses
 ordinary NixOS modules and a Nixpkgs release pinned in `nixpkgs.json`: no flakes, Home Manager, or a
 host framework. A narrow repository-owned overlay
 selects the immutably pinned first-party OpenClaw package.
@@ -24,7 +24,7 @@ hardware-configuration.nix generated facts for the currently installed system
 config/                    host facts (helix.nix, infernalnexus.nix) and assets
 lib/                       helpers for repeated module patterns
 hardware/                  device and driver policy
-desktop/                   Plasma, Hyprland, browsers, applications, and theme
+desktop/                   Plasma, browsers, applications, and theme
 system/                    boot, users, networking, NAS, and storage
 services/                  OpenSSH, Netdata, backups, OpenClaw, and maintenance
 profiles/                  optional features behind helix.<feature>.enable options

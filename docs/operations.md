@@ -51,7 +51,7 @@ registers its own, as for the health gate. The notification names the unit and
 systemd's verdict (exit code, timeout, out of memory), quotes the end of the
 failed run's own output and gives the `journalctl` command for details. It is
 only sent to a notification server that is already running, so it never starts
-one (mako would otherwise displace Plasma's). A
+one that is still registering at login. A
 failure while nobody is logged in is reported at the next graphical login, and
 at every login after that until the unit succeeds or the failure is
 acknowledged:

@@ -39,9 +39,30 @@ Release notes for Helix. Operating guides live in `docs/`.
   gateway build now fails if its Node links a SQLite older than 3.51.3.
 - The `--full` closure-command checks share one helper that reads each
   closure once; the Ghostty menus share one chooser.
+- Plasma now carries an explicit performance baseline, force-applied every
+  login alongside the theme rotation: animations off, no login splash, the
+  Blur compositor effect off, KWin tearing allowed
+  (helps fullscreen Steam/gamescope), and Baloo file indexing disabled.
+
+### Removed
+
+- Hyprland: never used, and an optional second session cost its own theme
+  startup helper, exit prompt, and Waybar/Mako/Fuzzel/swaybg assets across the
+  theme pipeline and checks. Plasma is now the only session; recoverable from
+  Git history if wanted again.
 
 ### Fixed
 
+- `helix-theme`'s login autostart has been failing every boot since at least
+  2026-09-27 (`app-helix\x2dtheme@autostart.service`, "No schemas installed"):
+  `gsettings-desktop-schemas` is never installed, so the unguarded
+  `gsettings set org.gnome.desktop.interface …` calls aborted the whole
+  script under `set -e` before reaching the KDE block below them — taking
+  the Breeze colour/decoration/wallpaper application and the new Plasma
+  performance keys down with it. Those three calls are now best-effort
+  (`|| true`), matching the rest of the script's style for non-critical
+  live-apply steps; the GTK settings.ini merge remains the real mechanism
+  and never depended on gsettings.
 - With Infernalnexus offline the nightly backup ended as a silent dependency
   failure, never marked failed; it now runs, fails and raises an alert.
 - The `--full` gate's desktop checks: the Hyprland theme helper and the

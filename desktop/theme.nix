@@ -32,6 +32,7 @@ let
       coreutils
       dconf
       glib
+      kdePackages.baloo
       kdePackages.kconfig
       kdePackages.plasma-workspace
       procps
@@ -74,14 +75,10 @@ let
 
       source=/etc/helix/themes/$selected
       [[ -d $source ]] || { printf 'Theme assets unavailable: %s\n' "$source" >&2; exit 1; }
-      mkdir -p "$state_dir" "$XDG_CONFIG_HOME/helix/theme" "$XDG_CONFIG_HOME/waybar" \
-        "$XDG_CONFIG_HOME/mako" "$XDG_CONFIG_HOME/fuzzel" "$XDG_CONFIG_HOME/ghostty" \
+      mkdir -p "$state_dir" "$XDG_CONFIG_HOME/helix/theme" "$XDG_CONFIG_HOME/ghostty" \
         "$XDG_CONFIG_HOME/AdwSteamGtk"
       printf '%s\n' "$selected" > "$selection_file"
       ln -sfn "$source" "$XDG_CONFIG_HOME/helix/theme/current"
-      install -m 0644 "$source/waybar.css" "$XDG_CONFIG_HOME/waybar/helix.css"
-      install -m 0644 "$source/mako.conf" "$XDG_CONFIG_HOME/mako/helix.conf"
-      install -m 0644 "$source/fuzzel.ini" "$XDG_CONFIG_HOME/fuzzel/helix.ini"
       install -m 0644 "$source/steam.css" "$XDG_CONFIG_HOME/AdwSteamGtk/custom.css"
       # ghostty-profile owns the Ghostty profile. Main follows the Helix theme;
       # an explicit Moss, Slate or Ember choice must survive theme changes.
@@ -96,9 +93,14 @@ let
         /etc/helix/theme/gtk-4.0-settings.ini "$XDG_CONFIG_HOME/gtk-4.0/settings.ini"
 
       if [[ -n ''${DBUS_SESSION_BUS_ADDRESS:-} && -n ''${XDG_CURRENT_DESKTOP:-} ]]; then
-        gsettings set org.gnome.desktop.interface color-scheme prefer-dark
-        gsettings set org.gnome.desktop.interface gtk-theme Breeze-Dark
-        gsettings set org.gnome.desktop.interface icon-theme breeze-dark
+        # Best-effort live-apply for already-running GTK apps/portals; the
+        # GTK settings.ini merge above is the real mechanism and does not
+        # depend on this. A host without gsettings-desktop-schemas on its
+        # XDG_DATA_DIRS has no org.gnome.desktop.interface schema to set, and
+        # must not abort the KDE block below under set -e for that reason.
+        gsettings set org.gnome.desktop.interface color-scheme prefer-dark 2>/dev/null || true
+        gsettings set org.gnome.desktop.interface gtk-theme Breeze-Dark 2>/dev/null || true
+        gsettings set org.gnome.desktop.interface icon-theme breeze-dark 2>/dev/null || true
         if gsettings writable io.github.Foldex.AdwSteamGtk prefs-install-custom-css >/dev/null 2>&1; then
           gsettings set io.github.Foldex.AdwSteamGtk prefs-install-custom-css true
         fi
@@ -118,10 +120,17 @@ let
           plasma-apply-colorscheme "$scheme"
           plasma-apply-wallpaperimage "$source/wallpaper.svg"
           kwriteconfig6 --file konsolerc --group "Desktop Entry" --key DefaultProfile "$scheme.profile"
+          # Performance: no compositor eye-candy, no splash, no tearing
+          # penalty for fullscreen games, and no background file indexing on
+          # a workstation whose libraries (ROMs, game installs) Baloo would
+          # otherwise crawl. Re-enable per-key in System Settings if wanted.
+          kwriteconfig6 --file kdeglobals --group KDE --key AnimationDurationFactor 0
+          kwriteconfig6 --file ksplashrc --group KSplash --key Theme None
+          kwriteconfig6 --file kwinrc --group Plugins --key blurEnabled false
+          kwriteconfig6 --file kwinrc --group Compositing --key AllowTearing true
+          balooctl6 disable 2>/dev/null || true
         fi
         systemctl --user reload app-com.mitchellh.ghostty.service 2>/dev/null || pkill -USR2 -x ghostty 2>/dev/null || true
-        pkill -USR2 -x waybar 2>/dev/null || true
-        makoctl reload 2>/dev/null || true
       fi
       printf 'Applied Helix Graphite + %s. Restart Steam for its custom CSS to take effect.\n' "$selected"
     '';
@@ -192,8 +201,6 @@ in
     // {
       "helix/theme/gtk-3.0-settings.ini".source = ../config/theme/gtk-3.0-settings.ini;
       "helix/theme/gtk-4.0-settings.ini".source = ../config/theme/gtk-4.0-settings.ini;
-      "helix/theme/waybar.css".source = "${themeFamily}/generated/fern/waybar.css";
-      "helix/theme/mako.conf".source = "${themeFamily}/generated/fern/mako.conf";
       "helix/theme/fuzzel.ini".source = "${themeFamily}/generated/fern/fuzzel.ini";
       "helix/theme/steam.css".source = "${themeFamily}/generated/fern/steam.css";
       "helix/theme/wallpaper.svg".source = "${themeFamily}/generated/fern/wallpaper.svg";

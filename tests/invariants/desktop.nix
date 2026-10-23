@@ -16,8 +16,6 @@ assert
   && builtins.match ".*[Ss][Dd][Dd][Mm].*" config.services.displayManager.generic.execCmd != null;
 assert config.security.wrappers.op.source != "";
 assert config.security.wrappers."1Password-BrowserSupport".source != "";
-assert config.programs.hyprland.enable;
-assert config.programs.hyprland.withUWSM;
 assert config.services.xserver.videoDrivers == [ "nvidia" ];
 assert config.hardware.graphics.enable;
 assert config.hardware.graphics.enable32Bit;

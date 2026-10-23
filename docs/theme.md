@@ -33,14 +33,13 @@ civilized pool: Fern, Petrol, Plum, Oxide, Amber, or Rosewood. The theme used by
 the previous login is excluded from the draw, so the appearance genuinely
 changes each time. Hot Dog Stand is never selected automatically; if it was
 chosen manually, the next login returns to one of the six civilized themes.
-Plasma performs the draw from its session autostart; Hyprland performs it before
-starting its wallpaper, Waybar, and Mako surfaces.
+Plasma performs the draw from its session autostart.
 
 The current choice is persisted in `~/.local/state/helix/theme`. Manual
 `helix-theme NAME` commands still work normally during a session, and
 `helix-theme random` performs the same non-Hot-Dog, different-from-current draw
-on demand. Switching updates Plasma, Konsole, Ghostty Main, Waybar, Mako,
-Fuzzel, the wallpaper, and AdwSteamGtk custom CSS. Running Steam is never killed;
+on demand. Switching updates Plasma, Konsole, Ghostty Main, Fuzzel, the
+wallpaper, and AdwSteamGtk custom CSS. Running Steam is never killed;
 restart it when convenient to see new CSS. `helix-apply-theme` remains a Fern
 compatibility command.
 
@@ -54,7 +53,7 @@ blend/focus cue, inactive windows recede, and Breeze uses a small border with
 conservative outline and shadow settings. The existing Plasma panel layout
 remains mutable and is not rearranged.
 
-The local scalable SVG anchors Plasma, the lock screen, SDDM, and Hyprland.
+The local scalable SVG anchors Plasma, the lock screen, and SDDM.
 SDDM remains packaged Breeze with the Graphite + Fern wallpaper and loading
 colour. GTK 3/4 use maintained Breeze-Dark, Breeze Dark icons, and the native
 dark preference; no global GTK or Qt environment override is set.
@@ -72,8 +71,7 @@ in `config/ghostty/profiles` and a table entry.
   logins until Main is chosen again.
 - **New surfaces:** every split, tab or window after the first gets a random
   profile's colours before Bash starts. This runs inside the new PTY, so it
-  works in Plasma and the optional Hyprland session without compositor hooks.
-  The font stays the default profile's.
+  needs no compositor hooks. The font stays the default profile's.
 - **This surface:** run `ghostty-theme` inside any split or tab to pick its
   colours from the menu, or `ghostty-theme NAME` directly. Ghostty's right-click
   menu cannot be extended with custom entries, so this is a command. A matching Konsole colour scheme/profile is installed and selected
@@ -82,12 +80,7 @@ syntax colours with owned workbench surface, selection, focus, and status
 colours. Browser chrome uses the graphite base where policy supports it. Dark
 Reader remains available without fragile per-site CSS.
 
-The optional Hyprland session shares the wallpaper and palette through its
-Waybar, Mako, and Fuzzel files. A repository-owned startup helper performs the
-login theme draw before launching those surfaces so they all see the same
-selection. Its workspaces and normal session behaviour are unchanged; the
-random Ghostty surface colours work the same way as in Plasma. Obsidian remains per-vault:
-select its Dark base colour scheme when necessary.
+Obsidian remains per-vault: select its Dark base colour scheme when necessary.
 
 Steam does not inherit KDE colours. NixOS therefore installs the maintained
 AdwSteamGtk wrapper and a repository-owned Graphite custom-colour file.
@@ -125,11 +118,12 @@ through `helix-menu`, which uses the current theme's Fuzzel configuration.
 
 `desktop/theme.nix` owns packaging, SDDM, deployment, and the KDE login
 autostart that rotates among civilized themes; each login applies exactly one
-theme.
-`desktop/hyprland.nix` owns the matching ordered Hyprland login rotation and
-surface startup. Theme application updates selected KDE keys and merges only
-repository-owned GTK keys. `desktop/ghostty.nix` deploys Ghostty;
-`desktop/fonts.nix` remains the sole font owner.
+theme. The same login script also force-writes Plasma's performance baseline
+(animations, compositor effects, splash, tearing, Baloo indexing) every time,
+so a change made through System Settings does not outlive the next login.
+Theme application updates selected KDE keys and merges only repository-owned
+GTK keys. `desktop/ghostty.nix` deploys Ghostty; `desktop/fonts.nix` remains
+the sole font owner.
 
 Plasma panel geometry, widget order, desktop icon layout, per-monitor geometry,
 and application-specific settings remain mutable user state. This preserves the
