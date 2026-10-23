@@ -61,7 +61,7 @@ require_closure_commands "$theme_helper" gsettings python3 plasma-apply-colorsch
 # Each login applies exactly one theme, from the session's rotation.
 [[ ! -e $system_closure/etc/systemd/user/helix-graphite-fern-theme.service ]]
 [[ -r $system_closure/etc/systemd/user/helix-ghostty-config.service ]]
-for theme_asset in gtk-3.0-settings.ini gtk-4.0-settings.ini waybar.css mako.conf \
+for theme_asset in gtk-3.0-settings.ini gtk-4.0-settings.ini \
   fuzzel.ini steam.css wallpaper.svg apply-theme-settings.py; do
   [[ -r $system_closure/etc/helix/theme/$theme_asset ]]
 done
@@ -71,14 +71,18 @@ done
 grep -qF -- '--adw-accent-rgb: 103, 184, 122' "$system_closure/etc/helix/theme/steam.css"
 [[ -r $system_closure/sw/share/themes/Breeze-Dark/settings.ini ]]
 [[ -r $system_closure/sw/share/icons/breeze-dark/index.theme ]]
-# Hyprland starts its themed surfaces through one helper, after the login draw.
-grep -qxF 'exec-once = helix-hyprland-theme-start' "$hyprland_config"
-grep -qF 'fuzzel --config /home/tristan/.config/helix/theme/current/fuzzel.ini' "$hyprland_config"
-hyprland_theme_start=$system_closure/sw/bin/helix-hyprland-theme-start
-require_executable "$hyprland_theme_start"
-require_contains "$hyprland_theme_start" 'swaybg --image /home/tristan/.config/helix/theme/current/wallpaper.svg'
-require_contains "$hyprland_theme_start" 'waybar --style /home/tristan/.config/helix/theme/current/waybar.css'
-require_contains "$hyprland_theme_start" 'mako --config /home/tristan/.config/helix/theme/current/mako.conf'
+# The login theme script also enforces Plasma's performance baseline every
+# login: no compositor eye-candy, no splash, tearing allowed for fullscreen
+# games, and Baloo's file indexer disabled.
+helix_theme=$system_closure/sw/bin/helix-theme
+# A missing gsettings-desktop-schemas must not take the whole KDE block above
+# down with it under set -e (incident: app-helix-theme@autostart.service
+# failed every login from 2026-09-27 to 2026-10-20).
+require_contains "$helix_theme" 'gsettings set org.gnome.desktop.interface color-scheme prefer-dark 2>/dev/null || true'
+require_contains "$helix_theme" 'kwriteconfig6 --file kdeglobals --group KDE --key AnimationDurationFactor 0'
+require_contains "$helix_theme" 'kwriteconfig6 --file kwinrc --group Plugins --key blurEnabled false'
+require_contains "$helix_theme" 'kwriteconfig6 --file kwinrc --group Compositing --key AllowTearing true'
+require_contains "$helix_theme" 'balooctl6 disable'
 # Validate the managed Ghostty config with every built profile it may include,
 # substituting a temporary path for the per-user profile file.
 ghostty_validation_profile=$temporary_directory/ghostty-profile.ghostty

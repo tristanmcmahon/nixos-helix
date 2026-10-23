@@ -26,7 +26,6 @@ in
     ./hardware/corsair-k70.nix
 
     ./desktop/plasma.nix
-    ./desktop/hyprland.nix
     ./desktop/applications.nix
     ./desktop/fonts.nix
     ./desktop/ghostty.nix

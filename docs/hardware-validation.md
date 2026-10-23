@@ -20,9 +20,8 @@ testing below does not imply hibernation support.
 
 ## Desktop and NVIDIA
 
-- In SDDM, confirm both Plasma (Wayland) and Hyprland are selectable. Test
-  Plasma first, then Hyprland, then log out with `Super+Shift+E` and return to
-  Plasma. Confirm the previous-session behavior remains controlled by SDDM.
+- In SDDM, confirm Plasma (Wayland) is selectable and log in. Confirm the
+  previous-session behavior remains controlled by SDDM.
 - Confirm Wayland with `echo "$XDG_SESSION_TYPE"` and
   `loginctl show-session "$XDG_SESSION_ID" -p Type`.
 - Confirm the RTX 5080 driver with `lspci -nnk`, `lsmod`, and `nvidia-smi`.
@@ -32,9 +31,7 @@ testing below does not imply hibernation support.
   refresh rate in Plasma System Settings → Display & Monitor.
 - Suspend with `systemctl suspend`, resume, and inspect
   `journalctl -b -p warning..alert` plus `nvidia-smi`. Repeat with monitors on
-  each connector.
-- Repeat renderer, connector, refresh-rate, screen-sharing, suspend/resume, and
-  cursor checks in Hyprland; evaluation alone cannot validate NVIDIA behavior.
+  each connector. Evaluation alone cannot validate NVIDIA behavior.
 
 ## Audio, camera, and radios
 
@@ -110,7 +107,7 @@ libinput list-devices
 ```
 
 - Confirm normal typing with no missing, repeated, or duplicate keystrokes in
-  Plasma, Hyprland, and a text-console login.
+  Plasma and a text-console login.
 - Test media keys, volume wheel, mute, and supported brightness/profile keys.
 - Open ckb-next manually and confirm RGB control without overwriting the
   keyboard's existing onboard profile or flashing firmware.
@@ -151,8 +148,21 @@ These are physical tests; a successful build does not prove they pass.
 - [ ] Dark Reader appears in managed browsers, can be disabled per site, and
       does not blindly invert photographs, video, or PDFs.
 - [ ] Existing 1Password extensions remain installed and connected.
-- [ ] In Hyprland, the wallpaper, borders, Waybar, Mako, Fuzzel, Qt, and GTK
-      applications are dark and logout still works.
+
+## Plasma performance
+
+`desktop/theme.nix` writes these every graphical login; a successful build
+only proves the writer script contains the right lines, not that KWin and
+Baloo actually picked them up.
+
+- [ ] System Settings → Workspace Behavior → General Behaviour shows
+      "Animation speed" at its fastest (instant) setting.
+- [ ] System Settings → Apps → Desktop Effects shows Blur disabled.
+- [ ] No splash screen appears between SDDM and the Plasma desktop.
+- [ ] `balooctl6 status` reports indexing disabled, and no `baloo_file`
+      process accumulates CPU/disk activity after login.
+- [ ] A borderless/fullscreen game (Steam or gamescope) does not show a
+      tearing-related stutter regression versus windowed mode.
 
 ## 1Password
 

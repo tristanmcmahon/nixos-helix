@@ -9,7 +9,6 @@ system_closure=$(nix-build --no-out-link '<nixpkgs/nixos>' -A system \
 # One evaluation of the canonical configuration supplies every other artifact.
 printf 'Building inspected artifacts from the canonical configuration...\n'
 artifacts=$(nix-build --no-out-link tests/artifacts.nix)
-hyprland_config=$(readlink -f "$artifacts/hyprland.conf")
 session_data=$(readlink -f "$artifacts/session-data")
 # shellcheck disable=SC2034 # Used by the sourced applications checks.
 onepassword_gui=$(readlink -f "$artifacts/1password-gui")
@@ -29,14 +28,8 @@ grep -qF 'nix-env --profile /nix/var/nix/profiles/system --set "$candidate"' \
 printf 'Checking Vim and modern-bash in the built default system...\n'
 ./scripts/test-modern-bash.sh "$system_closure"
 
-printf 'Verifying the repository-owned Hyprland baseline...\n'
-"$system_closure/sw/bin/Hyprland" --verify-config --config "$hyprland_config"
-polkit_agent=$(sed -n 's/^exec-once = \(.*polkit-kde-authentication-agent-1\)$/\1/p' "$hyprland_config")
-[[ -x $polkit_agent ]]
-
 printf 'Checking generated display-manager sessions...\n'
 
 find "$session_data/share" -type f -name '*.desktop' -print
 grep -Rqs '^Name=Plasma' "$session_data/share/wayland-sessions"
-grep -Rqs '^Name=Hyprland' "$session_data/share/wayland-sessions"
 

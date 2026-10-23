@@ -131,6 +131,21 @@ mismatch. Do not use SMB1 as a fallback.
 - A failed `ls` is expected when the NAS is offline. Only the automount is
   pulled into boot; explicit network ordering and on-demand isolation keep an
   absent NAS from destabilising boot or the desktop.
+- `failed (Result: start-limit-hit)` on `mnt-infernalnexus-nas1.mount` or its
+  automount, even though `ping 192.168.1.8` and port 445 both work: a brief
+  network interruption (Wi-Fi reassociation, a DHCP renewal, or two processes
+  racing to trigger the automount at once) can exhaust systemd's default
+  start-rate-limit in a few seconds. Unlike a simple offline NAS, this does
+  not self-heal once the network recovers — the automount stays inactive
+  until restarted. `systemctl reset-failed` alone is not enough; it only
+  clears the failure counter; it does not reactivate the automount:
+  ```bash
+  sudo systemctl reset-failed mnt-infernalnexus-nas1.mount mnt-infernalnexus-nas1.automount
+  sudo systemctl start mnt-infernalnexus-nas1.automount
+  ls /mnt/infernalnexus/nas1   # now triggers a fresh mount attempt
+  ```
+  Anything depending on the share (e.g. `hamology-backup.service`) needs the
+  same `reset-failed` treatment afterward if it failed as a result.
 
 
 ## Helix DNS via Pi-hole

@@ -34,8 +34,8 @@ raise it for an ordinary Nixpkgs update.
 
 ## Recovery
 
-Vim is available as both `vi` and `vim` on a text console. Plasma is the primary
-desktop; Hyprland remains an optional SDDM session.
+Vim is available as both `vi` and `vim` on a text console. Plasma is the only
+desktop session.
 
 If a new generation cannot reach the desktop, select an older generation in
 the systemd-boot menu. From a working generation, inspect the list and restore

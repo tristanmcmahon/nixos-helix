@@ -74,13 +74,6 @@ for gtk_version in ("3.0", "4.0"):
     assert gtk_settings["Settings"]["gtk-theme-name"] == "Breeze-Dark"
     assert gtk_settings["Settings"]["gtk-application-prefer-dark-theme"] == "true"
 
-waybar = (fern / "waybar.css").read_text(encoding="utf-8")
-assert waybar.count("{") == waybar.count("}") and "#232824" in waybar
-
-mako = (fern / "mako.conf").read_text(encoding="utf-8")
-for key in ("background-color", "text-color", "border-color", "default-timeout"):
-    assert f"{key}=" in mako
-
 fuzzel = configparser.ConfigParser()
 fuzzel.read(fern / "fuzzel.ini")
 assert {"main", "colors", "border"}.issubset(fuzzel.sections())
@@ -96,18 +89,12 @@ theme_module = (ROOT / "desktop/theme.nix").read_text(encoding="utf-8")
 assert "Exec=${helixTheme}/bin/helix-theme random" in theme_module
 assert "Usage: helix-theme {list|current|random|" in theme_module
 
-hyprland_module = (ROOT / "desktop/hyprland.nix").read_text(encoding="utf-8")
-assert "helix-hyprland-theme-start" in hyprland_module
-assert "/run/current-system/sw/bin/helix-theme random" in hyprland_module
-
 # Every theme renders complete, parseable assets.
 names = ("fern", "petrol", "plum", "oxide", "amber", "rosewood", "hotdog")
 for name in names:
     assets = generated / name
     assert assets.is_dir()
     assert (assets / "wallpaper.svg").is_file()
-    assert (assets / "waybar.css").is_file()
-    assert (assets / "mako.conf").is_file()
     assert (assets / "fuzzel.ini").is_file()
     assert (assets / "steam.css").is_file()
     assert (assets / "ghostty.ghostty").is_file()

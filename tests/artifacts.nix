@@ -7,10 +7,6 @@ let
 in
 pkgs.linkFarm "helix-check-artifacts" [
   {
-    name = "hyprland.conf";
-    path = config.environment.etc."hypr/helix.conf".source;
-  }
-  {
     name = "session-data";
     path = config.services.displayManager.sessionData.desktops;
   }
