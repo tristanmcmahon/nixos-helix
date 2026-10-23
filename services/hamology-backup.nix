@@ -22,7 +22,17 @@ in
     wants = [ "network-online.target" ];
     after = [ "network-online.target" ];
 
-    unitConfig.ConditionPathExists = entrypoint;
+    unitConfig = {
+      ConditionPathExists = entrypoint;
+      # A resume from suspend fires this Persistent timer's missed run before
+      # Wi-Fi has reconnected (network-online.target is a boot-only gate; it
+      # is not re-evaluated after resume). hamology-backup has no retry of
+      # its own, unlike restic, so it loses that race every time without
+      # this. Bounded: a few attempts over a couple of minutes, matching the
+      # NAS mount's own widened start-limit above it.
+      StartLimitIntervalSec = "3min";
+      StartLimitBurst = 4;
+    };
 
     path = [
       pkgs.bash
@@ -46,6 +56,11 @@ in
       IOSchedulingClass = "idle";
       TimeoutStartSec = "3h";
       NoNewPrivileges = true;
+      # Retry a resume-triggered run that fails before Wi-Fi reconnects;
+      # see the StartLimit comment above. hamology's own backup script stays
+      # the single source of truth for whether a run actually succeeded.
+      Restart = "on-failure";
+      RestartSec = "20s";
     };
   };
 

@@ -59,10 +59,19 @@ in
     unitConfig = {
       ConditionPathExists = passwordFile;
       WantsMountsFor = [ nas ];
+      # A resume from suspend fires this Persistent timer's missed run before
+      # Wi-Fi has reconnected. restic's own retry-with-backoff usually rides
+      # that out within a few seconds, but give the unit room for a second
+      # attempt if the NAS mount itself is still catching up; matches the
+      # NAS mount's own widened start-limit.
+      StartLimitIntervalSec = "3min";
+      StartLimitBurst = 4;
     };
     serviceConfig = {
       Nice = 19;
       IOSchedulingClass = "idle";
+      Restart = "on-failure";
+      RestartSec = "20s";
     };
   };
 

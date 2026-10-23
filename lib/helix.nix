@@ -89,6 +89,16 @@ in
             ++ lib.optional readOnly "ro"
           );
           mountConfig.TimeoutSec = infernalnexus.mountTimeout;
+          # A resume from suspend fires every Persistent backup timer that was
+          # missed while asleep, and those race the few seconds Wi-Fi takes to
+          # reconnect: several near-simultaneous automount attempts can burn
+          # through systemd's default start-limit (5 within 10s) before the
+          # network is back, latching the mount "failed" until a manual
+          # `systemctl reset-failed` + `start`. Give it room to ride that out.
+          unitConfig = {
+            StartLimitIntervalSec = "2min";
+            StartLimitBurst = 10;
+          };
         }
       ];
       automounts = [
