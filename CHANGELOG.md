@@ -4,6 +4,10 @@ Release notes for Helix. Operating guides live in `docs/`.
 
 ## Unreleased
 
+## v0.3.0-alpha.7
+
+Release target: `v0.3.0-alpha.7`
+
 ### Added
 
 - Heroic and `helix-fallout-london-setup`: the script prepares install and
