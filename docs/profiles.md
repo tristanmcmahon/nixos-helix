@@ -3,8 +3,8 @@
 Every module is imported unconditionally. Each optional feature is a profile
 that declares a `helix.<feature>.enable` option and owns its packages, services
 and storage initialisers; `configuration.nix` only chooses which are enabled:
-`workstation`, `development`, `gaming`, `localLlm`, `emulation`, `hamCade` and
-`monitoring`. `tests/features-disabled.nix` turns them all off and checks that
+`workstation`, `development`, `gaming`, `localLlm`, `emulation`, `hamCade`,
+`monitoring` and `benchmark`. `tests/features-disabled.nix` turns them all off and checks that
 each one's packages, services and directories disappear while the recovery base
 remains. `packages/` holds only package definitions and the base set.
 
@@ -161,3 +161,14 @@ cache (`OLLAMA_KV_CACHE_TYPE=q8_0`). At that context length the cache is a large
 share of the 16 GB of VRAM; halving it keeps more of each model on the GPU.
 Compare `ollama ps` (the GPU/CPU split) before and after a model loads to see
 the effect. Keep-alive policy remains at the Ollama default.
+
+### Benchmark
+
+`profiles/benchmark.nix` installs one CLI tool, `helix-benchmark`, for
+lightweight, on-demand self-benchmarking across the four other profiles: raw
+CPU compute (`sysbench`), GPU (`vkmark` plus, if Steam and Cyberpunk 2077 are
+present, a real-world FPS capture via MangoHud), local LLM inference
+(`deepseek-r1:8b` tokens/sec through Ollama), and a quick system health
+snapshot (load, memory, temperatures). It owns no long-running service and
+registers nothing in the health gate. See `docs/benchmarking.md` for the full
+regime, what each number means, and its manual-verification caveats.

@@ -4,6 +4,27 @@ Release notes for Helix. Operating guides live in `docs/`.
 
 ## Unreleased
 
+### Added
+
+- `helix-benchmark` (`helix.benchmark`, on by default): lightweight,
+  on-demand self-benchmarking for raw CPU compute (`sysbench`), GPU (`vkmark`,
+  plus a real-world Cyberpunk 2077 FPS capture via MangoHud if it's
+  installed), local LLM inference (`deepseek-r1:8b` tokens/sec through
+  Ollama), and a quick system health snapshot. See `docs/benchmarking.md`.
+
+### Fixed
+
+- The nightly backup and NAS mount popups after waking from suspend: a
+  resume fires every `Persistent` backup timer that was missed while asleep,
+  racing the few seconds Wi-Fi takes to reconnect. `hamology-backup` had no
+  retry of its own and lost that race every time; the NAS mount's default
+  systemd start-limit (5 attempts within 10s) could also be exhausted by the
+  burst of near-simultaneous automount requests, latching it `failed` until
+  a manual `systemctl reset-failed` + `start`. The mount's start-limit is
+  now wider, and both `hamology-backup.service` and
+  `restic-backups-helix.service` retry a few times before giving up and
+  raising an alert.
+
 ## v0.3.0-alpha.7
 
 Release target: `v0.3.0-alpha.7`

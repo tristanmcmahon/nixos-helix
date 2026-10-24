@@ -48,6 +48,14 @@ fi
 [[ -r $system_closure/etc/systemd/system/ollama-model-loader.service ]]
 grep -qF 'BindsTo=ollama.service' \
   "$system_closure/etc/systemd/system/ollama-model-loader.service"
+[[ -x $system_closure/sw/bin/helix-benchmark ]]
+helix_benchmark=$(readlink -f "$system_closure/sw/bin/helix-benchmark")
+require_closure_commands "$helix_benchmark" python3 sysbench vkmark pkill
+benchmark_usage=$("$system_closure/sw/bin/helix-benchmark" --help)
+# Check each subcommand separately so adding one does not break the gate.
+for benchmark_subcommand in system compute gpu llm all history; do
+  [[ $benchmark_usage =~ (\{|,)$benchmark_subcommand(,|\}) ]]
+done
 [[ ! -e $system_closure/sw/bin/chatgpt ]]
 if grep -Rqs '^Name=ChatGPT$' "$system_closure/sw/share/applications"; then
   printf 'ChatGPT remains in the active system closure.\n' >&2

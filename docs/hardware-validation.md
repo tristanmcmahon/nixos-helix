@@ -164,6 +164,24 @@ Baloo actually picked them up.
 - [ ] A borderless/fullscreen game (Steam or gamescope) does not show a
       tearing-related stutter regression versus windowed mode.
 
+## Self-benchmarking
+
+`docs/benchmarking.md` has the full regime. None of this is build-verified;
+`check.sh` only proves `helix-benchmark`'s subcommands exist.
+
+- [ ] `helix-benchmark system` reports plausible load/memory/temperature
+      figures.
+- [ ] `helix-benchmark compute` completes and reports a non-zero events/sec
+      for both the single-thread and all-thread sysbench runs.
+- [ ] `helix-benchmark gpu` reports a `vkmark` score. With Cyberpunk 2077
+      installed and a save that resumes into gameplay, it also reports
+      average/minimum FPS from a MangoHud log; confirm the log file it names
+      actually contains sampled rows, not just a header.
+- [ ] `helix-benchmark llm` reports generation and prompt tokens/sec; cross-check
+      the generation figure against `ollama ps`'s reported GPU split while it
+      runs.
+- [ ] `helix-benchmark history` lists the runs above.
+
 ## 1Password
 
 - [ ] The desktop app launches, its tray integration appears, and Quick Access works.

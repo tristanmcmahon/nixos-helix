@@ -14,6 +14,7 @@ let
           emulation = null;
           hamCade = null;
           monitoring = null;
+          benchmark = null;
         };
       };
   };
@@ -34,6 +35,8 @@ assert !(config.systemd.services ? helix-doom-storage) && absent "gzdoom";
 assert !config.services.ollama.enable && !(config.systemd.services ? helix-ollama-model-storage);
 # emulation
 assert !(config.systemd.services ? helix-emulation-storage);
+# benchmark
+assert absent "helix-benchmark";
 # Only the always-on units remain in the health gate.
 assert config.helix.health.criticalUnits == [ "sshd.service" ];
 # The recovery base survives with every feature disabled.

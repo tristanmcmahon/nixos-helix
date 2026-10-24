@@ -29,6 +29,11 @@ in
         # runtime state, so neither is guessed or committed here.
         networkmanager.enable = true;
 
+        # iwlwifi (Intel AC9260) power-save adds latency on this AP; keep it
+        # off rather than relying on a manual `iw` toggle that reverts on
+        # reconnect or reboot.
+        networkmanager.wifi.powersave = false;
+
         # Keep NixOS' stateful firewall. The OpenSSH module owns the sole inbound
         # exception for TCP port 22; desktop clients need no additional exceptions.
         firewall.enable = true;

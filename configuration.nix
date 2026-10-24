@@ -63,6 +63,7 @@ in
     ./profiles/hamcade.nix
     ./profiles/emulation.nix
     ./profiles/local-llm.nix
+    ./profiles/benchmark.nix
 
     # The deliberately small package set needed on every Helix installation.
     ./packages/base.nix
@@ -77,6 +78,7 @@ in
     emulation.enable = true;
     hamCade.enable = true;
     monitoring.enable = true;
+    benchmark.enable = true;
 
     # Helix is the first client of the Pi-hole on infernalnexus. This is a
     # workstation-local DNS policy only; it does not alter router or LAN DNS.
