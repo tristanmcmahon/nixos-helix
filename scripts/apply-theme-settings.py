@@ -135,6 +135,18 @@ def merge_vscode(destination: pathlib.Path) -> None:
     atomic_write(destination, json.dumps(settings, indent=2, sort_keys=True) + "\n")
 
 
+def merge_zed(source: pathlib.Path, destination: pathlib.Path) -> None:
+    rendered = json.loads(source.read_text(encoding="utf-8"))
+    settings = parse_jsonc(destination.read_text(encoding="utf-8")) if destination.exists() else {}
+    settings["theme"] = rendered["theme"]
+    overrides = settings.get("experimental.theme_overrides", {})
+    if not isinstance(overrides, dict):
+        overrides = {}
+    overrides.update(rendered["experimental.theme_overrides"])
+    settings["experimental.theme_overrides"] = overrides
+    atomic_write(destination, json.dumps(settings, indent=2, sort_keys=True) + "\n")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -143,9 +155,14 @@ def main() -> None:
     ini.add_argument("destination", type=pathlib.Path)
     vscode = subparsers.add_parser("merge-vscode")
     vscode.add_argument("destination", type=pathlib.Path)
+    zed = subparsers.add_parser("merge-zed")
+    zed.add_argument("source", type=pathlib.Path)
+    zed.add_argument("destination", type=pathlib.Path)
     args = parser.parse_args()
     if args.command == "merge-ini":
         merge_ini(args.source, args.destination)
+    elif args.command == "merge-zed":
+        merge_zed(args.source, args.destination)
     else:
         merge_vscode(args.destination)
 

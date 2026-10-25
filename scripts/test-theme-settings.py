@@ -98,6 +98,7 @@ for name in names:
     assert (assets / "fuzzel.ini").is_file()
     assert (assets / "steam.css").is_file()
     assert (assets / "ghostty.ghostty").is_file()
+    assert (assets / "zed.json").is_file()
     element_tree.parse(assets / "wallpaper.svg")
     schemes = list(assets.glob("*.colors"))
     assert len(schemes) == 1
@@ -105,10 +106,18 @@ for name in names:
     parsed.optionxform = str
     parsed.read(schemes[0])
     assert required_groups.issubset(parsed.sections())
+    zed_settings = json.loads((assets / "zed.json").read_text(encoding="utf-8"))
+    assert zed_settings["theme"] == "One Dark"
+    overrides = zed_settings["experimental.theme_overrides"]
+    assert overrides["text.accent"] == overrides["terminal.ansi.green"] == overrides["success"]
+    assert len(overrides["border"]) == 7 and overrides["border"].startswith("#")
 # Fuzzel follows each theme rather than staying Fern.
 assert "prompt=5fa8a3ff" in (generated / "petrol/fuzzel.ini").read_text(encoding="utf-8")
 assert "95, 168, 163" in (generated / "petrol/steam.css").read_text(encoding="utf-8")
 assert "255, 0, 0" in (generated / "hotdog/steam.css").read_text(encoding="utf-8")
+# Zed follows each theme rather than staying Fern.
+petrol_zed = json.loads((generated / "petrol/zed.json").read_text(encoding="utf-8"))
+assert petrol_zed["experimental.theme_overrides"]["text.accent"] == "#5FA8A3"
 
 
 with tempfile.TemporaryDirectory() as temporary_directory:
@@ -161,5 +170,22 @@ with tempfile.TemporaryDirectory() as temporary_directory:
     assert settings["workbench.colorTheme"] == "Default Dark Modern"
     assert settings["workbench.colorCustomizations"]["editor.background"] == "#0B0D0C"
     assert settings["workbench.colorCustomizations"]["sideBar.background"] == "#232824"
+
+    zed_source = generated / "petrol/zed.json"
+    zed_destination = temporary / "zed-settings.json"
+    zed_destination.write_text(
+        '{\n  // kept\n  "agent_servers": {"Claude Code": {"type": "custom"}},\n'
+        '  "experimental.theme_overrides": {"unrelated.key": "#000000"},\n}\n',
+        encoding="utf-8",
+    )
+    MODULE.merge_zed(zed_source, zed_destination)
+    first_zed_result = zed_destination.read_text(encoding="utf-8")
+    MODULE.merge_zed(zed_source, zed_destination)
+    assert zed_destination.read_text(encoding="utf-8") == first_zed_result
+    zed_settings = json.loads(zed_destination.read_text(encoding="utf-8"))
+    assert zed_settings["agent_servers"] == {"Claude Code": {"type": "custom"}}
+    assert zed_settings["theme"] == "One Dark"
+    assert zed_settings["experimental.theme_overrides"]["text.accent"] == "#5FA8A3"
+    assert zed_settings["experimental.theme_overrides"]["unrelated.key"] == "#000000"
 
 print("Theme settings merge fixtures passed.")

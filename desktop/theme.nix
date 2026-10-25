@@ -91,6 +91,8 @@ let
         /etc/helix/theme/gtk-3.0-settings.ini "$XDG_CONFIG_HOME/gtk-3.0/settings.ini"
       python3 /etc/helix/theme/apply-theme-settings.py merge-ini \
         /etc/helix/theme/gtk-4.0-settings.ini "$XDG_CONFIG_HOME/gtk-4.0/settings.ini"
+      python3 /etc/helix/theme/apply-theme-settings.py merge-zed \
+        "$source/zed.json" "$XDG_CONFIG_HOME/zed/settings.json"
 
       if [[ -n ''${DBUS_SESSION_BUS_ADDRESS:-} && -n ''${XDG_CURRENT_DESKTOP:-} ]]; then
         # Best-effort live-apply for already-running GTK apps/portals; the

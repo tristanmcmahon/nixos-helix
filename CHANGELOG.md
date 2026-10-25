@@ -11,6 +11,11 @@ Release notes for Helix. Operating guides live in `docs/`.
   plus a real-world Cyberpunk 2077 FPS capture via MangoHud if it's
   installed), local LLM inference (`deepseek-r1:8b` tokens/sec through
   Ollama), and a quick system health snapshot. See `docs/benchmarking.md`.
+- Zed now follows the Helix Graphite theme rotation: every login, `helix-theme`
+  merges the current theme's surfaces, borders, text, accent/success colour
+  and error/warning into Zed's `experimental.theme_overrides` setting (kept
+  on top of its built-in "One Dark" theme), the same way it already merges
+  GTK settings. `helix-zed-agent-setup`'s `agent_servers` key is untouched.
 
 ### Fixed
 

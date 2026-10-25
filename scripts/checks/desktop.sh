@@ -65,6 +65,11 @@ for theme_asset in gtk-3.0-settings.ini gtk-4.0-settings.ini \
   fuzzel.ini steam.css wallpaper.svg apply-theme-settings.py; do
   [[ -r $system_closure/etc/helix/theme/$theme_asset ]]
 done
+for theme in fern petrol plum oxide amber rosewood hotdog; do
+  [[ -r $system_closure/etc/helix/themes/$theme/zed.json ]]
+done
+helix_theme=$system_closure/sw/bin/helix-theme
+require_contains "$helix_theme" 'apply-theme-settings.py merge-zed'
 [[ -x $system_closure/sw/bin/adwaita-steam-gtk ]]
 [[ -x $system_closure/sw/bin/helix-apply-steam-theme ]]
 "$system_closure/sw/bin/helix-apply-steam-theme" --help | grep -qF 'Close Steam first'
@@ -74,7 +79,6 @@ grep -qF -- '--adw-accent-rgb: 103, 184, 122' "$system_closure/etc/helix/theme/s
 # The login theme script also enforces Plasma's performance baseline every
 # login: no compositor eye-candy, no splash, tearing allowed for fullscreen
 # games, and Baloo's file indexer disabled.
-helix_theme=$system_closure/sw/bin/helix-theme
 # A missing gsettings-desktop-schemas must not take the whole KDE block above
 # down with it under set -e (incident: app-helix-theme@autostart.service
 # failed every login from 2026-09-27 to 2026-10-20).

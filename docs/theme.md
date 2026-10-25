@@ -38,7 +38,7 @@ Plasma performs the draw from its session autostart.
 The current choice is persisted in `~/.local/state/helix/theme`. Manual
 `helix-theme NAME` commands still work normally during a session, and
 `helix-theme random` performs the same non-Hot-Dog, different-from-current draw
-on demand. Switching updates Plasma, Konsole, Ghostty Main, Fuzzel, the
+on demand. Switching updates Plasma, Konsole, Ghostty Main, Fuzzel, Zed, the
 wallpaper, and AdwSteamGtk custom CSS. Running Steam is never killed;
 restart it when convenient to see new CSS. `helix-apply-theme` remains a Fern
 compatibility command.
@@ -77,8 +77,12 @@ in `config/ghostty/profiles` and a table entry.
   menu cannot be extended with custom entries, so this is a command. A matching Konsole colour scheme/profile is installed and selected
 when the applicator runs in Plasma. VS Code uses built-in Default Dark Modern
 syntax colours with owned workbench surface, selection, focus, and status
-colours. Browser chrome uses the graphite base where policy supports it. Dark
-Reader remains available without fragile per-site CSS.
+colours. Zed keeps its built-in "One Dark" theme for syntax highlighting and
+gets the same treatment through its own `experimental.theme_overrides`
+setting: surfaces, borders, text, the accent/success colour, and error/warning
+follow the current theme the same way VS Code's workbench colours do. Browser
+chrome uses the graphite base where policy supports it. Dark Reader remains
+available without fragile per-site CSS.
 
 Obsidian remains per-vault: select its Dark base colour scheme when necessary.
 
@@ -122,8 +126,10 @@ theme. The same login script also force-writes Plasma's performance baseline
 (animations, compositor effects, splash, tearing, Baloo indexing) every time,
 so a change made through System Settings does not outlive the next login.
 Theme application updates selected KDE keys and merges only repository-owned
-GTK keys. `desktop/ghostty.nix` deploys Ghostty; `desktop/fonts.nix` remains
-the sole font owner.
+GTK and Zed keys (`theme` and `experimental.theme_overrides`; Zed's
+`agent_servers`, set separately by `helix-zed-agent-setup`, is untouched).
+`desktop/ghostty.nix` deploys Ghostty; `desktop/fonts.nix` remains the sole
+font owner.
 
 Plasma panel geometry, widget order, desktop icon layout, per-monitor geometry,
 and application-specific settings remain mutable user state. This preserves the
