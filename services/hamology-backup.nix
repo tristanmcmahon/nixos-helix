@@ -1,7 +1,8 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 
 let
   helix = import ../config/helix.nix;
+  helixLib = import ../lib/helix.nix { inherit lib pkgs; };
   inherit ((import ../config/infernalnexus.nix).backups) keep;
   inherit (helix) user group home;
   repo = "${home}/Projects/hamology";
@@ -41,6 +42,8 @@ in
       User = user;
       Group = group;
       WorkingDirectory = repo;
+      # See lib/helix.nix: no restart on failure, so a failed run alerts.
+      ExecStartPre = [ helixLib.waitForInfernalnexusCommand ];
       ExecStart = "${pkgs.bash}/bin/bash ${entrypoint} --unattended --keep ${toString keep}";
       Nice = 19;
       IOSchedulingClass = "idle";
