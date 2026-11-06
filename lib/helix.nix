@@ -89,6 +89,14 @@ in
             ++ lib.optional readOnly "ro"
           );
           mountConfig.TimeoutSec = infernalnexus.mountTimeout;
+          # A resume from suspend (or any other transient network blip) can
+          # fail this mount several times within systemd's default 10s
+          # window, permanently latching it "failed" with no self-recovery:
+          # confirmed on 2026-10-30, when exactly that happened and the share
+          # stayed unmounted until a manual `systemctl reset-failed` + start.
+          # This is plumbing for an optional, already-isolated NAS; it should
+          # retry forever rather than ever need a human to unstick it.
+          unitConfig.StartLimitIntervalSec = 0;
         }
       ];
       automounts = [

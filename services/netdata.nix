@@ -83,6 +83,9 @@ in
           debugfs = "no";
           nfacct = "no";
           tc = "no";
+          # Helix has no BMC: freeipmi polls one anyway, logging kernel
+          # warnings for about ten minutes each boot before giving up.
+          freeipmi = "no";
         };
 
         web = {

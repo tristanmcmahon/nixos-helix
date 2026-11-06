@@ -73,6 +73,35 @@ here. What remains is narrower:
   indexing disabled (`balooctl6 disable`). See
   `docs/hardware-validation.md`'s "Plasma performance" section for the manual
   verification steps a build cannot cover.
+- **Nightly backups after a suspend resume.** Fixed properly in #109: both
+  backup units run `helix-wait-for-nas` (up to three minutes for the NAS's SMB
+  port, non-fatal if it never answers) and deliberately never restart on
+  failure, with an invariant holding both properties. An earlier attempt at
+  this (commit `ae658dd`, "Retry nightly backups...") used
+  `Restart=on-failure`, which #109's review correctly rejected: a systemd
+  start-limit counts starts, not run time, so a slow failure (an SSH attempt
+  to a NAS that is down) could retry forever without ever reaching the limit
+  or raising its alert. That commit reached `claude/intelligent-hamilton-g61kbz`
+  after #106 was already squash-merged, so it never reached `main`; `a199405`
+  then landed its `CHANGELOG.md` text without its code, so `main` briefly
+  documented a fix it didn't contain. #109 corrected both the code and the
+  changelog entry.
+- **NAS mount permanently latching on a transient network blip.** #109
+  deliberately left the mount's own start-limit unchanged, pending a failure
+  log from Helix. That log arrived on 2026-10-30: `mnt-infernalnexus-nas1.mount`
+  hit the default start-limit (5 attempts/10s) during a burst of
+  "Network is unreachable" errors, and both it and its automount latched
+  `failed`/`mount-start-limit-hit` and did not self-recover; the share stayed
+  unmounted for about 20 hours until a manual `systemctl reset-failed` +
+  `start`. `lib/helix.nix`'s `mkInfernalnexusShare` now sets
+  `unitConfig.StartLimitIntervalSec = 0` on the mount (shared by `nas1` and
+  `roms`), so it retries indefinitely instead of ever latching. (An earlier,
+  weaker attempt at this — widening the limit to 2 minutes/10 attempts rather
+  than removing it — was made and validated in this same session but never
+  actually landed in a commit; it does not appear in `main`'s history.)
+- **Netdata polling a BMC that doesn't exist.** `freeipmi` is now disabled in
+  `services/netdata.nix`; it was logging kernel warnings for about ten minutes
+  every boot before giving up on its own.
 
 ## Remaining: Phase 4 (tests and CI)
 
@@ -137,19 +166,31 @@ here. What remains is narrower:
      write-back and submits a comparable burst of Vulkan pipeline work. If a
      native workload reproduces the Xid, Proton/Wine/EOS/EAC are all cleared
      and this becomes a pure driver/GPU question; if it never does, the
-     translation layer itself is implicated.
+     translation layer itself is implicated. **Not actually attempted yet
+     despite one try on 2026-11-07**: `vkmark` is only on `helix-benchmark`'s
+     own wrapped `PATH`, not a system-wide command, so a bare `vkmark
+     --run-forever` call failed instantly with "command not found" (exit
+     127) and the GPU telemetry taken alongside it shows idle power/clocks
+     the whole time — no load was ever generated. Use the full `/nix/store`
+     path (read it from `grep '^export PATH=' "$(readlink -f "$(command -v
+     helix-benchmark)")"`) or run `helix-benchmark gpu` itself for a real
+     attempt.
   2. **Capture GPU state live through a reproduction** (`nvidia-smi -l 1`
      logging temperature/clocks/power, or a persistent `journalctl -f`
      watch) — none of the existing evidence includes this, only the Xid line
      itself after the fact.
   3. Check NVIDIA's 595.x release notes for a documented Blackwell Xid 109
-     fix before changing anything.
+     fix before changing anything. The pinned Nixpkgs' `linuxPackages.nvidia_x11`
+     currently offers 595.71.05 as stable/latest/production, 595.45.04 as
+     beta, and 590.48.01 as new_feature.
   4. `open = false` (proprietary kernel modules) as a controlled A/B test —
-     easy to try, but confounds with (1) and (3) if done first; the open
-     module choice in `hardware/nvidia.nix` currently has a comment
-     asserting it is required for this PCI family, so verify that is still
-     accurate for the current driver before flipping it.
-  5. A different driver branch/version.
+     confounds with (1) and (3) if done first, and `hardware/nvidia.nix`'s own
+     comment ("NVIDIA lists this PCI family as requiring its open kernel
+     modules") says this will likely just fail to produce a working graphical
+     session rather than yield a usable comparison; confirm against current
+     NVIDIA documentation before spending time on it, and expect to revert
+     immediately either way.
+  5. A different driver branch/version (595.45.04 or 590.48.01 above).
 
   Change exactly one variable at a time and reproduce (or fail to) before
   trying the next, or a fix cannot be attributed. `docs/profiles.md` must be
