@@ -41,6 +41,30 @@
     "terminal.ansi.yellow": "#D6AD63",
     "error": "#D77A78",
     "warning": "#D6AD63",
-    "success": "@accent@"
+    "success": "@accent@",
+    "syntax": {
+      "title": { "color": "@accent@", "font_weight": 700 },
+      "emphasis": { "color": "@accentBright@", "font_style": "italic" },
+      "emphasis.strong": { "color": "#E4E8E5", "font_weight": 700 },
+      "link_text": { "color": "@accent@", "font_style": "italic" },
+      "link_uri": { "color": "@accentBright@" },
+      "punctuation.list_marker": { "color": "@accent@" },
+      "keyword": { "color": "@accent@" },
+      "preproc": { "color": "@accent@" },
+      "tag": { "color": "@accent@" },
+      "attribute": { "color": "@accentBright@" },
+      "string": { "color": "@accentBright@" },
+      "string.special": { "color": "@accentDeep@" },
+      "number": { "color": "@accentDeep@" },
+      "boolean": { "color": "@accentDeep@" },
+      "constant": { "color": "@accentDeep@" },
+      "function": { "color": "#E4E8E5" },
+      "variable": { "color": "#E4E8E5" },
+      "type": { "color": "@accentBright@" },
+      "comment": { "color": "#7E8981" },
+      "comment.doc": { "color": "#AEB8B1" },
+      "diff.plus": { "color": "@accent@" },
+      "diff.minus": { "color": "#D77A78" }
+    }
   }
 }

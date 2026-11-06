@@ -111,6 +111,10 @@ for name in names:
     overrides = zed_settings["experimental.theme_overrides"]
     assert overrides["text.accent"] == overrides["terminal.ansi.green"] == overrides["success"]
     assert len(overrides["border"]) == 7 and overrides["border"].startswith("#")
+    syntax = overrides["syntax"]
+    assert syntax["title"]["color"] == overrides["text.accent"]
+    assert syntax["keyword"]["color"] == overrides["text.accent"]
+    assert syntax["emphasis.strong"]["color"] == "#E4E8E5"
 # Fuzzel follows each theme rather than staying Fern.
 assert "prompt=5fa8a3ff" in (generated / "petrol/fuzzel.ini").read_text(encoding="utf-8")
 assert "95, 168, 163" in (generated / "petrol/steam.css").read_text(encoding="utf-8")
