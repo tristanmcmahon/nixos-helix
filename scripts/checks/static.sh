@@ -121,6 +121,7 @@ printf 'Validating the Helix theme family and merge fixtures...\n'
 python3 scripts/test-theme-settings.py
 python3 scripts/test-fan-commission.py
 python3 scripts/test-zed-agent-setup.py
+./scripts/test-wait-for-nas.sh
 
 ./scripts/reinstall/test-safety.sh
 ./scripts/reinstall/test-restore.sh

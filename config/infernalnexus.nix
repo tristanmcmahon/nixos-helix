@@ -13,6 +13,7 @@ in
   credentialsFile = "/etc/nixos/secrets/infernalnexus-smb";
   user = "tristan";
   group = "users";
+  smbPort = 445;
   smbVersion = "2.0";
   security = "ntlmssp";
   mountTimeout = "15s";

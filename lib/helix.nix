@@ -7,6 +7,17 @@
 
 let
   infernalnexus = import ../config/infernalnexus.nix;
+  waitForInfernalnexus = pkgs.writeShellApplication {
+    name = "helix-wait-for-nas";
+    runtimeInputs = with pkgs; [
+      bash
+      coreutils
+    ];
+    text = ''
+      nas_host=${lib.escapeShellArg infernalnexus.host}
+    ''
+    + builtins.readFile ../scripts/helix-wait-for-nas.sh;
+  };
 in
 {
   # Shell prologue for commands that take no arguments: --help describes the
@@ -53,6 +64,17 @@ in
           ${lib.escapeShellArg path}
       '';
     };
+
+  # ExecStartPre for an unattended unit that uses Infernalnexus. A resume from
+  # suspend fires every timer missed while asleep a few seconds before Wi-Fi is
+  # back, so wait (at most three minutes) for the SMB port before starting. The
+  # leading dash makes a NAS that never answers non-fatal: the job then runs
+  # once and reports its own, more precise, error, so this can delay a failure
+  # alert by the wait but never create or hide one. Retrying a failed run
+  # instead would not be bounded: a start limit only counts starts, so a slow
+  # failure (hamology's SSH to a NAS that is down) would loop forever and
+  # never alert.
+  waitForInfernalnexusCommand = "-${waitForInfernalnexus}/bin/helix-wait-for-nas ${toString infernalnexus.smbPort}";
 
   # Native mount and automount units for an Infernalnexus share. Native units
   # are static closure artifacts, unlike fstab-generated ones, so live

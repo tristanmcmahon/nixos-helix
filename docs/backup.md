@@ -72,10 +72,13 @@ rmdir backup   # fails, and says why, if anything is left behind
 The first run after the move prunes the repository to the two newest
 snapshots; the older daily, weekly and monthly snapshots are deleted for good.
 
-Until the password file exists the unit is skipped, not failed. If the NAS is
-offline the run still starts and fails, so it raises a desktop alert (see
-[operations.md](operations.md#failure-alerts)) and appears among failed units
-in `helix-health`; the next night tries again.
+Until the password file exists the unit is skipped, not failed. Both nightly
+backups first wait up to three minutes for the NAS to answer on its SMB port,
+because waking from suspend fires missed timers a few seconds before Wi-Fi is
+back. If the NAS is offline the run then starts anyway and fails, so it raises
+a desktop alert (see [operations.md](operations.md#failure-alerts)) and appears
+among failed units in `helix-health`; the next night tries again. They never
+restart themselves: a failed run alerts once instead of retrying out of sight.
 
 ## Restore drill
 

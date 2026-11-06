@@ -1,7 +1,8 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 
 let
   helix = import ../config/helix.nix;
+  helixLib = import ../lib/helix.nix { inherit lib pkgs; };
   infernalnexus = import ../config/infernalnexus.nix;
   nas = infernalnexus.shares.nas1.mountPoint;
   inherit (infernalnexus) backups;
@@ -63,6 +64,8 @@ in
     serviceConfig = {
       Nice = 19;
       IOSchedulingClass = "idle";
+      # See lib/helix.nix: no restart on failure, so a failed run alerts.
+      ExecStartPre = [ helixLib.waitForInfernalnexusCommand ];
     };
   };
 

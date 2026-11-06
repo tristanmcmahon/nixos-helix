@@ -88,6 +88,22 @@ assert builtins.all
     "nix-gc"
     "nix-optimise"
   ];
+# A resume from suspend fires missed backup timers before Wi-Fi is back. The
+# NAS backups wait a bounded time for the NAS, then run once. They must not
+# restart on failure: a start limit counts starts, not run time, so a slow
+# failure would retry forever and its alert would never fire.
+assert builtins.all
+  (
+    unit:
+    builtins.any (system.pkgs.lib.hasInfix "helix-wait-for-nas") (
+      system.pkgs.lib.toList config.systemd.services.${unit}.serviceConfig.ExecStartPre
+    )
+    && !(config.systemd.services.${unit}.serviceConfig ? Restart)
+  )
+  [
+    "restic-backups-helix"
+    "hamology-backup"
+  ];
 # NIX_PATH exposes the repository's pinned Nixpkgs, not a moving channel.
 assert builtins.elem "nixpkgs=${import ../../nixpkgs.nix}" config.nix.nixPath;
 # Routine backups go to the NAS, cover the unrecreatable state, and keep the

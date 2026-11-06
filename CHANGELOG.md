@@ -19,16 +19,15 @@ Release notes for Helix. Operating guides live in `docs/`.
 
 ### Fixed
 
-- The nightly backup and NAS mount popups after waking from suspend: a
-  resume fires every `Persistent` backup timer that was missed while asleep,
-  racing the few seconds Wi-Fi takes to reconnect. `hamology-backup` had no
-  retry of its own and lost that race every time; the NAS mount's default
-  systemd start-limit (5 attempts within 10s) could also be exhausted by the
-  burst of near-simultaneous automount requests, latching it `failed` until
-  a manual `systemctl reset-failed` + `start`. The mount's start-limit is
-  now wider, and both `hamology-backup.service` and
-  `restic-backups-helix.service` retry a few times before giving up and
-  raising an alert.
+- The nightly backups after waking from suspend: a resume fires every
+  `Persistent` backup timer missed while asleep, a few seconds before Wi-Fi
+  has reconnected, so `hamology-backup` failed every time. Both backup units
+  now wait up to three minutes for the NAS before starting (`helix-wait-for-nas`)
+  and then run once. They deliberately do not restart on failure: a start
+  limit counts starts, not run time, so a run that fails slowly would retry
+  forever and never raise its alert (`tests/invariants/core.nix` keeps it so).
+  The NAS mount's start-limit is unchanged until a failure log shows which
+  unit latches.
 
 ## v0.3.0-alpha.7
 
