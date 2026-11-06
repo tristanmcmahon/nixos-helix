@@ -98,3 +98,60 @@ here. What remains is narrower:
 
 - **`gzdoom` and `uzdoom`.** Both are still installed. Keep both, or only the
   successor fork.
+- **NVIDIA Xid 109 (`CTX SWITCH TIMEOUT`) under sustained Proton load.**
+  Unresolved; needs real investigation in this repo, not another per-game
+  workaround. `journalctl | grep "Xid (PCI"` shows 15 occurrences across 6
+  separate boots between 2026-10-07 and 2026-11-07, every one traced by PID
+  to either STAR WARS: Galactic Racer (appid 4078430) or Warhammer 40,000:
+  Space Marine 2 (appid 2183900) — see `docs/profiles.md`. One occurrence
+  (2026-10-07 21:18, boot `920bbe2b`) recurred within two minutes of a fresh
+  reboot taken specifically to clear the first one that same evening, so a
+  reboot alone does not fix it. This spans two unrelated engines (Unreal 5
+  vs Saber's own Swarm engine), two unrelated anti-cheat/online stacks (Epic
+  Online Services vs EasyAntiCheat), and three unrelated Proton builds
+  (Proton Experimental, Proton Hotfix and GE-Proton11-9 have all hit it on
+  Galactic Racer alone on different days) — ruling out a per-game, per-engine
+  or per-Proton-build cause. Every hit leaves the process, audio and GPU
+  submission alive — the GPU stays non-idle and the game keeps running —
+  but drawing stops permanently for that session: Space Marine 2's own menus
+  render fine first, so whatever triggers it is a specific heavy workload
+  partway into a session, not startup itself.
+
+  `hardware/nvidia.nix` runs the RTX 5080 (Blackwell) on NVIDIA's open
+  kernel modules (`open = true`) at the nixpkgs-stable driver pin (595.71.05
+  per `CHANGELOG.md`); Blackwell plus open kernel modules has a documented
+  history of scheduling instability elsewhere, which is the leading
+  hypothesis. Tried and confirmed **not** the cause on Galactic Racer:
+  `PROTON_ENABLE_NVAPI=0`; forcing ray tracing off
+  (`-noraytracing -execcmds="r.RayTracing 0"`). Confirmed working on Windows
+  on the same physical hardware, which points at the Linux driver stack
+  specifically rather than a hardware fault, though that is not conclusive
+  on its own.
+
+  Not yet tried, roughly in order of how much they'd narrow it down:
+  1. Whether a **native (non-Proton) Vulkan workload** can reproduce it —
+     this is the single biggest open question, since every occurrence so far
+     ran through Proton/Wine. `helix-benchmark gpu` (`vkmark`) is one
+     candidate; so is Steam's own `fossilize_replay`, which already runs
+     natively (no Wine involved) during every post-session shader-cache
+     write-back and submits a comparable burst of Vulkan pipeline work. If a
+     native workload reproduces the Xid, Proton/Wine/EOS/EAC are all cleared
+     and this becomes a pure driver/GPU question; if it never does, the
+     translation layer itself is implicated.
+  2. **Capture GPU state live through a reproduction** (`nvidia-smi -l 1`
+     logging temperature/clocks/power, or a persistent `journalctl -f`
+     watch) — none of the existing evidence includes this, only the Xid line
+     itself after the fact.
+  3. Check NVIDIA's 595.x release notes for a documented Blackwell Xid 109
+     fix before changing anything.
+  4. `open = false` (proprietary kernel modules) as a controlled A/B test —
+     easy to try, but confounds with (1) and (3) if done first; the open
+     module choice in `hardware/nvidia.nix` currently has a comment
+     asserting it is required for this PCI family, so verify that is still
+     accurate for the current driver before flipping it.
+  5. A different driver branch/version.
+
+  Change exactly one variable at a time and reproduce (or fail to) before
+  trying the next, or a fix cannot be attributed. `docs/profiles.md` must be
+  corrected to stop recommending GE-Proton for Galactic Racer if this is
+  ever actually fixed — right now it correctly says not to.

@@ -68,27 +68,34 @@ vanilla Fallout 4 instead of London, and the fix is copying
 into the prefix by hand (back up the existing `Fallout4.ini` first; leave
 `Fallout4Prefs.ini` alone since it holds shared display settings).
 
-STAR WARS: Galactic Racer (Steam appid 4078430) does not work on Helix.
-**Abandoned as of 2026-10-20; the notes below are a dead end, not a
-workaround** — nothing here gets the game to a playable state, so do not
-re-pin its compatibility tool on the strength of this entry alone. On its
-default Proton Hotfix build it dies silently after about two and a half
-minutes: its EOS Bootstrapper's `CreateProcessAsUser` call fails under Proton
+STAR WARS: Galactic Racer (Steam appid 4078430) does not work on Helix. Its
+default Proton Hotfix build dies silently after about two and a half
+minutes: the EOS Bootstrapper's `CreateProcessAsUser` call fails under Proton
 and falls back to a path that does not propagate the `EOS_SESSION_GUID`
 environment variable to the second EOS helper process it spawns
 (`EpicOnlineServicesUserHelper.exe --mode=stage`), which exits immediately
 (`EOS_SESSION_GUID environment variable is required`, code 9001) and leaves
 the game waiting on a handshake that never completes. Overriding the
 compatibility tool to GE-Proton avoids that specific failure but is *not* a
-fix: the title then hits an NVIDIA Xid 109 (`CTX SWITCH TIMEOUT`) within the
-first minute under both Proton Hotfix and GE-Proton11-9, and the game is
-equally unplayable either way — process, audio and EOS overlay stay alive
-and the GPU stays non-idle, but only the clear colour is ever presented, with
-no further draw calls landing. Neither `PROTON_ENABLE_NVAPI=0` nor forcing
-ray tracing off (`-noraytracing -execcmds="r.RayTracing 0"`) avoided it.
-Confirmed working on Windows. Helix's compatibility tool for this app has
-been left on the Proton Hotfix default; nothing above should be reapplied
-without new evidence.
+fix and should not be reapplied on the strength of this entry: the title
+then hits an NVIDIA Xid 109 (`CTX SWITCH TIMEOUT`) within the first minute,
+under Proton Experimental, Proton Hotfix and GE-Proton11-9 alike, and the
+game is equally unplayable either way — process, audio and EOS overlay stay
+alive and the GPU stays non-idle, but only the clear colour is ever
+presented, with no further draw calls landing. Neither
+`PROTON_ENABLE_NVAPI=0` nor forcing ray tracing off
+(`-noraytracing -execcmds="r.RayTracing 0"`) avoided it. Confirmed working on
+Windows on the same hardware. Helix's compatibility tool for this app has
+been left on the Proton Hotfix default.
+
+**This is not specific to Galactic Racer.** Warhammer 40,000: Space Marine 2
+(appid 2183900, EasyAntiCheat, Saber's own Swarm engine, Proton Experimental
+— a third, otherwise-unrelated stack) hits the identical Xid 109 symptom:
+its main menu renders fine, so the trigger is a specific heavy workload
+rather than startup, but loading into the game proper hangs the same way.
+Treat both of these as one open GPU/driver question, not two per-game bugs —
+the consolidated evidence and untried next steps are in `docs/roadmap.md`'s
+"Decisions needed".
 
 Setting `helix.gaming.enable = false` returns the configuration to the
 non-gaming workstation layer; emulation asserts that gaming is enabled.
