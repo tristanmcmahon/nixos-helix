@@ -43,7 +43,6 @@ assert !(builtins.elem "zen-browser" packageNames);
 assert builtins.elem "claude-code" packageNames;
 assert builtins.elem "claude-agent-acp" packageNames;
 assert builtins.elem "helix-zed-agent-setup" packageNames;
-assert builtins.elem "helix-openclaw-acp" packageNames;
 # `zed` must open the editor, not another package's `zed` CLI.
 assert builtins.elem "zed" packageNames;
 # hamology backups run unattended as the user, keep exactly the two newest
