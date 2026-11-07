@@ -206,18 +206,53 @@ here. What remains is narrower:
      for an actual Galactic Racer/Space Marine 2 hang. Every existing hang
      data point is still only the Xid line itself after the fact, with no
      temperature/clock/power trace leading into it.
-  3. Check NVIDIA's 595.x release notes for a documented Blackwell Xid 109
-     fix before changing anything. The pinned Nixpkgs' `linuxPackages.nvidia_x11`
-     currently offers 595.71.05 as stable/latest/production, 595.45.04 as
-     beta, and 590.48.01 as new_feature.
+  3. **Checked NVIDIA's 595.x release notes on 2026-11-08: this is a known,
+     NVIDIA-acknowledged bug, not something to wait on a future driver
+     for.** `NVIDIA/open-gpu-kernel-modules#1097` (GitHub) describes the
+     identical symptom — Xid 109 CTX SWITCH TIMEOUT on Blackwell
+     (RTX 5090/5080/5070 Ti/5060 Ti) under Proton, confirmed across driver
+     595.58.03 through at least 615.78.08 — and NVIDIA has assigned it
+     internal bug **6017526**. The 595.71.05 release notes themselves list
+     exactly one fix (an unrelated Wayland suspend/resume rendering bug), so
+     this was never silently fixed in the version Helix is pinned to. Root
+     cause per the issue and corroborating reports (vkd3d-proton
+     `HansKristian-Work/vkd3d-proton#2914`, CachyOS forum): **descriptor
+     heap exhaustion** in vkd3d-proton's classic code path on Blackwell —
+     which is also consistent with (1)'s native results, since neither
+     vkmark nor fossilize_replay exercises live DX12 descriptor-heap
+     allocation the way actual gameplay does.
+
+     **Untried, most promising next step**: set the Steam launch option
+     `VKD3D_CONFIG=descriptor_heap %command%` on Galactic Racer (and
+     separately on Space Marine 2, if it also uses vkd3d/DX12 — not yet
+     confirmed). This makes vkd3d-proton use the `VK_EXT_descriptor_heap`
+     path the 595 driver series added, and community reports confirm it
+     fixes the identical Xid 109 symptom on the same GPU class. A newer
+     driver (620.70.06, reported fixed) is far ahead of anything in the
+     current Nixpkgs pin (595.71.05/595.45.04/590.48.01), so this launch
+     option is the only available path short of waiting for Nixpkgs to
+     catch up. A secondary, lower-priority workaround for a *different*
+     root cause on older (Turing) hardware exists too
+     (`VKD3D_DISABLE_EXTENSIONS=VK_NV_raw_access_chains`, from
+     `NVIDIA/open-gpu-kernel-modules#1409`) — likely not relevant to
+     Blackwell, and it carries a performance regression; only worth trying
+     if `descriptor_heap` alone does not fully resolve it. This needs
+     Proton Experimental's bundled vkd3d-proton to actually include the
+     `VK_EXT_descriptor_heap` support (PR #2805) for the config key to do
+     anything rather than being silently ignored by an older build — not
+     yet checked.
   4. `open = false` (proprietary kernel modules) as a controlled A/B test —
-     confounds with (1) and (3) if done first, and `hardware/nvidia.nix`'s own
+     now lower priority than (3), since a likely root cause has already
+     been identified independent of the kernel module choice; confounds with
+     (1) and (3) if done first either way, and `hardware/nvidia.nix`'s own
      comment ("NVIDIA lists this PCI family as requiring its open kernel
      modules") says this will likely just fail to produce a working graphical
      session rather than yield a usable comparison; confirm against current
      NVIDIA documentation before spending time on it, and expect to revert
      immediately either way.
-  5. A different driver branch/version (595.45.04 or 590.48.01 above).
+  5. A different driver branch/version (595.45.04 or 590.48.01 above) —
+     also now lower priority than (3); none of the available pinned options
+     reach 620.70.06 regardless.
 
   Change exactly one variable at a time and reproduce (or fail to) before
   trying the next, or a fix cannot be attributed. `docs/profiles.md` must be

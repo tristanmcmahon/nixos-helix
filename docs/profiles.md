@@ -97,6 +97,11 @@ presented, with no further draw calls landing. Neither
 Windows on the same hardware. Helix's compatibility tool for this app has
 been left on the Proton Hotfix default.
 
+This matches a known, NVIDIA-acknowledged Blackwell bug (internal bug
+6017526, `NVIDIA/open-gpu-kernel-modules#1097`) with a documented, untried
+launch-option workaround — see `docs/roadmap.md`'s "Decisions needed" before
+reaching for a Proton change again.
+
 **This is not specific to Galactic Racer.** Warhammer 40,000: Space Marine 2
 (appid 2183900, EasyAntiCheat, Saber's own Swarm engine, Proton Experimental
 — a third, otherwise-unrelated stack) hits the identical Xid 109 symptom:
