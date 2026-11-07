@@ -23,8 +23,11 @@ is interleaved with the others. -s RUN resumes at that run number.
 Defaults: baseline:  heap:PROTON_VKD3D_HEAP=1  hvv:VKD3D_CONFIG=no_upload_hvv
 
 Quit Steam first, and select the Proton build to test in Steam. Play while it
-runs. Results go to ~/.local/state/helix/xid/: results.tsv and, per run, the
-telemetry, kernel log lines and a snapshot taken at the hang.
+runs, or leave it unattended: it holds off the screen lock and sleep, takes a
+first, middle and last screenshot of every run (spectacle), and writes a
+contact sheet, contact-sheet.html, beside the results. Results go to
+~/.local/state/helix/xid/: results.tsv and, per run, the telemetry, kernel log
+lines, screenshots and a snapshot taken at the hang.
 EOF
 }
 
@@ -33,6 +36,7 @@ die() {
   exit 1
 }
 
+original_args=("$@")
 minutes=12
 rounds=3
 appid=4078430
@@ -85,6 +89,17 @@ if [[ -z $baseline ]]; then
   printf 'Warning: no baseline variant (NAME:), so nothing can be compared.\n' >&2
 fi
 
+# An unattended sweep must not meet a locked or blank screen: run under KDE's
+# inhibitor, which holds off idle locking and sleep for as long as it lives.
+if [[ -z ${HELIX_XID_INHIBITED:-} ]]; then
+  export HELIX_XID_INHIBITED=1
+  if command -v kde-inhibit >/dev/null &&
+    timeout 10 kde-inhibit --power --screenSaver true >/dev/null 2>&1; then
+    exec kde-inhibit --power --screenSaver bash "$0" "${original_args[@]}"
+  fi
+  printf 'Warning: cannot inhibit idle and sleep; the screen may lock during a long sweep.\n' >&2
+fi
+
 for tool in nvidia-smi journalctl systemd-run systemctl steam pgrep; do
   command -v "$tool" >/dev/null || die "Missing command: $tool"
 done
@@ -99,6 +114,10 @@ cooldown=${COOLDOWN:-15}
 # The hang showed as 100% utilisation at 48-60 W (genuine load draws 200 W+).
 wedge_watts=${WEDGE_WATTS:-100}
 wedge_samples=${WEDGE_SAMPLES:-3}
+# Screenshots are few on purpose: a capture is GPU work in the compositor, and
+# this hunts a GPU hang. First once Steam is up, middle at half the time limit,
+# last at the end (at the hang itself when there is one).
+first_at=30
 sweep=$(date +%Y%m%d-%H%M%S)
 mkdir -p "$state/$sweep"
 driver=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -n 1)
@@ -107,16 +126,44 @@ bug_report=$(dirname "$(readlink -f "$(command -v nvidia-smi)")")/nvidia-bug-rep
 bug_report_done=0
 total=$((${#names[@]} * rounds))
 limit=$((minutes * 60))
+middle_at=$((limit / 2))
+((middle_at > first_at)) || middle_at=$((first_at + 1))
 smi_pid=''
 klog_pid=''
 current_scope=''
 
 can_sudo=0
+sudo_pid=''
 if sudo -v; then
   can_sudo=1
+  # Keep the credential alive for an unattended sweep; sudo forgets it after
+  # fifteen idle minutes, and the bug report is taken whenever a hang lands.
+  (while sleep 60; do sudo -n -v 2>/dev/null || exit 0; done) &
+  sudo_pid=$!
 else
   printf 'No sudo: the nvidia-bug-report capture will be skipped.\n'
 fi
+
+# Prove screenshots work now, while someone can still answer a permission
+# prompt, rather than discovering at the end that every frame is missing.
+can_grab=0
+probe=$state/$sweep/screenshot-test.jpg
+if ! command -v spectacle >/dev/null; then
+  printf 'SCREENSHOTS DISABLED: spectacle is not installed.\n'
+elif timeout 30 spectacle --background --nonotify --fullscreen --output "$probe" >/dev/null 2>&1 &&
+  [[ -s $probe ]]; then
+  can_grab=1
+  printf 'Screenshots: working.\n'
+else
+  printf 'SCREENSHOTS DISABLED: a test capture with spectacle failed.\n'
+fi
+rm -f "$probe"
+
+grab() {
+  ((can_grab)) || return 0
+  timeout 20 spectacle --background --nonotify --fullscreen --output "$1" >/dev/null 2>&1 ||
+    printf 'Screenshot failed (compositor busy or wedged): %s\n' "${1##*/}"
+}
 
 # PIDs inside a run's scope: exactly the processes Steam started for it.
 scope_pids() {
@@ -183,7 +230,7 @@ do_run() {
   local scope="helix-xid-$sweep-$run" dir fifo klog_fd launcher
   local line outcome='' started=$SECONDS now last_check=-1 last_status=$SECONDS
   local env_state=n/a proton='' sample prev_sample='' low_samples=0 wedge_warned=0
-  local util='' power='' clock='' temp='' elapsed
+  local util='' power='' clock='' temp='' elapsed shot_first=0 shot_middle=0
   dir=$state/$sweep/$(printf '%02d' "$run")-$name
   fifo=$dir/kernel.fifo
   mkdir -p "$dir"
@@ -229,6 +276,15 @@ do_run() {
       break
     fi
 
+    if ((shot_first == 0 && now - started >= first_at)); then
+      shot_first=1
+      grab "$dir/1-first.jpg"
+    fi
+    if ((shot_middle == 0 && now - started >= middle_at)); then
+      shot_middle=1
+      grab "$dir/2-middle.jpg"
+    fi
+
     # Precursor seen before the first captured hang: pegged utilisation at
     # far-too-low power. Informational only.
     sample=$(tail -n 1 "$dir/telemetry.csv" 2>/dev/null || true)
@@ -270,6 +326,7 @@ do_run() {
   [[ -n $outcome ]] || outcome=PASS
   elapsed=$((SECONDS - started))
   [[ $env_state != unchecked ]] || env_state=unverified
+  grab "$dir/3-last.jpg"
   [[ -n $proton ]] || proton=$(proton_of "$current_scope")
 
   if [[ $outcome == FAIL-* ]]; then
@@ -309,6 +366,7 @@ do_run() {
   fi
 
   record "$run" "$name" "$assign" "$outcome" "$elapsed" "$env_state" "$proton"
+  contact_sheet
   printf 'Run %s: %s after %ss (variable reached the game: %s)\n' "$run" "$outcome" "$elapsed" "$env_state"
 }
 
@@ -345,11 +403,88 @@ summary() {
   printf 'Full detail: %s/%s/\n' "$state" "$sweep"
 }
 
+esc() {
+  sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' -e 's/"/\&quot;/g'
+}
+
+# One row per run, one column per screenshot, written as a self-contained page
+# beside the images so it can be opened (or copied) as a whole directory. It is
+# rebuilt after every run, so a power cut leaves a usable partial sheet.
+contact_sheet() {
+  local root=$state/$sweep sheet run_dir run_no outcome seconds envs proton assign class slot
+  sheet=$root/contact-sheet.html
+  compgen -G "$root/[0-9][0-9]-*" >/dev/null || return 0
+  field() { # column
+    awk -F'\t' -v s="$sweep" -v r="$run_no" -v c="$1" '$1 == s && $2 == r { print $c }' \
+      "$state/results.tsv" 2>/dev/null || true
+  }
+  {
+    printf '<!doctype html>\n<meta charset="utf-8">\n<title>Xid sweep %s</title>\n' "$sweep"
+    cat <<'CSS'
+<style>
+body { font: 14px/1.4 system-ui, sans-serif; background: #121212; color: #ddd; margin: 16px; }
+pre { background: #1c1c1c; padding: 10px; overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+th, td { padding: 6px; vertical-align: top; text-align: left; }
+th { width: 17%; }
+img { width: 100%; height: auto; display: block; border: 3px solid #333; }
+tr.fail img { border-color: #d44; } tr.pass img { border-color: #3a6; }
+tr.invalid img { border-color: #cb3; }
+tr.fail th { color: #f88; } tr.pass th { color: #8d9; } tr.invalid th { color: #ec8; }
+td.none { color: #777; font-style: italic; }
+code { color: #9cf; }
+</style>
+CSS
+    printf '<h1>Xid sweep %s</h1>\n<p>Driver %s, kernel %s, app %s.</p>\n<pre>' \
+      "$sweep" "$driver" "$kernel" "$appid"
+    summary | esc
+    printf '</pre>\n<table>\n<tr><th>Run</th><th>First</th><th>Middle</th><th>Last</th></tr>\n'
+    for run_dir in "$root"/[0-9][0-9]-*/; do
+      [[ -d $run_dir ]] || continue
+      run_dir=${run_dir%/}
+      run_no=${run_dir##*/}
+      run_no=$((10#${run_no%%-*}))
+      outcome=$(field 5)
+      seconds=$(field 6)
+      envs=$(field 7)
+      assign=$(field 4)
+      proton=$(field 8)
+      class=other
+      case $outcome in
+      FAIL-*) class=fail ;;
+      PASS) class=pass ;;
+      *) ;;
+      esac
+      [[ $envs != MISSING ]] || class=invalid
+      printf '<tr class="%s"><th>Run %s<br>%s<br><code>%s</code><br>%s%s<br>variable reached the game: %s<br>%s</th>\n' \
+        "$class" "$run_no" "$(printf '%s' "${run_dir##*/}" | cut -c4- | esc)" \
+        "$(printf '%s' "${assign:-no variable}" | esc)" \
+        "$(printf '%s' "${outcome:-not finished}" | esc)" "${seconds:+ after ${seconds}s}" \
+        "$(printf '%s' "${envs:--}" | esc)" "$(printf '%s' "${proton##*/}" | esc)"
+      for slot in 1-first 2-middle 3-last; do
+        if [[ -s $run_dir/$slot.jpg ]]; then
+          printf '<td><a href="%s/%s.jpg"><img loading="lazy" src="%s/%s.jpg" alt="%s"></a></td>' \
+            "${run_dir##*/}" "$slot" "${run_dir##*/}" "$slot" "$slot"
+        else
+          printf '<td class="none">no frame</td>'
+        fi
+      done
+      printf '</tr>\n'
+    done
+    printf '</table>\n'
+  } >"$sheet"
+}
+
 finish() {
   [[ -z $smi_pid ]] || kill "$smi_pid" 2>/dev/null || true
   [[ -z $klog_pid ]] || kill "$klog_pid" 2>/dev/null || true
   [[ -z $current_scope ]] || systemctl --user stop "$current_scope" 2>/dev/null || true
+  [[ -z $sudo_pid ]] || kill "$sudo_pid" 2>/dev/null || true
   summary
+  contact_sheet
+  if [[ -s $state/$sweep/contact-sheet.html ]]; then
+    printf 'Contact sheet: %s\n' "$state/$sweep/contact-sheet.html"
+  fi
 }
 trap finish EXIT
 trap 'printf "\nInterrupted.\n"; exit 130' INT TERM
