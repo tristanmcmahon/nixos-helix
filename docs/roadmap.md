@@ -222,25 +222,35 @@ here. What remains is narrower:
      vkmark nor fossilize_replay exercises live DX12 descriptor-heap
      allocation the way actual gameplay does.
 
-     **Untried, most promising next step**: set the Steam launch option
-     `VKD3D_CONFIG=descriptor_heap %command%` on Galactic Racer (and
-     separately on Space Marine 2, if it also uses vkd3d/DX12 — not yet
-     confirmed). This makes vkd3d-proton use the `VK_EXT_descriptor_heap`
-     path the 595 driver series added, and community reports confirm it
-     fixes the identical Xid 109 symptom on the same GPU class. A newer
-     driver (620.70.06, reported fixed) is far ahead of anything in the
-     current Nixpkgs pin (595.71.05/595.45.04/590.48.01), so this launch
-     option is the only available path short of waiting for Nixpkgs to
-     catch up. A secondary, lower-priority workaround for a *different*
-     root cause on older (Turing) hardware exists too
-     (`VKD3D_DISABLE_EXTENSIONS=VK_NV_raw_access_chains`, from
+     **Tried on 2026-11-08: `VKD3D_CONFIG=descriptor_heap %command%` on
+     Galactic Racer (Proton Experimental) did not prevent it.** Hit the
+     identical Xid 109 again at 10:42:06, ~1 minute into the session,
+     visually confirmed (audio kept playing, screen went to the clear
+     colour) while watched live. This is the first occurrence with a GPU
+     telemetry trace leading into it (`nvidia-smi -l 1`, logged throughout
+     via a persistent journal watch): utilization was low and bursty
+     (7–40%) for the preceding ~50 seconds, then at 10:42:03 — 3 seconds
+     before the Xid — utilization jumped to and pegged at 100%, clocks
+     locked at max boost (2917 MHz), while power draw stayed at only
+     48–60 W, far below what genuine 100%-utilization work on this card
+     draws (200–300 W+). High reported utilization with anomalously low
+     power is consistent with the GPU spinning on an already-wedged context
+     switch for a few seconds before the driver's watchdog gives up and
+     logs the Xid, rather than a sudden failure with no warning.
+
+     This does not clear descriptor heap exhaustion as the cause: the
+     launch option only has an effect if Proton Experimental's bundled
+     vkd3d-proton actually implements `VK_EXT_descriptor_heap` (PR #2805) —
+     not yet confirmed, and if it does not, `VKD3D_CONFIG=descriptor_heap`
+     would have been silently ignored rather than tried and failed. Checking
+     the bundled vkd3d-proton version (`strings` the game's Proton
+     installation for a version string, or check Valve's Proton Experimental
+     changelog against when #2805 landed upstream) is the next step before
+     concluding this workaround doesn't help. A secondary, lower-priority
+     workaround for a *different* root cause on older (Turing) hardware
+     exists too (`VKD3D_DISABLE_EXTENSIONS=VK_NV_raw_access_chains`, from
      `NVIDIA/open-gpu-kernel-modules#1409`) — likely not relevant to
-     Blackwell, and it carries a performance regression; only worth trying
-     if `descriptor_heap` alone does not fully resolve it. This needs
-     Proton Experimental's bundled vkd3d-proton to actually include the
-     `VK_EXT_descriptor_heap` support (PR #2805) for the config key to do
-     anything rather than being silently ignored by an older build — not
-     yet checked.
+     Blackwell, and it carries a performance regression.
   4. `open = false` (proprietary kernel modules) as a controlled A/B test —
      now lower priority than (3), since a likely root cause has already
      been identified independent of the kernel module choice; confounds with
