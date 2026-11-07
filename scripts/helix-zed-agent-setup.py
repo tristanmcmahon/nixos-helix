@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Register the Nix-managed Claude Code ACP adapter as a Zed external agent.
+"""Register Helix-managed ACP agents in Zed user settings.
 
 Zed ignores `agent_servers` in project-local settings, so this explicit,
-user-run helper edits only that key in the user's settings file. The command is
-PATH-resolved deliberately: an absolute /nix/store path would break after the
-generation that supplied it is garbage-collected.
+user-run helper edits only that key in the user's settings file. Commands are
+PATH-resolved deliberately: absolute /nix/store paths would break after the
+generation that supplied them is garbage-collected.
 """
 
 import datetime
@@ -14,8 +14,10 @@ import pathlib
 import sys
 import tempfile
 
-AGENT_NAME = "Claude Code"
-AGENT = {"type": "custom", "command": "claude-agent-acp", "args": []}
+AGENTS = {
+    "Claude Code": {"type": "custom", "command": "claude-agent-acp", "args": []},
+    "OpenClaw ACP": {"type": "custom", "command": "helix-openclaw-acp", "args": []},
+}
 
 
 def strip_jsonc(text):
@@ -78,8 +80,8 @@ def configure(settings_file):
         servers = settings.get("agent_servers", {})
         if not isinstance(servers, dict):
             raise SystemExit(f"Refusing to replace non-object agent_servers in {settings_file}")
-        if servers.get(AGENT_NAME) == AGENT:
-            print(f"{AGENT_NAME} is already configured in {settings_file}")
+        if all(servers.get(name) == agent for name, agent in AGENTS.items()):
+            print(f"Helix ACP agents are already configured in {settings_file}")
             return None
         stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         backup = settings_file.with_name(f"{settings_file.name}.{stamp}.bak")
@@ -89,7 +91,9 @@ def configure(settings_file):
             counter += 1
         backup.write_text(original, encoding="utf-8")
 
-    settings.setdefault("agent_servers", {})[AGENT_NAME] = AGENT
+    servers = settings.setdefault("agent_servers", {})
+    for name, agent in AGENTS.items():
+        servers[name] = agent
     descriptor, temporary = tempfile.mkstemp(dir=settings_file.parent, prefix=".settings.", suffix=".json")
     try:
         with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
@@ -102,7 +106,7 @@ def configure(settings_file):
         pathlib.Path(temporary).unlink(missing_ok=True)
         raise
 
-    print(f"Configured {AGENT_NAME} in {settings_file}")
+    print(f"Configured {', '.join(AGENTS)} in {settings_file}")
     if backup is not None:
         print(f"Previous settings backed up at {backup} (comments are kept only there)")
     return backup
@@ -111,7 +115,7 @@ def configure(settings_file):
 def main(argv):
     if len(argv) == 2 and argv[1] in ("--help", "-h"):
         print("Usage: helix-zed-agent-setup")
-        print("Register the Nix-managed Claude Code ACP adapter in Zed's user settings.")
+        print("Register the Helix-managed Claude Code and OpenClaw ACP agents in Zed user settings.")
         return 0
     if len(argv) > 1:
         print("Usage: helix-zed-agent-setup (takes no arguments; see --help)", file=sys.stderr)
