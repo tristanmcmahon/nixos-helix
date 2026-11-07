@@ -28,7 +28,10 @@ with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.S
     # A missing file is created without a backup.
     assert MODULE.configure(settings) is None
     created = json.loads(settings.read_text())
-    assert created == {"agent_servers": MODULE.AGENTS}
+    assert created == {
+        "agent_servers": MODULE.AGENTS,
+        "context_servers": MODULE.CONTEXT_SERVERS,
+    }
 
     # Re-running on a configured file changes nothing and creates no backup.
     assert MODULE.configure(settings) is None
@@ -36,7 +39,15 @@ with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.S
 
     # Real Zed settings are JSONC; other keys and agents are preserved and
     # every run keeps its own backup of the original bytes.
-    original = '// user settings\n{\n  "theme": "One Dark", // inline\n  "agent_servers": {"Other": {"command": "x"},},\n}\n'
+    original = (
+        '// user settings\n{\n'
+        '  "theme": "One Dark", // inline\n'
+        '  "agent_servers": {\n'
+        '    "Other": {"command": "x"},\n'
+        '    "OpenClaw ACP": {"type": "custom", "command": "helix-openclaw-acp", "args": []},\n'
+        '  },\n'
+        '}\n'
+    )
     settings.write_text(original)
     settings.chmod(0o600)
     first_backup = MODULE.configure(settings)
@@ -45,10 +56,11 @@ with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.S
     assert updated["theme"] == "One Dark"
     assert updated["agent_servers"]["Other"] == {"command": "x"}
     assert updated["agent_servers"]["Claude Code"]["command"] == "claude-agent-acp"
-    assert updated["agent_servers"]["OpenClaw ACP"] == {
-        "type": "custom",
-        "command": "helix-openclaw-acp",
+    assert "OpenClaw ACP" not in updated["agent_servers"]
+    assert updated["context_servers"]["OpenClaw"] == {
+        "command": "helix-openclaw-mcp",
         "args": [],
+        "env": {},
     }
     assert "/nix/store" not in settings.read_text()
     assert settings.stat().st_mode & 0o777 == 0o600
@@ -59,7 +71,7 @@ with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.S
     assert first_backup.read_text() == original
 
     # Unparseable or wrongly shaped settings are refused untouched.
-    for bad in ['{"theme": ', "[]", '{"agent_servers": []}']:
+    for bad in ['{"theme": ', "[]", '{"agent_servers": []}', '{"context_servers": []}']:
         settings.write_text(bad)
         try:
             MODULE.configure(settings)
