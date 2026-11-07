@@ -21,7 +21,6 @@ let
   openclawAcp = pkgs.writeShellApplication {
     name = "helix-openclaw-acp";
     runtimeInputs = [
-      pkgs.coreutils
       pkgs.gnugrep
       pkgs.openclaw
     ];
