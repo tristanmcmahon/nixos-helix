@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Register Helix-managed ACP agents in Zed user settings.
+"""Register Helix-managed agents and MCP servers in Zed user settings.
 
-Zed ignores `agent_servers` in project-local settings, so this explicit,
-user-run helper edits only that key in the user's settings file. Commands are
-PATH-resolved deliberately: absolute /nix/store paths would break after the
-generation that supplied them is garbage-collected.
+Zed keeps external agents and MCP servers in user settings. This explicit,
+user-run helper edits only the managed entries in `agent_servers` and
+`context_servers`. Commands are PATH-resolved deliberately: absolute
+/nix/store paths would break after the generation that supplied them is
+garbage-collected.
 """
 
 import datetime
