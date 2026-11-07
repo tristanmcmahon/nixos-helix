@@ -223,32 +223,55 @@ here. What remains is narrower:
      allocation the way actual gameplay does.
 
      **Tried on 2026-11-08: `VKD3D_CONFIG=descriptor_heap %command%` on
-     Galactic Racer (Proton Experimental) did not prevent it.** Hit the
-     identical Xid 109 again at 10:42:06, ~1 minute into the session,
-     visually confirmed (audio kept playing, screen went to the clear
-     colour) while watched live. This is the first occurrence with a GPU
-     telemetry trace leading into it (`nvidia-smi -l 1`, logged throughout
-     via a persistent journal watch): utilization was low and bursty
-     (7–40%) for the preceding ~50 seconds, then at 10:42:03 — 3 seconds
-     before the Xid — utilization jumped to and pegged at 100%, clocks
-     locked at max boost (2917 MHz), while power draw stayed at only
-     48–60 W, far below what genuine 100%-utilization work on this card
-     draws (200–300 W+). High reported utilization with anomalously low
-     power is consistent with the GPU spinning on an already-wedged context
-     switch for a few seconds before the driver's watchdog gives up and
-     logs the Xid, rather than a sudden failure with no warning.
+     Galactic Racer did not prevent it — and this time the compatibility
+     tool was actually Proton Hotfix, not Proton Experimental as first
+     recorded here; corrected.** Hit the identical Xid 109 again at
+     10:42:06, ~1 minute into the session, visually confirmed (audio kept
+     playing, screen went to the clear colour) while watched live. First
+     occurrence with a GPU telemetry trace leading into it (`nvidia-smi
+     -l 1`, logged throughout via a persistent journal watch): utilization
+     was low and bursty (7–40%) for the preceding ~50 seconds, then at
+     10:42:03 — 3 seconds before the Xid — utilization jumped to and
+     pegged at 100%, clocks locked at max boost (2917 MHz), while power
+     draw stayed at only 48–60 W, far below what genuine 100%-utilization
+     work on this card draws (200–300 W+). High reported utilization with
+     anomalously low power is consistent with the GPU spinning on an
+     already-wedged context switch for a few seconds before the driver's
+     watchdog gives up and logs the Xid, rather than a sudden failure with
+     no warning.
 
-     This does not clear descriptor heap exhaustion as the cause: the
-     launch option only has an effect if Proton Experimental's bundled
-     vkd3d-proton actually implements `VK_EXT_descriptor_heap` (PR #2805) —
-     not yet confirmed, and if it does not, `VKD3D_CONFIG=descriptor_heap`
-     would have been silently ignored rather than tried and failed. Checking
-     the bundled vkd3d-proton version (`strings` the game's Proton
-     installation for a version string, or check Valve's Proton Experimental
-     changelog against when #2805 landed upstream) is the next step before
-     concluding this workaround doesn't help. A secondary, lower-priority
-     workaround for a *different* root cause on older (Turing) hardware
-     exists too (`VKD3D_DISABLE_EXTENSIONS=VK_NV_raw_access_chains`, from
+     **Confirmed this was a real test, not a silent no-op: `#2805` was a
+     closed, never-merged "bringup" prototype, but descriptor-heap support
+     was later productized through many subsequent phases and genuinely
+     merged (`#3046`, "Descriptor heap - Phase 15/16", 2026-05-27).** The
+     vkd3d-proton actually bundled in this Proton Hotfix build is commit
+     `2230755878b0` (2026-10-06, well after that merge) —
+     `files/lib/wine/vkd3d-proton/version` inside the Proton install gives
+     this directly, no guessing needed. `strings` on the real implementation
+     DLL (`d3d12core.dll`, not the `d3d12.dll` stub — confirmed by finding
+     `VKD3D_CONFIG` references only in the former) shows the literal string
+     `descriptor_heap` alongside other known-real config flags
+     (`force_static_cbv`, `single_queue`, `no_upload_hvv`,
+     `skip_driver_workarounds`), plus a genuine runtime log format string,
+     `"VK_EXT_descriptor_heap enabled (%zu / %zu size, raw uav counter
+     %s)."` — this build recognizes and can enable the extension. So the
+     negative result stands: descriptor-heap exhaustion in vkd3d-proton's
+     classic path, at least as fixed by this config flag, is **not** what
+     caused this specific occurrence.
+
+     This build being from October also means it near-certainly already
+     includes vkd3d-proton 2.9's separate, earlier driver workaround for
+     concurrent-queue-submission/timeline-semaphore Xid 109 cases (which
+     predates the descriptor-heap work and fixed a different subset of
+     occurrences in many titles) — so that avenue is also most likely
+     already in play, not a fresh one to try. What's left genuinely untried:
+     the driver-level fix some reports attribute to 620.70.06, which is far
+     beyond anything in the current Nixpkgs pin, and the possibility that
+     this specific hang (unlike Crimson Desert's) has a different root cause
+     entirely that neither known vkd3d-proton mitigation addresses. A
+     secondary, lower-priority workaround for a *different* root cause on
+     older (Turing) hardware exists too
+     (`VKD3D_DISABLE_EXTENSIONS=VK_NV_raw_access_chains`, from
      `NVIDIA/open-gpu-kernel-modules#1409`) — likely not relevant to
      Blackwell, and it carries a performance regression.
   4. `open = false` (proprietary kernel modules) as a controlled A/B test —
