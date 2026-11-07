@@ -29,7 +29,7 @@ publishing tools.
 `profiles/development.nix` is an explicit enable/disable boundary for editors,
 GitHub publishing tools, Codex, Claude Code and its Zed ACP adapter, compilers,
 runtimes, the Nix language server and formatter, and ShellCheck. The
-`helix-zed-agent-setup` helper also registers the OpenClaw ACP bridge supplied
+`helix-zed-agent-setup` helper also registers the OpenClaw MCP bridge supplied
 by `services/openclaw.nix`, keeping OpenClaw runtime ownership with the service
 rather than duplicating it in the development profile. It remains separate even
 though it currently adds no system service policy.
