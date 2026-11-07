@@ -28,7 +28,7 @@ with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.S
     # A missing file is created without a backup.
     assert MODULE.configure(settings) is None
     created = json.loads(settings.read_text())
-    assert created == {"agent_servers": {"Claude Code": MODULE.AGENT}}
+    assert created == {"agent_servers": MODULE.AGENTS}
 
     # Re-running on a configured file changes nothing and creates no backup.
     assert MODULE.configure(settings) is None
@@ -45,6 +45,11 @@ with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.S
     assert updated["theme"] == "One Dark"
     assert updated["agent_servers"]["Other"] == {"command": "x"}
     assert updated["agent_servers"]["Claude Code"]["command"] == "claude-agent-acp"
+    assert updated["agent_servers"]["OpenClaw ACP"] == {
+        "type": "custom",
+        "command": "helix-openclaw-acp",
+        "args": [],
+    }
     assert "/nix/store" not in settings.read_text()
     assert settings.stat().st_mode & 0o777 == 0o600
 

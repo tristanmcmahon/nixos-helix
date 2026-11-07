@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 
 let
   helix = import ../config/helix.nix;
@@ -14,6 +14,23 @@ let
   ];
   emulationDirectory = "/mnt/games_nvme/emulation";
   secretFile = "${helix.configHome}/openclaw/gateway.env";
+
+  # Zed and other ACP clients run outside the Gateway unit, so they do not
+  # inherit its EnvironmentFile or OPENCLAW_* state paths. Keep the adapter
+  # thin: inject those Helix-owned paths, then let OpenClaw own the protocol.
+  openclawAcp = pkgs.writeShellApplication {
+    name = "helix-openclaw-acp";
+    runtimeInputs = [
+      pkgs.gnugrep
+      pkgs.openclaw
+    ];
+    text = ''
+      export HELIX_OPENCLAW_SECRET_FILE=${lib.escapeShellArg secretFile}
+      export HELIX_OPENCLAW_STATE_DIR=${lib.escapeShellArg stateDirectory}
+      export HELIX_OPENCLAW_CONFIG_PATH=${lib.escapeShellArg runtimeConfigFile}
+    ''
+    + builtins.readFile ../scripts/helix-openclaw-acp.sh;
+  };
 
   openclawConfig = (pkgs.formats.json { }).generate "openclaw.json" {
     gateway = {
@@ -69,6 +86,8 @@ let
 in
 {
   helix.health.criticalUserUnits = [ "openclaw-gateway.service" ];
+
+  environment.systemPackages = [ openclawAcp ];
 
   systemd.user.services.openclaw-gateway = {
     description = "OpenClaw local gateway";
