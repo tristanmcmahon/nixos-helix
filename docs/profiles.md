@@ -43,7 +43,9 @@ ProtonPlus, Protontricks, MangoHud, GOverlay, and the repository-owned Doom
 tooling are present, as is Heroic for the GOG copies of Fallout 4 and Fallout
 London; `helix-fallout-london-setup` points Heroic's install and prefix
 directories at a data SSD (`--ssd a|b|c`, default `a`) and prints the
-remaining in-Heroic steps. Lutris and a general Wine package remain absent.
+remaining in-Heroic steps. Lutris and winetricks are present for Battle.net,
+which Blizzard ships no native Linux client for; a general system-wide Wine
+package remains absent, since Lutris manages its own runner (see below).
 
 Fallout 4 and Fallout London must share one Wine prefix. Heroic's install
 dialog can silently reset a game's prefix to its own per-title default, so
@@ -67,6 +69,13 @@ vanilla Fallout 4 instead of London, and the fix is copying
 `Fallout London/__AppData/Plugins.txt` and `Fallout London/__Config/Fallout4.ini`
 into the prefix by hand (back up the existing `Fallout4.ini` first; leave
 `Fallout4Prefs.ini` alone since it holds shared display settings).
+
+Battle.net (the Blizzard launcher) and World of Warcraft installs, Wine
+prefixes, and account authentication are Lutris-managed mutable state under
+`~/.local/share/lutris` and `~/Games`, like Heroic's and Steam's own state;
+none of it is Nix-managed, downloaded at build time, or committed to the
+repository. See `docs/battlenet.md` for installation, launch, updates,
+troubleshooting and rollback.
 
 STAR WARS: Galactic Racer (Steam appid 4078430) does not work on Helix. Its
 default Proton Hotfix build dies silently after about two and a half

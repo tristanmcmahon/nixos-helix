@@ -31,6 +31,8 @@ assert builtins.elem "helix-fallout-london-setup" packageNames;
 assert builtins.elem "protonplus" packageNames;
 assert builtins.elem "protontricks" packageNames;
 assert builtins.elem "goverlay" packageNames;
+assert builtins.elem "lutris" packageNames;
+assert builtins.elem "winetricks" packageNames;
 assert builtins.elem "nix-output-monitor" packageNames;
 assert builtins.elem "nvd" packageNames;
 assert builtins.elem "helix-health" packageNames;

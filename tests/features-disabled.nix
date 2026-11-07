@@ -31,6 +31,7 @@ assert absent "claude-code" && absent "codex" && absent "vscode" && absent "gcc-
 # gaming
 assert !config.programs.steam.enable && !config.hardware.graphics.enable32Bit;
 assert !(config.systemd.services ? helix-doom-storage) && absent "gzdoom";
+assert absent "lutris" && absent "winetricks";
 # local LLM
 assert !config.services.ollama.enable && !(config.systemd.services ? helix-ollama-model-storage);
 # emulation

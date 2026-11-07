@@ -107,6 +107,14 @@ in
       falloutLondonSetup
       gzdoom
       heroic
+      # Lutris for Battle.net: Blizzard ships no native Linux client, and
+      # Lutris's maintained community installer is the standard path. Lutris
+      # manages its own Wine runner (fetched to ~/.local/share/lutris on
+      # first use, never the Nix store or build time), so no separate Wine
+      # package is installed here; winetricks is the one dependency Lutris
+      # genuinely needs from outside its own runner management.
+      lutris
+      winetricks
       mangohud
       protonplus
       protontricks
