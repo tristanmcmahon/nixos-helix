@@ -41,6 +41,9 @@ fi
 [[ -x $system_closure/sw/bin/claude ]]
 [[ -x $system_closure/sw/bin/claude-agent-acp ]]
 [[ -x $system_closure/sw/bin/helix-zed-agent-setup ]]
+[[ -x $system_closure/sw/bin/helix-openclaw-acp ]]
+openclaw_acp_usage=$("$system_closure/sw/bin/helix-openclaw-acp" --help)
+grep -qF 'Run OpenClaw ACP against the Helix loopback Gateway' <<<"$openclaw_acp_usage"
 [[ -x $system_closure/sw/bin/zed ]]
 [[ -x $system_closure/sw/bin/ollama ]]
 [[ -x $system_closure/sw/bin/helix-ollama-update-models ]]
