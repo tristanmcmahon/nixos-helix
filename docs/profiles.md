@@ -98,9 +98,9 @@ Windows on the same hardware. Helix's compatibility tool for this app has
 been left on the Proton Hotfix default.
 
 This matches a known, NVIDIA-acknowledged Blackwell bug (internal bug
-6017526, `NVIDIA/open-gpu-kernel-modules#1097`) with a documented, untried
-launch-option workaround — see `docs/roadmap.md`'s "Decisions needed" before
-reaching for a Proton change again.
+6017526, `NVIDIA/open-gpu-kernel-modules#1097`). See `docs/xid109.md` for
+the full case file, including a tried-and-ruled-out launch-option
+workaround, before reaching for a Proton change again.
 
 **This is not specific to Galactic Racer.** Warhammer 40,000: Space Marine 2
 (appid 2183900, EasyAntiCheat, Saber's own Swarm engine, Proton Experimental
@@ -108,8 +108,7 @@ reaching for a Proton change again.
 its main menu renders fine, so the trigger is a specific heavy workload
 rather than startup, but loading into the game proper hangs the same way.
 Treat both of these as one open GPU/driver question, not two per-game bugs —
-the consolidated evidence and untried next steps are in `docs/roadmap.md`'s
-"Decisions needed".
+the consolidated evidence and untried next steps are in `docs/xid109.md`.
 
 Setting `helix.gaming.enable = false` returns the configuration to the
 non-gaming workstation layer; emulation asserts that gaming is enabled.

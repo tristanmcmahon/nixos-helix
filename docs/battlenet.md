@@ -76,9 +76,8 @@ the rest of the system on a normal NixOS rebuild.
 - **A game hangs with no further draw calls, but the process and GPU stay
   alive.** Check `journalctl -k | grep Xid` for an NVIDIA Xid 109 — this is a
   known, unresolved, cross-title GPU/driver issue on this hardware, not
-  specific to Battle.net or any single game. See `docs/roadmap.md`'s
-  "Decisions needed" for the full case file before assuming a new,
-  WoW-specific cause.
+  specific to Battle.net or any single game. See `docs/xid109.md` for the
+  full case file before assuming a new, WoW-specific cause.
 
 ## Rollback
 

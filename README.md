@@ -116,12 +116,15 @@ for disaster recovery and any deliberately planned future reinstall; see
 - [Infernalnexus NAS](docs/nas.md)
 - [NAS-first emulation](docs/emulation.md)
 - [Profiles and package boundaries](docs/profiles.md)
+- [Battle.net and World of Warcraft via Lutris](docs/battlenet.md)
 - [Local development](docs/local-development.md)
 - [Graphite + Fern appearance](docs/theme.md)
 - [Health, updates, Nixpkgs and OpenClaw pins, GC, and memory](docs/operations.md)
 - [Media applications](docs/media.md)
+- [Self-benchmarking](docs/benchmarking.md)
 - [Custom package pins](docs/custom-packages.md)
 - [1Password integration](docs/onepassword.md)
+- [NVIDIA Xid 109 case file](docs/xid109.md)
 - [Evaluation and consolidation roadmap](docs/roadmap.md)
 
 Repository branch hygiene is deliberately conservative. Preview branches that are
