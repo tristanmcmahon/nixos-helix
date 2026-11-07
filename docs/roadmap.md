@@ -161,28 +161,27 @@ here. What remains is narrower:
   specifically rather than a hardware fault, though that is not conclusive
   on its own.
 
-  Not yet tried, roughly in order of how much they'd narrow it down:
-  1. Whether a **native (non-Proton) Vulkan workload** can reproduce it —
-     this is the single biggest open question, since every occurrence so far
-     ran through Proton/Wine. `helix-benchmark gpu` (`vkmark`) is one
-     candidate; so is Steam's own `fossilize_replay`, which already runs
-     natively (no Wine involved) during every post-session shader-cache
-     write-back and submits a comparable burst of Vulkan pipeline work. If a
-     native workload reproduces the Xid, Proton/Wine/EOS/EAC are all cleared
-     and this becomes a pure driver/GPU question; if it never does, the
-     translation layer itself is implicated. **Not actually attempted yet
-     despite one try on 2026-11-07**: `vkmark` is only on `helix-benchmark`'s
-     own wrapped `PATH`, not a system-wide command, so a bare `vkmark
-     --run-forever` call failed instantly with "command not found" (exit
-     127) and the GPU telemetry taken alongside it shows idle power/clocks
-     the whole time — no load was ever generated. Use the full `/nix/store`
-     path (read it from `grep '^export PATH=' "$(readlink -f "$(command -v
-     helix-benchmark)")"`) or run `helix-benchmark gpu` itself for a real
-     attempt.
-  2. **Capture GPU state live through a reproduction** (`nvidia-smi -l 1`
-     logging temperature/clocks/power, or a persistent `journalctl -f`
-     watch) — none of the existing evidence includes this, only the Xid line
-     itself after the fact.
+  1. **Native (non-Proton) Vulkan workload, attempted on 2026-11-07: did
+     not reproduce it.** `vkmark --present-mode immediate --run-forever` ran
+     for a full 10 minutes (confirmed real this time by its own `timeout`
+     wrapper exiting 124, not instantly; the first attempt the same day used
+     a bare `vkmark` with no store path and never actually ran — see
+     `CHANGELOG.md`/git history), with `nvidia-smi -l 1` telemetry logging
+     throughout. No Xid, no thermal or clock anomaly (peaked at 57°C). This
+     is one data point, not conclusive on its own: vkmark's workload is a
+     simpler, more repetitive scene set than Unreal 5 or Saber's Swarm
+     engine under Proton, so it does not rule out that some native workload
+     could still trigger it, only that this particular one did not in this
+     window. It does shift weight slightly toward the translation layer
+     (Proton/Wine/EOS/EAC) over a pure driver/GPU fault. Steam's own
+     `fossilize_replay` (native, runs during every post-session shader-cache
+     write-back) remains an untried native candidate closer to real game
+     Vulkan usage patterns than a synthetic benchmark.
+  2. **Capture GPU state live through a reproduction under Proton** — done
+     alongside (1) only for the non-reproducing native case; still not done
+     for an actual Galactic Racer/Space Marine 2 hang. Every existing hang
+     data point is still only the Xid line itself after the fact, with no
+     temperature/clock/power trace leading into it.
   3. Check NVIDIA's 595.x release notes for a documented Blackwell Xid 109
      fix before changing anything. The pinned Nixpkgs' `linuxPackages.nvidia_x11`
      currently offers 595.71.05 as stable/latest/production, 595.45.04 as
