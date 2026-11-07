@@ -15,6 +15,196 @@ let
   emulationDirectory = "/mnt/games_nvme/emulation";
   secretFile = "${helix.configHome}/openclaw/gateway.env";
 
+  # Zed and other ACP clients run outside the Gateway service, so they do not
+  # inherit its EnvironmentFile or OPENCLAW_* state paths. This thin adapter
+  # supplies the same runtime context without copying the secret into editor
+  # settings or command-line arguments.
+  openclawAcp = pkgs.writeShellApplication {
+    name = "helix-openclaw-acp";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.gnugrep
+      pkgs.openclaw
+    ];
+    text = ''
+      if [[ ${1:-} == --help || ${1:-} == -h ]]; then
+        printf '%s\n' \
+          'Usage: helix-openclaw-acp [OPENCLAW-ACP-ARGS...]' \
+          'Run OpenClaw ACP against the Helix loopback Gateway using its existing runtime state and token.'
+        exit 0
+      fi
+
+      secret_file=${lib.escapeShellArg secretFile}
+      if [[ ! -r $secret_file ]]; then
+        printf 'OpenClaw Gateway secret is not readable: %s\n' "$secret_file" >&2
+        exit 1
+      fi
+
+      token_line=$(grep -m1 -E '^[[:space:]]*OPENCLAW_GATEWAY_TOKEN=' "$secret_file" || true)
+      if [[ -z $token_line ]]; then
+        printf 'OPENCLAW_GATEWAY_TOKEN is missing from %s\n' "$secret_file" >&2
+        exit 1
+      fi
+      token=${token_line#*=}
+      token=${token% (pkgs.formats.json { }).generate "openclaw.json" {
+    gateway = {
+      mode = "local";
+      bind = "loopback";
+      auth.mode = "token";
+    };
+
+    models = {
+      mode = "replace";
+      pricing.enabled = false;
+      providers.ollama = {
+        baseUrl = "http://127.0.0.1:11434";
+        apiKey = "ollama-local";
+        api = "ollama";
+        timeoutSeconds = 300;
+        contextWindow = 32768;
+        contextTokens = 32768;
+        models = [
+          {
+            id = "gpt-oss:20b";
+            name = "gpt-oss:20b";
+            reasoning = true;
+            input = [ "text" ];
+            contextWindow = 32768;
+            contextTokens = 32768;
+            params.num_ctx = 32768;
+          }
+        ];
+      };
+    };
+
+    agents.defaults = {
+      workspace = workspaceDirectory;
+      model.primary = "ollama/gpt-oss:20b";
+    };
+
+    tools = {
+      # The service sandbox below is the filesystem boundary: only OpenClaw's
+      # state, the Helix repository, and the SSD emulation tree are writable.
+      # Infernalnexus is read-only inside this sandbox; outside it, only the
+      # ROM share is mounted read-only. This lets the agent inspect real machine state
+      # and edit the declarative configuration without granting host-wide
+      # writes.
+      fs.workspaceOnly = false;
+      exec = {
+        security = "allowlist";
+        ask = "always";
+      };
+      elevated.enabled = false;
+    };
+  };
+in
+{
+  helix.health.criticalUserUnits = [ "openclaw-gateway.service" ];
+
+  environment.systemPackages = [ openclawAcp ];
+
+  systemd.user.services.openclaw-gateway = {
+    description = "OpenClaw local gateway";
+    wantedBy = [ "default.target" ];
+    after = [ "network.target" ];
+
+    unitConfig.ConditionUser = helix.user;
+
+    environment = {
+      HOME = helix.home;
+      # OpenClaw writes a last-known-good backup beside its config, which fails
+      # with EROFS when the config is read directly from /nix/store. Each start
+      # copies the generated config into the state directory, so Nix remains
+      # authoritative and any runtime edit is discarded on the next start.
+      OPENCLAW_CONFIG_PATH = runtimeConfigFile;
+      OPENCLAW_STATE_DIR = stateDirectory;
+
+      # OpenClaw's current plugin boundary checks explicitly recognize immutable
+      # /nix/store package roots only in Nix mode. Without this, normal Nix store
+      # hardlinks can be rejected as unsafe bundled plugin surfaces.
+      OPENCLAW_NIX_MODE = "1";
+    };
+
+    serviceConfig = {
+      Type = "simple";
+      ExecStartPre = [
+        "${pkgs.coreutils}/bin/mkdir -p ${workspaceDirectory}"
+        "${pkgs.coreutils}/bin/install -D -m 0600 ${openclawConfig} ${runtimeConfigFile}"
+      ];
+      ExecStart = "${pkgs.openclaw}/bin/openclaw gateway run";
+      EnvironmentFile = secretFile;
+      Restart = "on-failure";
+      RestartSec = "5s";
+
+      StateDirectory = "openclaw";
+      StateDirectoryMode = "0700";
+      ConfigurationDirectory = "openclaw";
+      ConfigurationDirectoryMode = "0700";
+
+      NoNewPrivileges = true;
+      PrivateDevices = true;
+      PrivateTmp = true;
+      ProtectClock = true;
+      ProtectControlGroups = true;
+      ProtectHome = "tmpfs";
+      ProtectKernelLogs = true;
+      ProtectKernelModules = true;
+      ProtectKernelTunables = true;
+      ProtectSystem = "strict";
+      RestrictAddressFamilies = [
+        "AF_UNIX"
+        "AF_INET"
+        "AF_INET6"
+      ];
+      RestrictSUIDSGID = true;
+
+      BindPaths = [
+        stateDirectory
+        repositoryDirectory
+        emulationDirectory
+      ];
+      # These repository paths configure programs that later run as tristan
+      # outside this sandbox: Git hooks and core.fsmonitor (run by
+      # helix-update's git status), editor language-server paths, and Claude
+      # Code hooks. The agent may edit tracked configuration but not these.
+      ReadOnlyPaths = [
+        "-/mnt/infernalnexus"
+      ]
+      ++ map (path: "-${repositoryDirectory}/${path}") repositoryExecutableMetadata;
+      InaccessiblePaths = [
+        "-/etc/nixos/secrets"
+        "-/run/docker.sock"
+        "-/var/run/docker.sock"
+      ];
+      IPAddressDeny = "any";
+      IPAddressAllow = "localhost";
+    };
+  };
+}
+\r'}
+
+      # Accept the ordinary systemd EnvironmentFile forms used by this secret
+      # without evaluating the file as shell code.
+      if [[ $token == \"*\" && $token == *\" ]]; then
+        token=${token:1:${#token}-2}
+      elif [[ $token == \'*\' && $token == *\' ]]; then
+        token=${token:1:${#token}-2}
+      fi
+      if [[ -z $token ]]; then
+        printf 'OPENCLAW_GATEWAY_TOKEN is empty in %s\n' "$secret_file" >&2
+        exit 1
+      fi
+
+      export OPENCLAW_GATEWAY_TOKEN=$token
+      export OPENCLAW_STATE_DIR=${lib.escapeShellArg stateDirectory}
+      export OPENCLAW_CONFIG_PATH=${lib.escapeShellArg runtimeConfigFile}
+      export OPENCLAW_HIDE_BANNER=1
+      export OPENCLAW_SUPPRESS_NOTES=1
+
+      exec openclaw acp "$@"
+    '';
+  };
+
   openclawConfig = (pkgs.formats.json { }).generate "openclaw.json" {
     gateway = {
       mode = "local";
