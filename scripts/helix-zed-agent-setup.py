@@ -16,7 +16,16 @@ import tempfile
 
 AGENTS = {
     "Claude Code": {"type": "custom", "command": "claude-agent-acp", "args": []},
-    "OpenClaw ACP": {"type": "custom", "command": "helix-openclaw-acp", "args": []},
+}
+
+CONTEXT_SERVERS = {
+    "OpenClaw": {"command": "helix-openclaw-mcp", "args": [], "env": {}},
+}
+
+LEGACY_MANAGED_AGENT = {
+    "type": "custom",
+    "command": "helix-openclaw-acp",
+    "args": [],
 }
 
 
@@ -80,8 +89,16 @@ def configure(settings_file):
         servers = settings.get("agent_servers", {})
         if not isinstance(servers, dict):
             raise SystemExit(f"Refusing to replace non-object agent_servers in {settings_file}")
-        if all(servers.get(name) == agent for name, agent in AGENTS.items()):
-            print(f"Helix ACP agents are already configured in {settings_file}")
+        context_servers = settings.get("context_servers", {})
+        if not isinstance(context_servers, dict):
+            raise SystemExit(f"Refusing to replace non-object context_servers in {settings_file}")
+        legacy_absent = servers.get("OpenClaw ACP") != LEGACY_MANAGED_AGENT
+        if (
+            all(servers.get(name) == agent for name, agent in AGENTS.items())
+            and all(context_servers.get(name) == server for name, server in CONTEXT_SERVERS.items())
+            and legacy_absent
+        ):
+            print(f"Helix Zed agents and MCP servers are already configured in {settings_file}")
             return None
         stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         backup = settings_file.with_name(f"{settings_file.name}.{stamp}.bak")
@@ -92,8 +109,14 @@ def configure(settings_file):
         backup.write_text(original, encoding="utf-8")
 
     servers = settings.setdefault("agent_servers", {})
+    if servers.get("OpenClaw ACP") == LEGACY_MANAGED_AGENT:
+        del servers["OpenClaw ACP"]
     for name, agent in AGENTS.items():
         servers[name] = agent
+
+    context_servers = settings.setdefault("context_servers", {})
+    for name, server in CONTEXT_SERVERS.items():
+        context_servers[name] = server
     descriptor, temporary = tempfile.mkstemp(dir=settings_file.parent, prefix=".settings.", suffix=".json")
     try:
         with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
@@ -106,7 +129,10 @@ def configure(settings_file):
         pathlib.Path(temporary).unlink(missing_ok=True)
         raise
 
-    print(f"Configured {', '.join(AGENTS)} in {settings_file}")
+    print(
+        f"Configured agents ({', '.join(AGENTS)}) and MCP servers "
+        f"({', '.join(CONTEXT_SERVERS)}) in {settings_file}"
+    )
     if backup is not None:
         print(f"Previous settings backed up at {backup} (comments are kept only there)")
     return backup
@@ -115,7 +141,7 @@ def configure(settings_file):
 def main(argv):
     if len(argv) == 2 and argv[1] in ("--help", "-h"):
         print("Usage: helix-zed-agent-setup")
-        print("Register the Helix-managed Claude Code and OpenClaw ACP agents in Zed user settings.")
+        print("Register Claude Code and the Helix OpenClaw MCP server in Zed user settings.")
         return 0
     if len(argv) > 1:
         print("Usage: helix-zed-agent-setup (takes no arguments; see --help)", file=sys.stderr)
