@@ -173,10 +173,34 @@ here. What remains is narrower:
      engine under Proton, so it does not rule out that some native workload
      could still trigger it, only that this particular one did not in this
      window. It does shift weight slightly toward the translation layer
-     (Proton/Wine/EOS/EAC) over a pure driver/GPU fault. Steam's own
-     `fossilize_replay` (native, runs during every post-session shader-cache
-     write-back) remains an untried native candidate closer to real game
-     Vulkan usage patterns than a synthetic benchmark.
+     (Proton/Wine/EOS/EAC) over a pure driver/GPU fault.
+
+     **Second native attempt, same day: also did not reproduce it, but with
+     real caveats.** `fossilize_replay` (native, part of the Steam Linux
+     Runtime, run through `steam-run` since it is a generic dynamically-linked
+     binary NixOS cannot exec directly) replayed Galactic Racer's own 936 MB
+     captured pipeline cache
+     (`steamapps/shadercache/4078430/fozpipelinesv6/steamapprun_pipeline_cache.3554f158047e28bf/steam_pipeline_cache.foz`)
+     for a full 10 minutes (confirmed real: genuine GPU utilization throughout,
+     `timeout` exited 124). No Xid; GPU stayed cooler than the vkmark run
+     (49°C peak vs. 57°C), consistent with pipeline-compilation-bound work
+     rather than sustained rendering. Two caveats keep this from being a
+     clean "native" result: the replayed pipelines were originally captured
+     from a **Proton/vkd3d session** (`engineName: vkd3d`,
+     `applicationName: EOSOverlayRenderer-Win64-Shipping.exe` — vkd3d is the
+     DX12-to-Vulkan layer Proton uses for Unreal 5's DX12 path), so this is
+     native *execution* of Proton-originated data, not a Proton-untouched
+     pipeline; and several blobs failed to parse (`Failed to parse pNext
+     chain for sType: 1000574000`, an unrecognized extension struct) and were
+     silently skipped, so this did not exercise 100% of the cache.
+
+     Two independent native attempts now agree (neither reproduced it), which
+     is worth more than either alone, but both have real caveats (a simpler
+     synthetic workload; a partial replay of Proton-originated data) that
+     keep "native vs. Proton" from being settled. Remaining native candidate:
+     a from-scratch native Vulkan/DX12 title with no Proton involvement at
+     any point (e.g. a native Linux game using a similar engine), which
+     neither attempt here actually is.
   2. **Capture GPU state live through a reproduction under Proton** — done
      alongside (1) only for the non-reproducing native case; still not done
      for an actual Galactic Racer/Space Marine 2 hang. Every existing hang
