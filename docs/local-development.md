@@ -111,9 +111,9 @@ claude doctor
 claude
 ```
 
-Zed reads `agent_servers` only from user settings, not from a project's
-`.zed/settings.json`. Register Helix's external agents once with the explicit
-helper:
+Zed keeps custom external agents under `agent_servers` and MCP servers
+under `context_servers` in user settings. Register Helix's managed entries
+with:
 
 ```bash
 helix-zed-agent-setup
@@ -121,20 +121,21 @@ helix-zed-agent-setup
 
 The helper manages two entries in `~/.config/zed/settings.json`:
 
-- `Claude Code` runs the PATH-resolved `claude-agent-acp` adapter.
-- `OpenClaw ACP` runs `helix-openclaw-acp`, a thin adapter around the
-  Gateway-backed `openclaw acp` bridge.
+- `agent_servers."Claude Code"` runs the PATH-resolved
+  `claude-agent-acp` adapter.
+- `context_servers."OpenClaw"` runs `helix-openclaw-mcp`, a thin adapter
+  around OpenClaw's native `openclaw mcp serve` stdio server.
 
-The OpenClaw adapter reuses the running Gateway's generated runtime config,
+The OpenClaw MCP adapter reuses the running Gateway's generated runtime config,
 state directory and `OPENCLAW_GATEWAY_TOKEN` from
 `~/.config/openclaw/gateway.env`. The token is passed as an environment
-variable, never written into Zed settings or a process argument. Zed therefore
-talks to the same loopback Gateway and `gpt-oss:20b` agent that Helix already
-runs; no second OpenClaw instance or ACPX plugin is created.
+variable, never written into Zed settings or a process argument. Zed launches
+the MCP server on demand; no second Gateway or additional daemon is created.
 
-OpenClaw's service sandbox still defines the filesystem boundary. The
-`nixos-helix` checkout and emulation tree are available to the Gateway; adding
-the Zed integration does not grant it access to other projects.
+The helper removes the exact legacy `OpenClaw ACP` entry previously managed
+by Helix while leaving unrelated user-defined agents and MCP servers untouched.
+OpenClaw's Gateway sandbox remains unchanged, so this migration does not widen
+its filesystem or network authority.
 
 The setup helper records PATH-resolved commands rather than `/nix/store` paths,
 which would break after garbage collection. It accepts Zed's
