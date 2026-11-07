@@ -129,8 +129,12 @@ here. What remains is narrower:
   successor fork.
 - **NVIDIA Xid 109 (`CTX SWITCH TIMEOUT`) under sustained Proton load.**
   Unresolved; needs real investigation in this repo, not another per-game
-  workaround. `journalctl | grep "Xid (PCI"` shows 15 occurrences across 6
-  separate boots between 2026-10-07 and 2026-11-07, every one traced by PID
+  workaround. Recurred again on 2026-11-07 at 15:42:44, 35 seconds into
+  STAR WARS: Galactic Racer on Proton Experimental (`chdir` to the game's
+  install dir logged at 15:42:09) — on a fresh boot, 3 minutes after reboot,
+  so it is not specific to a stale session. `journalctl | grep "Xid (PCI"`
+  shows 16 occurrences across 7 separate boots between 2026-10-07 and
+  2026-11-07, every one traced by PID
   to either STAR WARS: Galactic Racer (appid 4078430) or Warhammer 40,000:
   Space Marine 2 (appid 2183900) — see `docs/profiles.md`. One occurrence
   (2026-10-07 21:18, boot `920bbe2b`) recurred within two minutes of a fresh
