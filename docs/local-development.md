@@ -112,19 +112,36 @@ claude
 ```
 
 Zed reads `agent_servers` only from user settings, not from a project's
-`.zed/settings.json`. Register the adapter once with the explicit helper:
+`.zed/settings.json`. Register Helix's external agents once with the explicit
+helper:
 
 ```bash
 helix-zed-agent-setup
 ```
 
-The helper edits only `agent_servers."Claude Code"` in
-`~/.config/zed/settings.json`. It records the PATH-resolved
-`claude-agent-acp` command rather than a `/nix/store` path, which would break
-after garbage collection. It accepts Zed's JSON-with-comments format, refuses
-unparseable settings, writes atomically, and keeps a timestamped backup of the
-original file for every change. The rewritten file does not keep comments; they
-remain in the backup. Rerunning it on configured settings changes nothing.
+The helper manages two entries in `~/.config/zed/settings.json`:
+
+- `Claude Code` runs the PATH-resolved `claude-agent-acp` adapter.
+- `OpenClaw ACP` runs `helix-openclaw-acp`, a thin adapter around the
+  Gateway-backed `openclaw acp` bridge.
+
+The OpenClaw adapter reuses the running Gateway's generated runtime config,
+state directory and `OPENCLAW_GATEWAY_TOKEN` from
+`~/.config/openclaw/gateway.env`. The token is passed as an environment
+variable, never written into Zed settings or a process argument. Zed therefore
+talks to the same loopback Gateway and `gpt-oss:20b` agent that Helix already
+runs; no second OpenClaw instance or ACPX plugin is created.
+
+OpenClaw's service sandbox still defines the filesystem boundary. The
+`nixos-helix` checkout and emulation tree are available to the Gateway; adding
+the Zed integration does not grant it access to other projects.
+
+The setup helper records PATH-resolved commands rather than `/nix/store` paths,
+which would break after garbage collection. It accepts Zed's
+JSON-with-comments format, refuses unparseable settings, writes atomically, and
+keeps a timestamped backup of the original file for every change. The rewritten
+file does not keep comments; they remain in the backup. Rerunning it on
+configured settings changes nothing.
 
 Repository guidance for Claude sessions lives in `CLAUDE.md`. Authentication
 and `~/.claude` are mutable per-user state and do not belong in Nix or Git.
