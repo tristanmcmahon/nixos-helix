@@ -36,7 +36,15 @@ with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.S
 
     # Real Zed settings are JSONC; other keys and agents are preserved and
     # every run keeps its own backup of the original bytes.
-    original = '// user settings\n{\n  "theme": "One Dark", // inline\n  "agent_servers": {"Other": {"command": "x"},},\n}\n'
+    original = (
+        '// user settings\n{\n'
+        '  "theme": "One Dark", // inline\n'
+        '  "agent_servers": {\n'
+        '    "Other": {"command": "x"},\n'
+        '    "OpenClaw ACP": {"type": "custom", "command": "helix-openclaw-acp", "args": []},\n'
+        '  },\n'
+        '}\n'
+    )
     settings.write_text(original)
     settings.chmod(0o600)
     first_backup = MODULE.configure(settings)
@@ -45,11 +53,7 @@ with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.S
     assert updated["theme"] == "One Dark"
     assert updated["agent_servers"]["Other"] == {"command": "x"}
     assert updated["agent_servers"]["Claude Code"]["command"] == "claude-agent-acp"
-    assert updated["agent_servers"]["OpenClaw ACP"] == {
-        "type": "custom",
-        "command": "helix-openclaw-acp",
-        "args": [],
-    }
+    assert "OpenClaw ACP" not in updated["agent_servers"]
     assert "/nix/store" not in settings.read_text()
     assert settings.stat().st_mode & 0o777 == 0o600
 
