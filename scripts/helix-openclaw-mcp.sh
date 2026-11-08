@@ -3,8 +3,8 @@ set -euo pipefail
 
 if [[ ${1:-} == --help || ${1:-} == -h ]]; then
   printf '%s\n' \
-    'Usage: helix-openclaw-acp [OPENCLAW-ACP-ARGS...]' \
-    'Run OpenClaw ACP against the Helix loopback Gateway using its existing runtime state and token.'
+    'Usage: helix-openclaw-mcp [OPENCLAW-MCP-SERVE-ARGS...]' \
+    'Expose the existing Helix OpenClaw Gateway to MCP clients over stdio.'
   exit 0
 fi
 
@@ -26,8 +26,6 @@ fi
 token=${token_line#*=}
 token=${token%$'\r'}
 
-# Accept the normal quoted or unquoted systemd EnvironmentFile forms without
-# evaluating the secret file as shell code.
 if [[ $token == \"*\" && $token == *\" ]]; then
   token=${token:1:${#token}-2}
 elif [[ $token == \'*\' && $token == *\' ]]; then
@@ -46,4 +44,4 @@ export OPENCLAW_NIX_MODE=1
 export OPENCLAW_HIDE_BANNER=1
 export OPENCLAW_SUPPRESS_NOTES=1
 
-exec openclaw acp "$@"
+exec openclaw mcp serve --claude-channel-mode off "$@"

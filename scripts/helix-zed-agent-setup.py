@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Register Helix-managed ACP agents in Zed user settings.
+"""Register the Helix-managed Claude Code ACP agent in Zed user settings.
 
-Zed ignores `agent_servers` in project-local settings, so this explicit,
-user-run helper edits only that key in the user's settings file. Commands are
-PATH-resolved deliberately: absolute /nix/store paths would break after the
-generation that supplied them is garbage-collected.
+This helper owns only the existing Claude Code agent entry. As part of removing
+the failed Helix OpenClaw ACP integration, it also deletes that exact legacy
+managed entry when present. Generic MCP client configuration belongs outside
+nixos-helix.
 """
 
 import datetime
@@ -16,7 +16,12 @@ import tempfile
 
 AGENTS = {
     "Claude Code": {"type": "custom", "command": "claude-agent-acp", "args": []},
-    "OpenClaw ACP": {"type": "custom", "command": "helix-openclaw-acp", "args": []},
+}
+
+LEGACY_OPENCLAW_ACP = {
+    "type": "custom",
+    "command": "helix-openclaw-acp",
+    "args": [],
 }
 
 
@@ -80,8 +85,9 @@ def configure(settings_file):
         servers = settings.get("agent_servers", {})
         if not isinstance(servers, dict):
             raise SystemExit(f"Refusing to replace non-object agent_servers in {settings_file}")
-        if all(servers.get(name) == agent for name, agent in AGENTS.items()):
-            print(f"Helix ACP agents are already configured in {settings_file}")
+        legacy_absent = servers.get("OpenClaw ACP") != LEGACY_OPENCLAW_ACP
+        if all(servers.get(name) == agent for name, agent in AGENTS.items()) and legacy_absent:
+            print(f"Helix Claude Code agent is already configured in {settings_file}")
             return None
         stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         backup = settings_file.with_name(f"{settings_file.name}.{stamp}.bak")
@@ -92,6 +98,8 @@ def configure(settings_file):
         backup.write_text(original, encoding="utf-8")
 
     servers = settings.setdefault("agent_servers", {})
+    if servers.get("OpenClaw ACP") == LEGACY_OPENCLAW_ACP:
+        del servers["OpenClaw ACP"]
     for name, agent in AGENTS.items():
         servers[name] = agent
     descriptor, temporary = tempfile.mkstemp(dir=settings_file.parent, prefix=".settings.", suffix=".json")
@@ -115,7 +123,7 @@ def configure(settings_file):
 def main(argv):
     if len(argv) == 2 and argv[1] in ("--help", "-h"):
         print("Usage: helix-zed-agent-setup")
-        print("Register the Helix-managed Claude Code and OpenClaw ACP agents in Zed user settings.")
+        print("Register Claude Code in Zed and remove the exact legacy Helix OpenClaw ACP entry if present.")
         return 0
     if len(argv) > 1:
         print("Usage: helix-zed-agent-setup (takes no arguments; see --help)", file=sys.stderr)
