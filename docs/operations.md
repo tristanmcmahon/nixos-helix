@@ -104,6 +104,22 @@ starts it.
 It does not modify Helix.
 
 
+### NVIDIA driver override
+
+Helix currently pins NVIDIA **620.70.06** explicitly in `hardware/nvidia.nix`
+rather than following the driver alias from the pinned Nixpkgs release. This
+means a Nixpkgs bump may change the kernel while leaving the NVIDIA driver
+version fixed; the module must still build and the candidate must pass the
+normal runtime health gate before switching. `scripts/nixpkgs-version-summary.sh`
+evaluates the effective Helix configuration, so its NVIDIA row reports this
+override rather than Nixpkgs' underlying default.
+
+Do not remove or advance the override merely because Nixpkgs packages a newer
+driver. Requalify the candidate on Helix first, with the Xid 109 case file as
+the regression reference, then deliberately update or remove the pin. This is
+also the path for taking future NVIDIA security or stability updates: the
+current override is immutable and will not move automatically.
+
 ## Git and repository hygiene
 
 Helix keeps GitHub HTTPS authentication independent of Nix store generations.
