@@ -1,6 +1,6 @@
 # Helix NixOS configuration
 
-Current alpha: `v0.3.0-alpha.6`; see the [changelog](CHANGELOG.md) for what
+Current alpha: `v0.3.0-alpha.8`; see the [changelog](CHANGELOG.md) for what
 changed and the operator notes.
 
 This is the canonical configuration for Helix, a NixOS 26.05 workstation with
@@ -13,7 +13,7 @@ The active configuration includes workstation, development, gaming, console emul
 a separate hamCade arcade integration, and local LLM profiles, plus a Netdata child that streams metrics to Infernalnexus. Ollama runs
 on `127.0.0.1:11434`; SSH is the only service intentionally exposed through the
 firewall. Hardware support includes PipeWire, Bluetooth, native DualSense
-support, redistributable firmware, NVIDIA open kernel modules, ckb-next for the
+support, redistributable firmware, NVIDIA 620.70.06 open kernel modules, ckb-next for the
 Corsair K70, and fan control.
 
 ## Repository layout

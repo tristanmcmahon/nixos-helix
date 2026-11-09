@@ -2,7 +2,13 @@
 
 Release notes for Helix. Operating guides live in `docs/`.
 
-## Unreleased
+## v0.3.0-alpha.8
+
+Release target: `v0.3.0-alpha.8`
+
+Qualified on Helix generation 72 on 2026-11-09: production activation and
+post-reboot `helix-health --check` passed on NVIDIA 620.70.06, and the boot
+journal contained no NVIDIA Xid or CTX SWITCH TIMEOUT.
 
 ### Changed
 
