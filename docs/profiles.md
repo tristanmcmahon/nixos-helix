@@ -73,6 +73,11 @@ vanilla Fallout 4 instead of London, and the fix is copying
 into the prefix by hand (back up the existing `Fallout4.ini` first; leave
 `Fallout4Prefs.ini` alone since it holds shared display settings).
 
+Vanilla Fallout 4 (not Fallout London) has hit the cross-title NVIDIA Xid
+109 hang described below under Galactic Racer, three times in one evening —
+see `docs/xid109.md` if a session hangs with audio and the process still
+alive but drawing stopped; it is not specific to Fallout 4 or this prefix.
+
 Battle.net (the Blizzard launcher) and World of Warcraft installs, Wine
 prefixes, and account authentication are Lutris-managed mutable state under
 `~/.local/share/lutris` and `~/Games`, like Heroic's and Steam's own state;
@@ -110,8 +115,12 @@ workaround, before reaching for a Proton change again.
 — a third, otherwise-unrelated stack) hits the identical Xid 109 symptom:
 its main menu renders fine, so the trigger is a specific heavy workload
 rather than startup, but loading into the game proper hangs the same way.
-Treat both of these as one open GPU/driver question, not two per-game bugs —
-the consolidated evidence and untried next steps are in `docs/xid109.md`.
+Fallout 4 (appid 377160, vanilla, via Steam) has hit it too — three times in
+one evening, confirmed via journal correlation, and through DXVK rather than
+vkd3d-proton, which is why this is treated as one GPU/driver-level question
+rather than a per-title or per-translation-layer one. Treat all of these as
+one open question, not separate per-game bugs — the consolidated evidence
+and untried next steps are in `docs/xid109.md`.
 
 Setting `helix.gaming.enable = false` returns the configuration to the
 non-gaming workstation layer; emulation asserts that gaming is enabled.
