@@ -9,6 +9,10 @@ let
 in
 assert config.system.nixos.release == release.nixosRelease;
 assert config.system.stateVersion == release.stateVersion;
+# Helix deliberately carries the qualified 620.70.06 driver ahead of the
+# pinned Nixpkgs default; a Nixpkgs bump must not silently drop this override.
+assert config.hardware.nvidia.package.version == "620.70.06";
+assert config.hardware.nvidia.open;
 assert config.nix.gc.automatic;
 assert config.nix.gc.options == "--delete-older-than 14d";
 assert config.nix.optimise.automatic;
