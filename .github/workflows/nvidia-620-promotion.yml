@@ -1,8 +1,8 @@
 name: NVIDIA 620 promotion probe
 
 on:
-  push:
-    branches: [ feat/nvidia-620-default ]
+  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
