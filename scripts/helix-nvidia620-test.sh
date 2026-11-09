@@ -70,6 +70,13 @@ prepare() {
     "https://us.download.nvidia.com/XFree86/Linux-x86_64/$version/NVIDIA-Linux-x86_64-$version.run" flat)
   open=$(prefetch 'NVIDIA open kernel modules' \
     "https://github.com/NVIDIA/open-gpu-kernel-modules/archive/$version.tar.gz" unpack)
+  # kernel-modules.nix passes this through fetchFromGitHub's generic `hash`
+  # attribute (the other three go through its algorithm-named `sha256`
+  # attribute instead), which requires an explicit SRI type prefix; bare
+  # nix32 output from nix-prefetch-url fails evaluation there with "hash
+  # does not include a type, nor is the type otherwise known from context."
+  open=$(nix --extra-experimental-features nix-command hash convert \
+    --hash-algo sha256 --to sri "$open")
   settings=$(prefetch 'NVIDIA settings' \
     "https://github.com/NVIDIA/nvidia-settings/archive/$version.tar.gz" unpack \
     "https://download.nvidia.com/XFree86/nvidia-settings/nvidia-settings-$version.tar.bz2")
