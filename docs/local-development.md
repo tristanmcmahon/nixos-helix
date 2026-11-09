@@ -54,6 +54,39 @@ make either service-backed agent local.
 Helix's editor split is deliberate: VS Code is used with Codex, and Zed is used
 with Claude Code.
 
+## Zed Agent with local Ollama and hamLLM MCP
+
+The **Zed Agent** uses a Zed-configured model and Zed MCP tools. It is distinct
+from Claude Code and OpenClaw external agents, which own their own ACP sessions.
+An active `context_servers.hamllm` server is not proof that an external agent
+can call its tools. The failed OpenClaw ACP integration is retired; do not
+reintroduce it to solve a native Zed model-selection problem.
+
+If Zed Agent reports `no language model configured`, this opt-in, user-run
+helper selects the locally installed `gpt-oss:20b` model and a 32768-token
+Ollama context window without touching MCP server registrations, external
+agents, or NixOS generations:
+
+```bash
+python3 scripts/helix-zed-local-model.py --check
+python3 scripts/helix-zed-local-model.py --execute
+python3 scripts/helix-zed-local-model.py --check
+```
+
+The helper checks the local Ollama `/api/tags` endpoint before making changes,
+refuses a non-local existing Ollama URL, and fails closed on invalid settings,
+a symlink, or a concurrent edit. Changes to `~/.config/zed/settings.json` are
+atomic and have a timestamped, private backup preserving the exact original
+JSONC (comments/trailing commas may be normalised in the new file). The command
+is opt-in and does not run on rebuild or login.
+
+Restart Zed or open a fresh **Zed Agent** thread, use a profile that enables
+MCP tools, and ask it to call hamLLM's `ask_local` with a short sentinel
+prompt. If hamLLM is absent, register it through the **hamLLM repository's**
+installer; this Helix helper intentionally does not manage that registration.
+The result does not establish that the separate OpenClaw Gateway MCP transport
+works, nor that an external ACP agent can use `ask_local`.
+
 ## VS Code and Nix
 
 The workspace recommends `jnoortheen.nix-ide` and the verified official Codex
