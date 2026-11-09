@@ -8,7 +8,7 @@
   },
   "hamllm": {
     "repository": "tristanmcmahon/hamLLM",
-    "commit": "4f2f931226a677241d829a227a7c7a8fe03a8943",
+    "commit": "9efdf04d13a642dc46c180a826426f6e72bd0d55",
     "paths": [
       "pyproject.toml",
       "README.md",
