@@ -85,42 +85,23 @@ none of it is Nix-managed, downloaded at build time, or committed to the
 repository. See `docs/battlenet.md` for installation, launch, updates,
 troubleshooting and rollback.
 
-STAR WARS: Galactic Racer (Steam appid 4078430) does not work on Helix. Its
-default Proton Hotfix build dies silently after about two and a half
-minutes: the EOS Bootstrapper's `CreateProcessAsUser` call fails under Proton
-and falls back to a path that does not propagate the `EOS_SESSION_GUID`
-environment variable to the second EOS helper process it spawns
-(`EpicOnlineServicesUserHelper.exe --mode=stage`), which exits immediately
-(`EOS_SESSION_GUID environment variable is required`, code 9001) and leaves
-the game waiting on a handshake that never completes. Overriding the
-compatibility tool to GE-Proton avoids that specific failure but is *not* a
-fix and should not be reapplied on the strength of this entry: the title
-then hits an NVIDIA Xid 109 (`CTX SWITCH TIMEOUT`) within the first minute,
-under Proton Experimental, Proton Hotfix and GE-Proton11-9 alike, and the
-game is equally unplayable either way — process, audio and EOS overlay stay
-alive and the GPU stays non-idle, but only the clear colour is ever
-presented, with no further draw calls landing. Neither
-`PROTON_ENABLE_NVAPI=0` nor forcing ray tracing off
-(`-noraytracing -execcmds="r.RayTracing 0"`) avoided it. Confirmed working on
-Windows on the same hardware. Helix's compatibility tool for this app has
-been left on the Proton Hotfix default.
+STAR WARS: Galactic Racer (Steam appid 4078430) has two distinct
+historical failure modes. Its EOS bootstrap path can spend a long time on a
+grey/clear loading screen, which is separate from the GPU fault. More
+importantly, the former NVIDIA Xid 109 / CTX SWITCH TIMEOUT was repeatedly
+fatal on driver 595.71.05 across Proton variants. Helix now deliberately pins
+NVIDIA **620.70.06** in `hardware/nvidia.nix`: the isolated qualification
+generation reached the same old trigger points without an Xid and a later
+session ran perfectly for about an hour. That driver is therefore the
+production default. Do not add `VKD3D_CONFIG=descriptor_heap`, change Proton,
+or otherwise stack workarounds on top of it unless the Xid actually recurs.
 
-This matches a known, NVIDIA-acknowledged Blackwell bug (internal bug
-6017526, `NVIDIA/open-gpu-kernel-modules#1097`). See `docs/xid109.md` for
-the full case file, including a tried-and-ruled-out launch-option
-workaround, before reaching for a Proton change again.
-
-**This is not specific to Galactic Racer.** Warhammer 40,000: Space Marine 2
-(appid 2183900, EasyAntiCheat, Saber's own Swarm engine, Proton Experimental
-— a third, otherwise-unrelated stack) hits the identical Xid 109 symptom:
-its main menu renders fine, so the trigger is a specific heavy workload
-rather than startup, but loading into the game proper hangs the same way.
-Fallout 4 (appid 377160, vanilla, via Steam) has hit it too — three times in
-one evening, confirmed via journal correlation, and through DXVK rather than
-vkd3d-proton, which is why this is treated as one GPU/driver-level question
-rather than a per-title or per-translation-layer one. Treat all of these as
-one open question, not separate per-game bugs — the consolidated evidence
-and untried next steps are in `docs/xid109.md`.
+Space Marine 2 and vanilla Fallout 4 were part of the same historical Xid 109
+case. Space Marine 2 reached active combat on 620.70.06 with no kernel GPU
+fault before a separate application crash; Fallout 4 had a short clean DXVK
+run but still needs a long-duration check against its historical 35–70+ minute
+failure window. The consolidated evidence, exact driver pin, and rollback
+history remain in `docs/xid109.md`.
 
 Setting `helix.gaming.enable = false` returns the configuration to the
 non-gaming workstation layer; emulation asserts that gaming is enabled.

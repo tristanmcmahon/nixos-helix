@@ -1,4 +1,4 @@
-_:
+{ config, ... }:
 
 {
   # The RTX 5080 is a Blackwell GPU. NVIDIA lists this PCI family as requiring
@@ -17,8 +17,20 @@ _:
 
     open = true;
 
-    # No package override is used: Nixpkgs selects a stable driver compatible
-    # with the selected kernel.
+    # 620.70.06 is intentionally pinned ahead of this repo's Nixpkgs default
+    # (595.71.05). It was qualified on this RTX 5080 on 2026-11-09 after the
+    # previous driver repeatedly hit NVIDIA Xid 109 / CTX SWITCH TIMEOUT under
+    # sustained Proton workloads. These are the exact artifacts used by the
+    # isolated qualification generation; do not replace them with moving
+    # branch aliases. Re-evaluate this override on every Nixpkgs bump until
+    # Nixpkgs' packaged stable driver is >= 620.70.06 and has been requalified.
+    package = config.boot.kernelPackages.nvidiaPackages.mkDriver {
+      version = "620.70.06";
+      sha256_64bit = "1cflmw275gpwpkjs4qh3my8980wd4dv9qgfapicpbh08plx8w499";
+      openSha256 = "sha256-dV8vzniUl3UJoG2Q3KdoUJigLRuQeTniUfB670gb1Mw=";
+      settingsSha256 = "17x1plnn9p5w4cidibr1zga77a4md301qr8lwhgy1xa9f6cm2l08";
+      persistencedSha256 = "144jq28bw3fjsl5sipwgy4gfyxhjrly2h9fz29kivggb1a2b748n";
+    };
 
     # Preserve video memory across suspend. On current stable drivers NixOS
     # uses NVIDIA's kernel suspend notifier when available, otherwise it

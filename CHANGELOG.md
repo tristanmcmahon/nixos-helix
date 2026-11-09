@@ -4,6 +4,15 @@ Release notes for Helix. Operating guides live in `docs/`.
 
 ## Unreleased
 
+### Changed
+
+- NVIDIA 620.70.06 is now the explicit production driver for the RTX 5080,
+  pinned from the exact upstream artifacts qualified in the Xid 109 experiment.
+  Galactic Racer, previously a reliable CTX SWITCH TIMEOUT reproducer on
+  595.71.05, completed about an hour of clean gameplay with no NVIDIA Xid.
+  An invariant prevents future Nixpkgs bumps from silently dropping the pin;
+  the upstream bug remains monitored rather than declared universally fixed.
+
 ### Added
 
 - `helix-benchmark` (`helix.benchmark`, on by default): lightweight,
