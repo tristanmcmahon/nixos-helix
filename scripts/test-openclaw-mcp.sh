@@ -12,6 +12,7 @@ set -euo pipefail
 printf 'token=%s\n' "$OPENCLAW_GATEWAY_TOKEN"
 printf 'state=%s\n' "$OPENCLAW_STATE_DIR"
 printf 'config=%s\n' "$OPENCLAW_CONFIG_PATH"
+printf 'nix_mode=%s\n' "$OPENCLAW_NIX_MODE"
 printf 'argv='
 printf '<%s>' "$@"
 printf '\n'
@@ -26,15 +27,16 @@ output=$(
     HELIX_OPENCLAW_SECRET_FILE="$secret" \
     HELIX_OPENCLAW_STATE_DIR="$tmp/state" \
     HELIX_OPENCLAW_CONFIG_PATH="$tmp/state/openclaw.json" \
-    bash "$repo_root/scripts/helix-openclaw-acp.sh" --session agent:main:main
+    bash "$repo_root/scripts/helix-openclaw-mcp.sh"
 )
 
 grep -qFx 'token=token with spaces' <<<"$output"
 grep -qFx "state=$tmp/state" <<<"$output"
 grep -qFx "config=$tmp/state/openclaw.json" <<<"$output"
-grep -qFx 'argv=<acp><--session><agent:main:main>' <<<"$output"
+grep -qFx 'nix_mode=1' <<<"$output"
+grep -qFx 'argv=<mcp><serve><--claude-channel-mode><off>' <<<"$output"
 if grep -qF '<token with spaces>' <<<"$output"; then
-  printf 'OpenClaw token leaked into ACP argv.\n' >&2
+  printf 'OpenClaw token leaked into MCP argv.\n' >&2
   exit 1
 fi
 
@@ -43,9 +45,9 @@ if PATH="$tmp/bin:$PATH" \
   HELIX_OPENCLAW_SECRET_FILE="$secret" \
   HELIX_OPENCLAW_STATE_DIR="$tmp/state" \
   HELIX_OPENCLAW_CONFIG_PATH="$tmp/state/openclaw.json" \
-  bash "$repo_root/scripts/helix-openclaw-acp.sh" >/dev/null 2>&1; then
-  printf 'OpenClaw ACP adapter accepted a missing Gateway token.\n' >&2
+  bash "$repo_root/scripts/helix-openclaw-mcp.sh" >/dev/null 2>&1; then
+  printf 'OpenClaw MCP adapter accepted a missing Gateway token.\n' >&2
   exit 1
 fi
 
-printf 'OpenClaw ACP adapter preserves secret boundaries.\n'
+printf 'OpenClaw MCP adapter preserves secret boundaries.\n'

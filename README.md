@@ -93,9 +93,9 @@ For normal maintenance:
 - `helix-git-credential-repair` repairs GitHub HTTPS authentication without
   pinning `gh` to a garbage-collectable store path.
 - `helix-theme list|current|random|NAME` inspects and switches appearance.
-- `helix-zed-agent-setup` registers Claude Code and the existing OpenClaw
-  Gateway as Zed external agents; the OpenClaw bridge keeps its token out of
-  editor settings.
+- `helix-zed-agent-setup` registers the packaged Claude Code ACP adapter in
+  Zed. OpenClaw exposes a separate `helix-openclaw-mcp` host adapter; MCP
+  client registration policy is owned outside this repository.
 
 Every `helix-*` command accepts `--help`.
 

@@ -119,29 +119,28 @@ helper:
 helix-zed-agent-setup
 ```
 
-The helper manages two entries in `~/.config/zed/settings.json`:
+The helper manages the `Claude Code` entry only, using the
+PATH-resolved `claude-agent-acp` adapter. As a cleanup for the retired failed
+integration, it removes the exact Helix-managed `OpenClaw ACP` entry if that
+entry is still present. It does not create or manage Zed MCP context servers.
 
-- `Claude Code` runs the PATH-resolved `claude-agent-acp` adapter.
-- `OpenClaw ACP` runs `helix-openclaw-acp`, a thin adapter around the
-  Gateway-backed `openclaw acp` bridge.
+OpenClaw itself remains host-owned here. The installed `helix-openclaw-mcp`
+adapter reuses the running Gateway's generated runtime config, state directory
+and `OPENCLAW_GATEWAY_TOKEN` from `~/.config/openclaw/gateway.env`, exporting
+the token only in the child environment before executing
+`openclaw mcp serve --claude-channel-mode off`. The token is never written
+into editor settings or a process argument, and no second OpenClaw daemon is
+created.
 
-The OpenClaw adapter reuses the running Gateway's generated runtime config,
-state directory and `OPENCLAW_GATEWAY_TOKEN` from
-`~/.config/openclaw/gateway.env`. The token is passed as an environment
-variable, never written into Zed settings or a process argument. Zed therefore
-talks to the same loopback Gateway and `gpt-oss:20b` agent that Helix already
-runs; no second OpenClaw instance or ACPX plugin is created.
+Generic local-model/editor MCP registration belongs to the sibling hamLLM
+project. OpenClaw's existing Gateway sandbox remains the filesystem and network
+boundary regardless of which MCP client launches the adapter.
 
-OpenClaw's service sandbox still defines the filesystem boundary. The
-`nixos-helix` checkout and emulation tree are available to the Gateway; adding
-the Zed integration does not grant it access to other projects.
-
-The setup helper records PATH-resolved commands rather than `/nix/store` paths,
-which would break after garbage collection. It accepts Zed's
-JSON-with-comments format, refuses unparseable settings, writes atomically, and
-keeps a timestamped backup of the original file for every change. The rewritten
-file does not keep comments; they remain in the backup. Rerunning it on
-configured settings changes nothing.
+The Zed setup helper records PATH-resolved commands rather than `/nix/store`
+paths, accepts Zed's JSON-with-comments format, refuses unparseable settings,
+writes atomically, and keeps a timestamped backup of the original file for
+every change. The rewritten file does not keep comments; they remain in the
+backup. Rerunning it on configured settings changes nothing.
 
 Repository guidance for Claude sessions lives in `CLAUDE.md`. Authentication
 and `~/.claude` are mutable per-user state and do not belong in Nix or Git.
