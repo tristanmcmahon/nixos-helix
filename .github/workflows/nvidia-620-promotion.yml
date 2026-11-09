@@ -1,0 +1,28 @@
+name: NVIDIA 620 promotion probe
+
+on:
+  push:
+    branches: [ feat/nvidia-620-default ]
+
+permissions:
+  contents: read
+
+jobs:
+  derive-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+      - name: Derive exact 620.70.06 hashes
+        run: |
+          bash ./scripts/helix-nvidia620-test.sh prepare
+          echo '=== CANDIDATE CONFIG ==='
+          cat "$HOME/.local/state/helix/nvidia-620.70.06/configuration.nix"
+      - name: Build NVIDIA 620 package and open kernel module
+        run: |
+          source ./scripts/release-environment.sh
+          cfg="$HOME/.local/state/helix/nvidia-620.70.06/configuration.nix"
+          system=$(nix-build --no-out-link '<nixpkgs/nixos>' -A system -I "nixos-config=$cfg")
+          echo "system=$system"
+          test -x "$system/bin/switch-to-configuration"
