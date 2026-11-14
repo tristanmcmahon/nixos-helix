@@ -15,6 +15,7 @@ PlasmoidItem {
     readonly property real pipSize: Math.max(14, Math.round(18 * Math.min(horizontalScale, verticalScale)))
     readonly property real horizontalGap: Math.max(3, Math.round(6 * horizontalScale))
     readonly property real verticalGap: Math.max(3, Math.round(6 * verticalScale))
+    readonly property real compactSidePadding: Math.max(6, Math.round(10 * horizontalScale))
     readonly property color phosphorGreen: "#78ff6b"
     readonly property color phosphorAmber: "#e6b85c"
     readonly property color phosphorRed: "#ff6654"
@@ -231,10 +232,10 @@ PlasmoidItem {
     compactRepresentation: Component {
         Item {
             implicitWidth: root.verticalPanel
-                ? Math.ceil(root.pipSize + 8 * root.horizontalScale)
+                ? Math.ceil(root.pipSize + 2 * root.compactSidePadding)
                 : Math.ceil(root.groups.length * root.pipSize
                     + (root.groups.length - 1) * root.horizontalGap
-                    + 8 * root.horizontalScale)
+                    + 2 * root.compactSidePadding)
             implicitHeight: root.verticalPanel
                 ? Math.ceil(root.groups.length * root.pipSize
                     + (root.groups.length - 1) * root.verticalGap
