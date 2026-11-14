@@ -1,0 +1,19 @@
+{
+  "KPlugin": {
+    "Authors": [
+      {
+        "Name": "Tristan McMahon"
+      }
+    ],
+    "Category": "System Information",
+    "Description": "Compact grouped health pips for alienrobot home services",
+    "Icon": "network-server",
+    "Id": "org.alienrobot.hamstatus",
+    "License": "MIT",
+    "Name": "alienrobot Service Health",
+    "Version": "0.1.0",
+    "Website": "https://github.com/tristanmcmahon/nixos-helix"
+  },
+  "KPackageStructure": "Plasma/Applet",
+  "X-Plasma-API-Minimum-Version": "6.0"
+}
