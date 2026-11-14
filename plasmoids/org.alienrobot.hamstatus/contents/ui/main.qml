@@ -327,14 +327,28 @@ PlasmoidItem {
                             }
                         }
 
+                        Timer {
+                            id: singleClickTimer
+                            interval: 250
+                            repeat: false
+                            onTriggered: {
+                                root.selectedGroup = parent.index;
+                                plasmoid.expanded = true;
+                            }
+                        }
+
                         MouseArea {
                             id: pipMouse
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                root.selectedGroup = parent.index;
-                                plasmoid.expanded = true;
+
+                            onClicked: singleClickTimer.restart()
+
+                            onDoubleClicked: function(mouse) {
+                                singleClickTimer.stop();
+                                mouse.accepted = true;
+                                Qt.openUrlExternally("https://home.alienrobot.org");
                             }
 
                             QQC2.ToolTip.visible: containsMouse
