@@ -12,7 +12,7 @@ PlasmoidItem {
         plasmoid.configuration.horizontalScalePercent / 100.0))
     readonly property real verticalScale: Math.max(0.5, Math.min(2.0,
         plasmoid.configuration.verticalScalePercent / 100.0))
-    readonly property real pipSize: Math.max(10, Math.round(13 * Math.min(horizontalScale, verticalScale)))
+    readonly property real pipSize: Math.max(14, Math.round(18 * Math.min(horizontalScale, verticalScale)))
     readonly property real horizontalGap: Math.max(3, Math.round(6 * horizontalScale))
     readonly property real verticalGap: Math.max(3, Math.round(6 * verticalScale))
     readonly property color phosphorGreen: "#78ff6b"
@@ -382,7 +382,7 @@ PlasmoidItem {
                                 spacing: Math.max(3, Math.round(4 * root.horizontalScale))
 
                                 Item {
-                                    width: Math.max(10, Math.round(12 * Math.min(root.horizontalScale, root.verticalScale)))
+                                    width: Math.max(12, Math.round(15 * Math.min(root.horizontalScale, root.verticalScale)))
                                     height: width
 
                                     Rectangle {
@@ -463,7 +463,7 @@ PlasmoidItem {
                                 spacing: Math.max(7, Math.round(9 * root.horizontalScale))
 
                                 Item {
-                                    width: Math.max(10, Math.round(12 * Math.min(root.horizontalScale, root.verticalScale)))
+                                    width: Math.max(12, Math.round(15 * Math.min(root.horizontalScale, root.verticalScale)))
                                     height: width
 
                                     Rectangle {
