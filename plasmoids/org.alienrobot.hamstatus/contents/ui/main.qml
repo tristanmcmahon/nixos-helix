@@ -9,13 +9,13 @@ PlasmoidItem {
     id: root
 
     readonly property real horizontalScale: Math.max(0.5, Math.min(2.0,
-        Plasmoid.configuration.horizontalScalePercent / 100.0))
+        plasmoid.configuration.horizontalScalePercent / 100.0))
     readonly property real verticalScale: Math.max(0.5, Math.min(2.0,
-        Plasmoid.configuration.verticalScalePercent / 100.0))
+        plasmoid.configuration.verticalScalePercent / 100.0))
     readonly property real pipSize: Math.max(6, Math.round(9 * Math.min(horizontalScale, verticalScale)))
     readonly property real horizontalGap: Math.max(2, Math.round(4 * horizontalScale))
     readonly property real verticalGap: Math.max(2, Math.round(4 * verticalScale))
-    readonly property bool verticalPanel: Plasmoid.formFactor === PlasmaCore.Types.Vertical
+    readonly property bool verticalPanel: plasmoid.formFactor === PlasmaCore.Types.Vertical
 
     property var serviceState: ({})
     property bool authorityReachable: false
@@ -163,7 +163,7 @@ PlasmoidItem {
         if (requestInFlight)
             return;
 
-        const endpoint = String(Plasmoid.configuration.endpoint || "").trim();
+        const endpoint = String(plasmoid.configuration.endpoint || "").trim();
         if (!endpoint) {
             authorityReachable = false;
             return;
@@ -203,7 +203,7 @@ PlasmoidItem {
 
     Timer {
         id: pollTimer
-        interval: Math.max(5, Plasmoid.configuration.pollSeconds) * 1000
+        interval: Math.max(5, plasmoid.configuration.pollSeconds) * 1000
         running: true
         repeat: true
         triggeredOnStart: true
@@ -281,7 +281,7 @@ PlasmoidItem {
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
                                 root.selectedGroup = parent.index;
-                                root.expanded = true;
+                                plasmoid.expanded = true;
                             }
 
                             QQC2.ToolTip.visible: containsMouse
