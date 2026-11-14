@@ -12,9 +12,14 @@ PlasmoidItem {
         plasmoid.configuration.horizontalScalePercent / 100.0))
     readonly property real verticalScale: Math.max(0.5, Math.min(2.0,
         plasmoid.configuration.verticalScalePercent / 100.0))
-    readonly property real pipSize: Math.max(6, Math.round(9 * Math.min(horizontalScale, verticalScale)))
-    readonly property real horizontalGap: Math.max(2, Math.round(4 * horizontalScale))
-    readonly property real verticalGap: Math.max(2, Math.round(4 * verticalScale))
+    readonly property real pipSize: Math.max(10, Math.round(13 * Math.min(horizontalScale, verticalScale)))
+    readonly property real horizontalGap: Math.max(3, Math.round(6 * horizontalScale))
+    readonly property real verticalGap: Math.max(3, Math.round(6 * verticalScale))
+    readonly property color phosphorGreen: "#78ff6b"
+    readonly property color phosphorAmber: "#e6b85c"
+    readonly property color phosphorRed: "#ff6654"
+    readonly property color phosphorDim: "#63745d"
+    readonly property color bezelDark: "#151a14"
     readonly property bool verticalPanel: plasmoid.formFactor === PlasmaCore.Types.Vertical
 
     property var serviceState: ({})
@@ -70,12 +75,12 @@ PlasmoidItem {
 
     function statusColor(status) {
         if (status === "up")
-            return Kirigami.Theme.positiveTextColor;
+            return phosphorGreen;
         if (status === "degraded")
-            return Kirigami.Theme.neutralTextColor;
+            return phosphorAmber;
         if (status === "down")
-            return Kirigami.Theme.negativeTextColor;
-        return Kirigami.Theme.disabledTextColor;
+            return phosphorRed;
+        return phosphorDim;
     }
 
     function serviceStatus(key) {
@@ -260,17 +265,64 @@ PlasmoidItem {
                         Rectangle {
                             anchors.fill: parent
                             radius: width / 2
-                            color: root.statusColor(parent.state)
-                            border.width: 1
-                            border.color: Qt.lighter(color, 1.25)
+                            color: root.bezelDark
+                            border.width: Math.max(1, Math.round(width * 0.10))
+                            border.color: Qt.darker(root.statusColor(parent.state), 1.65)
 
                             Rectangle {
                                 anchors.centerIn: parent
-                                width: Math.max(2, parent.width * 0.34)
+                                width: parent.width * 0.72
                                 height: width
                                 radius: width / 2
-                                color: "white"
-                                opacity: 0.20
+                                color: "transparent"
+                                border.width: Math.max(1, Math.round(parent.width * 0.08))
+                                border.color: root.statusColor(parent.parent.state)
+                                opacity: parent.parent.state === "unknown" ? 0.45 : 0.95
+                            }
+
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: parent.width * 0.34
+                                height: width
+                                radius: width / 2
+                                color: root.statusColor(parent.parent.state)
+                                opacity: parent.parent.state === "unknown" ? 0.45 : 1.0
+                            }
+
+                            Rectangle {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                anchors.top: parent.top
+                                width: Math.max(1, parent.width * 0.10)
+                                height: Math.max(2, parent.height * 0.18)
+                                color: root.statusColor(parent.parent.state)
+                                opacity: 0.65
+                            }
+
+                            Rectangle {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                anchors.bottom: parent.bottom
+                                width: Math.max(1, parent.width * 0.10)
+                                height: Math.max(2, parent.height * 0.18)
+                                color: root.statusColor(parent.parent.state)
+                                opacity: 0.65
+                            }
+
+                            Rectangle {
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.left: parent.left
+                                width: Math.max(2, parent.width * 0.18)
+                                height: Math.max(1, parent.height * 0.10)
+                                color: root.statusColor(parent.parent.state)
+                                opacity: 0.65
+                            }
+
+                            Rectangle {
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.right: parent.right
+                                width: Math.max(2, parent.width * 0.18)
+                                height: Math.max(1, parent.height * 0.10)
+                                color: root.statusColor(parent.parent.state)
+                                opacity: 0.65
                             }
                         }
 
@@ -329,11 +381,35 @@ PlasmoidItem {
                                 anchors.centerIn: parent
                                 spacing: Math.max(3, Math.round(4 * root.horizontalScale))
 
-                                Rectangle {
-                                    width: Math.max(6, Math.round(8 * Math.min(root.horizontalScale, root.verticalScale)))
+                                Item {
+                                    width: Math.max(10, Math.round(12 * Math.min(root.horizontalScale, root.verticalScale)))
                                     height: width
-                                    radius: width / 2
-                                    color: root.statusColor(parent.parent.state)
+
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        radius: width / 2
+                                        color: root.bezelDark
+                                        border.width: 1
+                                        border.color: Qt.darker(root.statusColor(parent.parent.parent.state), 1.55)
+                                    }
+
+                                    Rectangle {
+                                        anchors.centerIn: parent
+                                        width: parent.width * 0.62
+                                        height: width
+                                        radius: width / 2
+                                        color: "transparent"
+                                        border.width: 1
+                                        border.color: root.statusColor(parent.parent.parent.state)
+                                    }
+
+                                    Rectangle {
+                                        anchors.centerIn: parent
+                                        width: parent.width * 0.26
+                                        height: width
+                                        radius: width / 2
+                                        color: root.statusColor(parent.parent.parent.state)
+                                    }
                                 }
 
                                 Text {
@@ -386,11 +462,37 @@ PlasmoidItem {
                                 anchors.rightMargin: Math.round(8 * root.horizontalScale)
                                 spacing: Math.max(7, Math.round(9 * root.horizontalScale))
 
-                                Rectangle {
-                                    width: Math.max(7, Math.round(9 * Math.min(root.horizontalScale, root.verticalScale)))
+                                Item {
+                                    width: Math.max(10, Math.round(12 * Math.min(root.horizontalScale, root.verticalScale)))
                                     height: width
-                                    radius: width / 2
-                                    color: root.statusColor(serviceRow.state)
+
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        radius: width / 2
+                                        color: root.bezelDark
+                                        border.width: 1
+                                        border.color: Qt.darker(root.statusColor(serviceRow.state), 1.55)
+                                    }
+
+                                    Rectangle {
+                                        anchors.centerIn: parent
+                                        width: parent.width * 0.60
+                                        height: width
+                                        radius: width / 2
+                                        color: "transparent"
+                                        border.width: 1
+                                        border.color: root.statusColor(serviceRow.state)
+                                        opacity: serviceRow.state === "unknown" ? 0.45 : 0.95
+                                    }
+
+                                    Rectangle {
+                                        anchors.centerIn: parent
+                                        width: parent.width * 0.24
+                                        height: width
+                                        radius: width / 2
+                                        color: root.statusColor(serviceRow.state)
+                                        opacity: serviceRow.state === "unknown" ? 0.45 : 1.0
+                                    }
                                 }
 
                                 ColumnLayout {
