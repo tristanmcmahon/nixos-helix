@@ -1,0 +1,30 @@
+name: Nix Evaluation Performance
+
+on:
+  pull_request:
+    paths:
+      - 'tests/quick-evaluations.nix'
+      - 'scripts/checks/evaluation.sh'
+      - 'scripts/bench-evaluations.py'
+      - '.github/workflows/performance-eval.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: perf-eval-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+      - name: Warm and compare four-process versus single-process invariants
+        env:
+          TMPDIR: /tmp
+        run: |
+          ./scripts/dev-shell.sh --run 'python3 scripts/bench-evaluations.py --samples 3'
