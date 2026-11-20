@@ -45,6 +45,17 @@ is needed after that.
   the hottest `/sys/class/thermal` zone, `nvidia-smi` if reachable, and free
   space on `/`. Finishes in under a second; useful context alongside the other
   three.
+- **profile**: a read-only production footprint snapshot: exact
+  `/run/current-system` closure path, kernel, total boot time from
+  `systemd-analyze time`, top eight slow-starting units for diagnosis,
+  transitive Nix system-closure size (bytes), CPU/memory/I/O
+  pressure-stall 10-second averages, memory availability and a single NVIDIA
+  driver/power/utilisation/VRAM sample. Individual unavailable probes return
+  `null` or an empty object; they never block a running desktop. Most probes
+  have a 12-second timeout and the Nix closure query has a 20-second bound.
+  This is **not** an idle certification, cold-boot benchmark, or CPU/GPU
+  throughput measurement. It does not contact Infernalnexus, edit settings,
+  restart services, or create a Nix derivation.
 - **compute**: `sysbench cpu --cpu-max-prime=20000`, once single-threaded and
   once across every reported CPU, each for `--compute-duration` seconds
   (default 10). Reports events/sec; higher is faster. This never touches the
@@ -73,6 +84,42 @@ is needed after that.
   their matching durations — the same figures `ollama run --verbose` would
   show. `deepseek-r1:8b` is the smallest of the declared models
   (`docs/profiles.md`), chosen to keep a single run short.
+
+## Measured optimisation protocol
+
+For changes to the NixOS runtime (driver, kernel, services, memory, desktop
+or monitoring), capture an on-Helix baseline on the **same screen resolution,
+refresh mode, session type, workspace and background workload**:
+
+```bash
+helix-benchmark profile
+helix-benchmark system
+helix-benchmark compute --compute-duration 15
+helix-benchmark llm --llm-tokens 200
+helix-benchmark history
+```
+
+Repeat after settling temperatures and caches, ideally three times both
+before and after. The recorder appends results under
+`~/.local/state/helix/benchmarks/results.jsonl`; keep the generation
+fingerprint and NVIDIA driver shown in `profile` alongside each result.
+Do not average performance numbers across different games/saves/settings or
+compare mixed 119.91 Hz/144 Hz display modes. GPU FPS uses the same
+controlled in-game scene and capture interval for each run.
+
+For boot performance, compare complete cold-boot timings, not just a
+`systemd-analyze blame` line: services can start concurrently, and the
+critical chain often differs from the single slowest unit. A profile taken
+after a reboot records that boot; a snapshot without a reboot cannot measure
+the effect of changed boot policy. For power/memory pressure, settle all
+user processes and idle workloads first; a one-sample observation cannot
+prove a sustained improvement. If the comparison is noisy or regresses
+recoverability, decline the optimisation.
+
+Any claimed speedup should give the baseline and candidate Git revisions,
+sample count, medians and variability, workload and environmental conditions,
+and an explicit rollback. Do not enable a daemon, disable a health check,
+change GPU clocks or reduce recovery retention to win a synthetic score.
 
 ## Caveats that only a human can resolve
 
