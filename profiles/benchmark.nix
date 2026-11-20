@@ -13,6 +13,8 @@ let
     runtimeInputs = [
       pkgs.procps
       pkgs.python3
+      pkgs.nix
+      pkgs.systemd
       pkgs.sysbench
       pkgs.vkmark
     ];
