@@ -111,6 +111,14 @@ ghostty_profile_launcher=$system_closure/sw/share/applications/ghostty-profile.d
 [[ -r $ghostty_profile_launcher ]]
 grep -qF 'X-KDE-Shortcuts=Meta+Shift+Return' "$ghostty_profile_launcher"
 
+printf 'Checking declarative Plasma service-health widget...\n'
+plasmoid=$system_closure/sw/share/plasma/plasmoids/org.alienrobot.hamstatus
+[[ -r $plasmoid/metadata.json ]]
+[[ -r $plasmoid/contents/ui/main.qml ]]
+[[ -r $plasmoid/contents/config/main.xml ]]
+grep -qF '"Id": "org.alienrobot.hamstatus"' "$plasmoid/metadata.json"
+grep -qF 'https://home.alienrobot.org/api/services' "$plasmoid/contents/config/main.xml"
+
 printf 'Checking ckb-next in the built default system...\n'
 [[ -x $system_closure/sw/bin/ckb-next ]]
 [[ -x $system_closure/sw/bin/ckb-next-daemon ]]
