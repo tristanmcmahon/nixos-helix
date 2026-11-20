@@ -104,7 +104,7 @@ cipher=$stage/$set_name.tar.age
 # tar streams unencrypted bytes *directly* into age; no plaintext local copy
 # and no writes to the original NAS archive.
 tar -C "$source_root" -cf - "$set_name" | age -R "$recipients" -o "$cipher"
-sha256sum "$cipher" | sed "s|$stage/||" >"$stage/$set_name.tar.age.sha256"
+(cd "$stage" && sha256sum "$set_name.tar.age" >"$set_name.tar.age.sha256")
 source_manifest=$(sha256sum "$source_set/SHA256SUMS" | awk '{ print $1 }')
 sealed_sha=$(sha256sum "$cipher" | awk '{ print $1 }')
 python3 - "$stage/$set_name.sealed-manifest.json" "$set_name" "$source_manifest" "$sealed_sha" <<'PY'
