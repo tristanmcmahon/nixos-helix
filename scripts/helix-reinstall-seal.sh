@@ -64,6 +64,16 @@ else
     printf 'Output must not be on Infernalnexus.\n' >&2
     exit 1
   }
+  # A second CIFS mount of another share on the *same NAS* is not
+  # independent recovery storage, even if its device number differs.
+  nas_server=${helix_nas_source%/*}
+  mapfile -t destination_cifs < <(findmnt -rn --target "$output_dir" --types cifs -o SOURCE)
+  for candidate_source in "${destination_cifs[@]}"; do
+    if [[ $candidate_source == "$nas_server"/* ]]; then
+      printf 'Output is another share on the same Infernalnexus host.\n' >&2
+      exit 1
+    fi
+  done
   source_device=$(findmnt -nro MAJ:MIN --target "$nas_mount")
   output_device=$(findmnt -nro MAJ:MIN --target "$output_dir")
   [[ -n $output_device && $output_device != "$source_device" ]] || {
