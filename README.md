@@ -43,6 +43,15 @@ reformat it during ordinary changes.
 
 ## Routine operation
 
+When the normal Helix checkout has uncommitted work (including an
+in-progress Claude refactor), **do not stash or clean it** merely to deploy
+reviewed `main`. Use the independent, attended
+`helix-deploy-isolated --execute` path documented in
+[operations](docs/operations.md#deploy-reviewed-main-while-the-canonical-checkout-is-dirty).
+That command is installed declaratively after the first bootstrap and leaves
+the active checkout's tracked and untracked files untouched.
+
+
 Run fast validation without activating or building the complete workstation:
 
 ```bash
