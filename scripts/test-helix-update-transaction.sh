@@ -46,11 +46,18 @@ run_case() {
 for scenario in TEST HEALTH PROFILE SWITCH; do
   flag="HELIX_TEST_FAIL_$scenario"
   export "$flag=1"
-  if run_case >/dev/null 2>&1; then
+  # Run as a simple command with errexit disabled in this parent shell.
+  # Testing a Bash function directly in an if suppresses -e in its body,
+  # even inside a subshell, which would invalidate failure injection.
+  set +e
+  run_case >/dev/null 2>&1
+  result=$?
+  set -e
+  unset "$flag"
+  if ((result == 0)); then
     printf 'Fault scenario %s unexpectedly succeeded\n' "$scenario" >&2
     exit 1
   fi
-  unset "$flag"
   grep -Fxq 'previous switch' "$HELIX_TEST_LOG" || {
     printf 'Fault scenario %s never restored the prior system\n' "$scenario" >&2
     exit 1
