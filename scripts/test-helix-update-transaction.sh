@@ -41,7 +41,12 @@ root="$work/gcroots/known-good"
 
 run_case() {
   : > "$HELIX_TEST_LOG"
-  ( set -euo pipefail; source "$source_script"; helix_guarded_promote "$candidate" "$previous" "$previous" "$root" )
+  (
+    set -euo pipefail
+    # shellcheck source=scripts/helix-update-transaction.sh
+    source "$source_script"
+    helix_guarded_promote "$candidate" "$previous" "$previous" "$root"
+  )
 }
 for scenario in TEST HEALTH PROFILE SWITCH; do
   flag="HELIX_TEST_FAIL_$scenario"
