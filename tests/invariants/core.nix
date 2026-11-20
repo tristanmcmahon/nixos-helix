@@ -57,6 +57,28 @@ assert
 assert config.systemd.services.hamology-backup.serviceConfig.User == "tristan";
 assert config.systemd.timers.hamology-backup.timerConfig.Persistent;
 assert !(builtins.hasAttr "hamology-backup" config.systemd.user.services);
+# Restic has a longer deduplicated recovery horizon; hamology's separate
+# full-tar archive keep count must not govern it.
+assert config.services.restic.backups.helix.pruneOpts == [
+  "--keep-daily 14"
+  "--keep-weekly 8"
+  "--keep-monthly 6"
+];
+# Preserve Steam userdata and Proton prefixes in routine backups.
+assert
+  !(builtins.elem "/home/tristan/.local/share/Steam" config.services.restic.backups.helix.exclude);
+assert !(builtins.elem "/home/tristan/.steam" config.services.restic.backups.helix.exclude);
+assert builtins.elem
+  "/home/tristan/.local/share/Steam/steamapps/common"
+  config.services.restic.backups.helix.exclude;
+# A successful backup program completion is recorded even across reboots,
+# independently of network availability; the advisory audit cannot gate boot.
+assert builtins.any (x: builtins.match ".*helix-recovery-receipt restic" x != null)
+  (system.pkgs.lib.toList config.systemd.services.restic-backups-helix.serviceConfig.ExecStartPost);
+assert builtins.any (x: builtins.match ".*helix-recovery-receipt hamology" x != null)
+  (system.pkgs.lib.toList config.systemd.services.hamology-backup.serviceConfig.ExecStartPost);
+assert config.systemd.timers.helix-recovery-audit.timerConfig.Persistent;
+assert builtins.elem "helix-recovery-audit.service" config.helix.failureAlerts.units;
 # No user lingering: it would start every user unit at boot without a login.
 assert config.users.users.tristan.linger != true;
 assert !(builtins.elem "codex-acp" packageNames);
