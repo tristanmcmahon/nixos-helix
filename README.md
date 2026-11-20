@@ -92,6 +92,9 @@ For normal maintenance:
   see [docs/backup.md](docs/backup.md).
 - `helix-git-credential-repair` repairs GitHub HTTPS authentication without
   pinning `gh` to a garbage-collectable store path.
+- The `alienrobot Service Health` Plasma 6 widget is installed declaratively
+  from `plasmoids/org.alienrobot.hamstatus`; an old user-local copy installed
+  with `kpackagetool6` should be removed after confirming the system copy.
 - `helix-theme list|current|random|NAME` inspects and switches appearance.
 - `helix-zed-agent-setup` registers the packaged Claude Code ACP adapter in
   Zed. OpenClaw exposes a separate `helix-openclaw-mcp` host adapter; MCP
