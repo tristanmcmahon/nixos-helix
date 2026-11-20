@@ -3,6 +3,8 @@ let
   inherit (context) config packageNames themePalette;
 in
 assert config.services.desktopManager.plasma6.enable;
+# The hamFence health client must survive a clean Helix reconstruction.
+assert builtins.elem "alienrobot-service-health-plasmoid" packageNames;
 # Every Ghostty surface, not only the first, needs Ghostty's ssh wrapper, or
 # SSH sends TERM=xterm-ghostty and Backspace/Delete break on remote hosts.
 assert
