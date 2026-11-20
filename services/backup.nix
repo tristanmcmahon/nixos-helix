@@ -38,8 +38,8 @@ in
     ];
     extraBackupArgs = [ "--one-file-system" ];
 
-    # The same retention as the hamology archives beside it.
-    pruneOpts = [ "--keep-last ${toString backups.keep}" ];
+    # Deduplicated Restic retention is independent of hamology tar archives.
+    pruneOpts = backups.resticRetention;
     # A light structural check after pruning; full data reads are a manual drill.
     runCheck = true;
 
