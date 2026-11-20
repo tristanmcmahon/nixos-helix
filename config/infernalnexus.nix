@@ -20,8 +20,14 @@ in
   idleTimeout = "10min";
 
   backups = {
-    # Nightly backups keep the two newest copies, Helix's and hamology's alike.
-    keep = 2;
+    # Restic is deduplicated; hamology stores complete tar archives.
+    # Retention must be independently controlled for each backup system.
+    resticRetention = [
+      "--keep-daily 14"
+      "--keep-weekly 8"
+      "--keep-monthly 6"
+    ];
+    hamologyKeep = 2;
     restic = "${backupRoot}/helix-restic";
     reinstall = "${backupRoot}/helix-reinstall";
   };
