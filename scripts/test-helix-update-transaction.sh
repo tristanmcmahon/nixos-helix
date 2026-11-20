@@ -44,10 +44,13 @@ run_case() {
   ( set -euo pipefail; source "$source_script"; helix_guarded_promote "$candidate" "$previous" "$previous" "$root" )
 }
 for scenario in TEST HEALTH PROFILE SWITCH; do
-  if HELIX_TEST_FAIL_"$scenario"=1 run_case >/dev/null 2>&1; then
+  flag="HELIX_TEST_FAIL_$scenario"
+  export "$flag=1"
+  if run_case >/dev/null 2>&1; then
     printf 'Fault scenario %s unexpectedly succeeded\n' "$scenario" >&2
     exit 1
   fi
+  unset "$flag"
   grep -Fxq 'previous switch' "$HELIX_TEST_LOG" || {
     printf 'Fault scenario %s never restored the prior system\n' "$scenario" >&2
     exit 1
