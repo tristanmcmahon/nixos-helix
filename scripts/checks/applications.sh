@@ -65,6 +65,8 @@ if grep -Rqs '^Name=ChatGPT$' "$system_closure/sw/share/applications"; then
   exit 1
 fi
 
+printf 'Checking optional encrypted recovery tooling...\n'
+[[ -x $system_closure/sw/bin/age ]]
 printf 'Checking 1Password modules, wrappers, and browser policies...\n'
 [[ -x $onepassword_cli/bin/op ]]
 [[ -x $onepassword_gui/bin/1password ]]
