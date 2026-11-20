@@ -88,6 +88,9 @@ For normal maintenance:
   diffs, tests and switches. It never runs garbage collection. Nixpkgs updates
   are pull requests made with `./scripts/bump-nixpkgs.sh`; a weekly workflow
   proposes one with a version summary.
+- `scripts/helix-reinstall-seal.sh` can create an additional public-key
+  encrypted, independently stored copy of a verified reinstall set; it never
+  changes the canonical plaintext archive or chooses off-site transport.
 - Restic backs up home, secrets and machine identity to Infernalnexus nightly;
   see [docs/backup.md](docs/backup.md).
 - `helix-git-credential-repair` repairs GitHub HTTPS authentication without
