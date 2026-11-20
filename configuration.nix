@@ -47,6 +47,7 @@ in
     ./system/commands.nix
     ./services/maintenance.nix
     ./services/backup.nix
+    ./services/recovery.nix
     ./services/monitoring.nix
     ./services/netdata.nix
     ./services/hamsteam.nix
