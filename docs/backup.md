@@ -3,7 +3,7 @@
 `services/backup.nix` takes a nightly restic snapshot of the state a rebuild
 cannot recreate:
 
-- `/home/tristan`, except caches, Trash, the Steam library and build outputs;
+- `/home/tristan`, except caches, Trash, disposable Steam game payloads/runtimes and build outputs; Steam userdata and Proton compatibility state remain included;
 - `/etc/nixos/secrets`;
 - `/etc/ssh` (host keys);
 - `/etc/NetworkManager/system-connections`.
@@ -11,11 +11,11 @@ cannot recreate:
 Snapshots go to `/mnt/infernalnexus/nas1/data/backups/helix-restic`, encrypted
 and deduplicated. That is the NAS's `/volume1/nas1/data/backups`, the same
 directory as the hamology archives below; `config/infernalnexus.nix` names it
-once for every Helix backup. Like the hamology archives, only the two newest
-snapshots are kept (`backups.keep` in the same file drives both). That is
-normally the last two nights, so a file is recoverable for about two nights
-after it changes or disappears; a manual run counts as a snapshot and shortens
-the window. Each run ends
+once for every Helix backup. Restic uses its own deduplicated retention policy in `config/infernalnexus.nix`:
+14 daily, eight weekly and six monthly recovery points, instead of just two
+snapshots. The separate hamology full-archive default remains `--keep 2` until
+its opt-in Phase 1B tiered retention is activated. This is version retention,
+not a guarantee of fresh recovery points when backup execution is failing. Each run ends
 with a structural `restic check`. The run starts around 03:17,
 yields to interactive work (nice 19, idle I/O) and catches up after a missed
 night. GAMES_NVME and the data SSDs are not included.
@@ -79,6 +79,21 @@ back. If the NAS is offline the run then starts anyway and fails, so it raises
 a desktop alert (see [operations.md](operations.md#failure-alerts)) and appears
 among failed units in `helix-health`; the next night tries again. They never
 restart themselves: a failed run alerts once instead of retrying out of sight.
+
+## Backup freshness and recovery audit
+
+`helix-recovery --check` reads root-controlled successful-run receipts under
+`/var/lib/helix/recovery`, and checks both timers are active. It deliberately
+does not contact the NAS or claim a completed restore drill. The independent
+`helix-recovery-audit` timer runs daily and alerts when the last completion
+is older than 48 hours, absent, or its timer is inactive. The runtime update
+gate (`helix-health --check`) remains NAS-independent.
+
+The manual `helix-reinstall backup` archives are still **unencrypted**
+tar files on the NAS, including credentials and SSH host keys. New sets use
+root-only creation permissions, but previous sets require separate NAS ACL
+review and an encrypted archive migration. Do not delete existing backup
+sets until decryption and restore have both been tested.
 
 ## Restore drill
 
