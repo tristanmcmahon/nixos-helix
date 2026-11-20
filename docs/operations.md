@@ -20,8 +20,18 @@ candidate, displays `nvd diff`, and test-activates it. The candidate's own
 `helix-health --check` must pass before it is registered in the system profile and
 selected for boot; a failed health gate restores the previous running generation
 and aborts the update.
-It uses `nom` when present and retains raw build output during bootstrap. It
-does not schedule or autonomously activate updates, and it does not run GC.
+It uses `nom` when present and retains raw build output during bootstrap.
+Promotion is single-instance (an advisory user lock), refuses a mismatch between
+the running and boot-selected generations, checks the previous generation is
+healthy before attempting a replacement, and atomically protects that verified
+previous store path via `/nix/var/nix/gcroots/helix-known-good`.
+A guarded activation transaction attempts to restore both the previous boot
+profile and the previous running configuration on failure or interruption,
+including a failure of the initial `test` activation. An unclean shutdown or
+a failure of the rollback itself still requires using the systemd-boot menu.
+The transaction failure paths have isolated mock tests; actual interrupted
+activation on Helix is not exercised automatically.
+It does not schedule or autonomously activate updates, and it does not run GC.
 
 Helix uses native persistent weekly Nix GC with the existing one-hour randomized
 delay and deletes generations older than 14 days. Store optimisation stays
