@@ -8,6 +8,8 @@ Nix evaluation may fetch the pinned release through normal Nixpkgs resolution.
 import argparse
 import json
 import pathlib
+import re
+import shutil
 import statistics
 import subprocess
 import time
@@ -24,9 +26,14 @@ BATCHED = ["tests/quick-evaluations.nix"]
 
 def measure(paths):
     started = time.perf_counter()
+    peak_kib = None
+    time_bin = shutil.which("time")
     for path in paths:
+        command = ["nix-instantiate", "--eval", "--strict", path]
+        if time_bin:
+            command = [time_bin, "-f", "HELIX_PEAK_KIB=%M", *command]
         completed = subprocess.run(
-            ["nix-instantiate", "--eval", "--strict", path],
+            command,
             cwd=ROOT,
             text=True,
             capture_output=True,
@@ -34,7 +41,10 @@ def measure(paths):
         )
         if completed.stdout.strip() != "true":
             raise RuntimeError(f"{path} did not return true: {completed.stdout!r}")
-    return round(time.perf_counter() - started, 4)
+        usage = re.search(r"HELIX_PEAK_KIB=(\\d+)", completed.stderr)
+        if usage:
+            peak_kib = max(peak_kib or 0, int(usage.group(1)))
+    return round(time.perf_counter() - started, 4), peak_kib
 
 
 def main():
@@ -49,13 +59,19 @@ def main():
     measure(BASELINE)
     measure(BATCHED)
     observations = {"baseline": [], "batched": []}
+    peak_memory = {"baseline": [], "batched": []}
     for i in range(args.samples):
         # Alternate ordering to reduce system cache and temperature bias.
         for method in (("baseline", "batched") if i % 2 == 0 else ("batched", "baseline")):
             paths = BASELINE if method == "baseline" else BATCHED
-            seconds = measure(paths)
+            seconds, memory_kib = measure(paths)
             observations[method].append(seconds)
-            print(f"sample={i + 1} method={method} seconds={seconds:.4f}", flush=True)
+            peak_memory[method].append(memory_kib)
+            print(
+                f"sample={i + 1} method={method} seconds={seconds:.4f}"
+                f" peak_nix_process_kib={memory_kib}",
+                flush=True,
+            )
 
     before = statistics.median(observations["baseline"])
     after = statistics.median(observations["batched"])
@@ -67,6 +83,8 @@ def main():
         "relative_change_percent": round(100 * (after - before) / before, 2),
         "baseline_samples_seconds": observations["baseline"],
         "batched_samples_seconds": observations["batched"],
+        "baseline_peak_nix_process_samples_kib": peak_memory["baseline"],
+        "batched_peak_nix_process_samples_kib": peak_memory["batched"],
     }
     print("RESULT " + json.dumps(summary, sort_keys=True), flush=True)
     return 0
