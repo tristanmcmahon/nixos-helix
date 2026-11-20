@@ -28,6 +28,10 @@ repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 if [[ $EUID -ne 0 ]]; then
   exec sudo -- "$repo_root/scripts/reinstall/backup.sh"
 fi
+# These recovery archives currently contain plaintext secrets and SSH keys.
+# At minimum, every newly created archive must default to root-only access.
+# Full encryption is an independent migration and restore-compatibility change.
+umask 077
 
 for command in blkid bootctl df findmnt git lsblk nix-env nixos-version \
   nix-store python3 runuser sha256sum ssh-keygen tar; do
@@ -138,7 +142,7 @@ final_path=$backup_root/$set_name
   printf 'FAIL: backup set name already exists; wait one second and retry.\n' >&2
   exit 1
 }
-install -d -m 0755 "$incomplete_path"
+install -d -m 0700 "$incomplete_path"
 printf 'An incomplete backup is retained on failure: %s\n' "$incomplete_path"
 
 repo_head=$(git -C "$repo_root" rev-parse HEAD)
