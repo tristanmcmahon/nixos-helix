@@ -30,8 +30,16 @@ in
     exclude = [
       "${helix.home}/.cache"
       "${helix.home}/.local/share/Trash"
-      "${helix.home}/.local/share/Steam"
-      "${helix.home}/.steam"
+      # Preserve Steam userdata and compatdata (which may contain saves);
+      # installed games, workshop payloads and shader caches are replaceable.
+      "${helix.home}/.local/share/Steam/steamapps/common"
+      "${helix.home}/.local/share/Steam/steamapps/downloading"
+      "${helix.home}/.local/share/Steam/steamapps/shadercache"
+      "${helix.home}/.local/share/Steam/steamapps/workshop"
+      "${helix.home}/.local/share/Steam/steamrt64"
+      "${helix.home}/.local/share/Steam/ubuntu12_32/steam-runtime"
+      "${helix.home}/.local/share/Steam/ubuntu12_32/steam-runtime.old"
+      "${helix.home}/.local/share/Steam/config/htmlcache"
       "**/node_modules"
       "**/.direnv"
       "**/result"
