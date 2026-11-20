@@ -9,6 +9,7 @@ dedicated review would.
 ```bash
 helix-benchmark            # runs system, compute, llm, then gpu (in that order)
 helix-benchmark system     # load average, memory headroom, temperatures, disk free
+helix-benchmark profile    # boot time, closure size, PSI and GPU idle-power context
 helix-benchmark compute    # sysbench CPU, single-thread and all-thread
 helix-benchmark gpu        # vkmark, then Cyberpunk 2077 via Steam + MangoHud if installed
 helix-benchmark llm        # Ollama tokens/sec on deepseek-r1:8b
