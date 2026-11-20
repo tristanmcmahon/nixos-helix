@@ -1,7 +1,9 @@
 # Helix NixOS configuration
 
-Current alpha: `v0.3.0-alpha.8`; see the [changelog](CHANGELOG.md) for what
-changed and the operator notes.
+Prepared alpha target: `v0.3.0-alpha.8` (release notes committed, not yet
+tagged; the last published Git tag is `v0.3.0-alpha.7`). See the
+[changelog](CHANGELOG.md) and complete the local full release gate before
+creating an annotated tag.
 
 This is the canonical configuration for Helix, a NixOS 26.05 workstation with
 Plasma 6 and an NVIDIA RTX 5080. It uses
@@ -111,6 +113,7 @@ for disaster recovery and any deliberately planned future reinstall; see
 
 - [Changelog](CHANGELOG.md)
 - [Architecture and ownership](docs/architecture.md)
+- [Survivability and reconstruction contract](docs/survivability-contract.md)
 - [Normal installation and recovery](docs/installation.md)
 - [Routine backups](docs/backup.md)
 - [Reinstall and recovery](docs/reinstall.md)
