@@ -22,6 +22,7 @@ BASELINE = [
     "tests/features-disabled.nix",
 ]
 BATCHED = ["tests/quick-evaluations.nix"]
+HYBRID = ["tests/quick-evaluations-primary.nix", "tests/quick-evaluations-secondary.nix"]
 
 
 def measure(paths):
@@ -58,12 +59,14 @@ def main():
     print("Warming baseline and batched evaluation...", flush=True)
     measure(BASELINE)
     measure(BATCHED)
-    observations = {"baseline": [], "batched": []}
-    peak_memory = {"baseline": [], "batched": []}
+    measure(HYBRID)
+    observations = {"baseline": [], "hybrid": [], "batched": []}
+    peak_memory = {"baseline": [], "hybrid": [], "batched": []}
     for i in range(args.samples):
         # Alternate ordering to reduce system cache and temperature bias.
-        for method in (("baseline", "batched") if i % 2 == 0 else ("batched", "baseline")):
-            paths = BASELINE if method == "baseline" else BATCHED
+        methods = ("baseline", "hybrid", "batched") if i % 2 == 0 else ("batched", "hybrid", "baseline")
+        for method in methods:
+            paths = {"baseline": BASELINE, "hybrid": HYBRID, "batched": BATCHED}[method]
             seconds, memory_kib = measure(paths)
             observations[method].append(seconds)
             peak_memory[method].append(memory_kib)
@@ -75,16 +78,21 @@ def main():
 
     before = statistics.median(observations["baseline"])
     after = statistics.median(observations["batched"])
+    hybrid = statistics.median(observations["hybrid"])
     summary = {
         "kind": "helix-quick-invariants-ab-v1",
         "samples_per_method": args.samples,
         "baseline_four_process_seconds": round(before, 4),
         "batched_one_process_seconds": round(after, 4),
+        "hybrid_two_process_seconds": round(hybrid, 4),
+        "hybrid_relative_change_percent": round(100 * (hybrid - before) / before, 2),
         "relative_change_percent": round(100 * (after - before) / before, 2),
         "baseline_samples_seconds": observations["baseline"],
         "batched_samples_seconds": observations["batched"],
+        "hybrid_samples_seconds": observations["hybrid"],
         "baseline_peak_nix_process_samples_kib": peak_memory["baseline"],
         "batched_peak_nix_process_samples_kib": peak_memory["batched"],
+        "hybrid_peak_nix_process_samples_kib": peak_memory["hybrid"],
     }
     print("RESULT " + json.dumps(summary, sort_keys=True), flush=True)
     return 0
