@@ -71,7 +71,7 @@ PlasmoidItem {
     ]
 
     activationTogglesExpanded: false
-    toolTipMainText: i18n("alienrobot service health")
+    toolTipMainText: i18n("alienrobot service reachability")
     toolTipSubText: root.overallSummary()
 
     function statusColor(status) {
@@ -122,11 +122,11 @@ PlasmoidItem {
 
     function statusLabel(status) {
         if (status === "up")
-            return i18n("healthy");
+            return i18n("reachable");
         if (status === "degraded")
-            return i18n("degraded");
+            return i18n("partially reachable");
         if (status === "down")
-            return i18n("down");
+            return i18n("unreachable");
         return i18n("unknown");
     }
 
@@ -147,7 +147,7 @@ PlasmoidItem {
             return i18np("%1 group down", "%1 groups down", down);
         if (degraded > 0)
             return i18np("%1 group degraded", "%1 groups degraded", degraded);
-        return i18n("all groups healthy");
+        return i18n("all groups reachable");
     }
 
     function finishRequest(success, payload) {
