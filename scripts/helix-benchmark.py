@@ -326,7 +326,7 @@ def _read_command(argv: list[str], *, timeout: int = 12) -> str | None:
 
 def _parse_duration_seconds(text: str) -> float | None:
     """Parse systemd-analyze's total after '=', including ms and minutes."""
-    match = re.search(r"=\\s*([\\d.]+)(ms|min|s)\\b", text)
+    match = re.search(r"=\s*([\d.]+)(ms|min|s)\b", text)
     if not match:
         return None
     number = float(match.group(1))
@@ -334,7 +334,7 @@ def _parse_duration_seconds(text: str) -> float | None:
 
 
 def _parse_pressure_avg10(text: str) -> float | None:
-    match = re.search(r"^some\\s+avg10=([\\d.]+)", text, re.MULTILINE)
+    match = re.search(r"^some\s+avg10=([\d.]+)", text, re.MULTILINE)
     return float(match.group(1)) if match else None
 
 
@@ -403,7 +403,7 @@ def run_profile() -> Result:
 
     meminfo = pathlib.Path("/proc/meminfo").read_text(encoding="utf-8")
     for field_name in ("MemTotal", "MemAvailable", "SwapTotal", "SwapFree"):
-        match = re.search(rf"^{field_name}:\\s+(\\d+)\\s+kB", meminfo, re.MULTILINE)
+        match = re.search(rf"^{field_name}:\s+(\d+)\s+kB", meminfo, re.MULTILINE)
         metrics[f"{field_name.lower()}_kib"] = int(match.group(1)) if match else None
     metrics["load_average_1m"] = round(os.getloadavg()[0], 3)
     metrics["logical_cpus"] = os.cpu_count()
