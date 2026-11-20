@@ -50,6 +50,40 @@ of these will be available after installation:
 If either is unavailable, **DO NOT WIPE YET**. Do not copy the credential to the
 Ventoy stick or create another secret archive.
 
+## Optional independent encrypted copy (no change to canonical format)
+
+A completed canonical reinstall set is currently a collection of **plaintext**
+tar archives on Infernalnexus, including the home, secret files and SSH host
+keys. To create an additional encrypted recovery copy without changing or
+removing that working backup, use `scripts/helix-reinstall-seal.sh` after
+the standard backup has been verified:
+
+```bash
+cd ~/Projects/nixos-helix
+sudo ./scripts/helix-reinstall-seal.sh helix-reinstall-YYYYMMDD-HHMMSS \
+  --recipients-file /secure/location/age-recipients.txt \
+  --output-dir /path/to/approved/off-nas-volume
+```
+
+The recipients file contains only **public** age recipient keys. Keep the
+matching private decryption identity independently available (for example in
+1Password), not in this repository, the Nix store, or on the source NAS.
+The command verifies the completed set's checksums and tar readability, then
+streams the whole set into `age` without creating a plaintext intermediate
+copy. It publishes an immutable-named `.sealed/` directory containing the
+ciphertext, SHA-256 sidecar and a non-secret manifest. It refuses to overwrite
+existing output, to run on an unmounted/unexpected NAS source, or to publish
+back onto that same mounted filesystem.
+
+**This does not encrypt or erase existing plaintext NAS archives.** The
+destination and further off-site transport are deliberate operator choices.
+To verify recovery, first test an `age --decrypt --identity` round trip
+into a protected scratch directory, validate the unpacked original
+`SHA256SUMS`, and perform a restore drill. The canonical restore command still
+expects a mounted Infernalnexus share; independent NAS-free restore is **not
+yet** fully automated. Keep original recovery copies until the full path has
+been demonstrated.
+
 ## Verified backup gate
 
 The only supported reinstall backup command writes timestamped archive sets to
