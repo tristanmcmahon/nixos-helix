@@ -116,10 +116,10 @@ here. What remains is narrower:
   (one removed so far; a full pass across the 220 remaining has not been
   done). Keep the policy set, and keep regression tests tied to real
   incidents, per `docs/architecture.md`.
-- Add a `helix.health.criticalUnits` option that each module appends to.
-  Generate the `helix-health --check` list, `helix-monitor status` and the
-  closure checks from it, so disabling a feature no longer requires updating
-  the health gate by hand.
+- The `helix.health.criticalUnits` and `criticalUserUnits` registry now
+  generates the `helix-health --check` unit list, so disabled features drop
+  from the runtime gate. Still align `helix-monitor status` and closure checks
+  with that registry, and retain policy assertions for truly critical units.
 - Replace source-grepping in `test-reinstall-safety.sh` with behavioural
   tests in the style of `test-reinstall-restore.sh`.
 
@@ -128,10 +128,8 @@ here. What remains is narrower:
 - **`gzdoom` and `uzdoom`.** Both are still installed. Keep both, or only the
   successor fork.
 - **NVIDIA Xid 109 (`CTX SWITCH TIMEOUT`) under sustained Proton load.**
-  Unresolved. Full case file, evidence and prioritized next steps are in
-  `docs/xid109.md` — read that file before trying anything new; several
-  plausible fixes (native-workload reproduction,
-  `VKD3D_CONFIG=descriptor_heap`) are already tried and ruled out with
-  evidence there, and this is a known, NVIDIA-acknowledged bug (internal
-  bug 6017526, `NVIDIA/open-gpu-kernel-modules#1097`), not an unreported
-  mystery.
+  Helix has promoted the specifically qualified NVIDIA 620.70.06 driver after
+  repeat workloads improved and generation 72 reboot/health verification
+  passed. That establishes a better local production baseline, not closure of
+  the upstream issue. Preserve the case file in `docs/xid109.md` and
+  deliberately requalify any replacement driver.
