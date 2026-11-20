@@ -41,6 +41,22 @@ Inside that sandbox the Helix checkout is writable, but `.git`, `.vscode`,
 human step. `helix-update` also disables `core.fsmonitor` and hooks for its
 Git commands.
 
+## Backup freshness and recovery readiness
+
+`helix-recovery --check` audits the local last-success receipts from the
+nightly Restic and hamology jobs, plus whether both timers are active. The
+receipts are stored under `/var/lib/helix/recovery`, written atomically by
+root-only `ExecStartPost` commands after successful backup execution.
+Failed and condition-skipped backups do not refresh them. The daily
+`helix-recovery-audit` timer raises the existing failure alert if either
+last success is older than 48 hours, is missing, or its timer is inactive.
+
+This audit does not contact or mount Infernalnexus and does not assert that
+the archives can be restored. It is intentionally separate from
+`helix-health --check`, whose successful operation may not depend on the
+NAS. A newly installed system requires successful backup jobs to establish
+its first receipts; this is a deliberate, visible initial warning.
+
 ## Failure alerts
 
 Unattended units raise a critical desktop notification when they fail: the
