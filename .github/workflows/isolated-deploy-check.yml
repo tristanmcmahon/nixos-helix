@@ -1,0 +1,33 @@
+name: Isolated Deploy Packaging
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/helix-deploy-isolated.sh'
+      - 'scripts/test-helix-deploy-isolated.sh'
+      - 'system/commands.nix'
+      - 'tests/isolated-deploy-package.nix'
+      - '.github/workflows/isolated-deploy-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: isolated-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wrapper:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+      - name: Build the real installed deploy command only
+        env:
+          TMPDIR: /tmp
+        run: |
+          ./scripts/dev-shell.sh --run 'nix-build --no-out-link tests/isolated-deploy-package.nix'
+      - name: Refusal-path fixture
+        run: ./scripts/test-helix-deploy-isolated.sh
