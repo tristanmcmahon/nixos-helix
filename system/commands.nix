@@ -47,6 +47,26 @@ let
     ''
     + builtins.readFile ../scripts/helix-update.sh;
   };
+  helixDeployIsolated = pkgs.writeShellApplication {
+    name = "helix-deploy-isolated";
+    runtimeInputs = with pkgs; [
+      coreutils
+      deadnix
+      gawk
+      git
+      nix
+      nix-output-monitor
+      nixfmt
+      nvd
+      shellcheck
+      statix
+      util-linux
+    ];
+    text = ''
+      helix_checkout=${lib.escapeShellArg (import ../config/helix.nix).checkout}
+    ''
+    + builtins.readFile ../scripts/helix-deploy-isolated.sh;
+  };
 in
 {
   options.helix.health = {
@@ -65,5 +85,6 @@ in
   config.environment.systemPackages = [
     helixHealth
     helixUpdate
+    helixDeployIsolated
   ];
 }

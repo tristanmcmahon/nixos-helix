@@ -23,6 +23,55 @@ and aborts the update.
 It uses `nom` when present and retains raw build output during bootstrap. It
 does not schedule or autonomously activate updates, and it does not run GC.
 
+### Deploy reviewed main while the canonical checkout is dirty
+
+`helix-deploy-isolated --execute` is the supported **attended** alternative
+when Claude or a human has in-progress modifications in
+`~/Projects/nixos-helix`. It fetches GitHub `origin/main`, creates a
+temporary detached Git worktree at that exact commit, selects its own
+pinned Nixpkgs, validates it, builds the real Helix system, prints an
+`nvd diff`, verifies the existing running generation, and then
+test-activates/health-checks/registers/switches the candidate.
+It protects the previously healthy closure against garbage collection
+under `/nix/var/nix/gcroots/helix-known-good` before any activation.
+If an activation step fails while the shell is running, it attempts to
+restore the old boot profile and running configuration. Power loss or
+failure of the rollback still needs manual recovery through systemd-boot.
+
+It deliberately **does not** stash, reset, clean, switch branches in, or
+commit anything to the canonical checkout. The operation updates Git's
+remote-tracking ref and briefly registers a separate temporary worktree;
+it does not incorporate the work-in-progress changes in the new closure.
+The temporary worktree is removed only if it remains clean. There is an
+exclusive user lock; do not run the regular `helix-update` at the same time.
+An unexpected GitHub `origin`, an unclean temporary worktree, a mismatched
+running/selected generation or a failed pre-activation health check blocks
+promotion. It never runs garbage collection or modifies NAS data.
+
+```bash
+helix-deploy-isolated --check      # fetch and quick validate, no activation
+helix-deploy-isolated --execute    # attended production activation
+```
+
+For the **first installation** of this command, the currently installed
+`helix-update` still refuses a dirty canonical checkout. Bootstrap from a
+clean independent worktree (no stash/clean of Claude's files):
+
+```bash
+git -C ~/Projects/nixos-helix fetch origin main
+git -C ~/Projects/nixos-helix worktree add --detach \
+  ~/Projects/nixos-helix-deploy origin/main
+~/Projects/nixos-helix-deploy/scripts/helix-deploy-isolated.sh --execute
+```
+
+If `~/Projects/nixos-helix-deploy` already exists, review that worktree
+rather than force-replacing it. This is a one-time bootstrap; subsequent
+deployments use the installed `helix-deploy-isolated` executable. Keep a
+record of the reported commit and verify `helix-health --check` after
+activation. To remove an unchanged bootstrap worktree later, use
+`git -C ~/Projects/nixos-helix worktree remove ~/Projects/nixos-helix-deploy`
+**after verifying it contains no additional work**.
+
 Helix uses native persistent weekly Nix GC with the existing one-hour randomized
 delay and deletes generations older than 14 days. Store optimisation stays
 weekly. The 32 GiB workstation uses zstd zram at 50% RAM and priority 100; no
