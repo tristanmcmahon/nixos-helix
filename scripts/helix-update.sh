@@ -26,6 +26,16 @@ esac
 repo=${helix_checkout:?helix-update must be run as the installed command}
 cd "$repo"
 
+# Concurrent unattended updates are forbidden; the lock is owned by the
+# invoking desktop user and does not depend on the NAS or root filesystem.
+lock_dir=${XDG_RUNTIME_DIR:-"$HOME/.local/state/helix"}
+mkdir -p -- "$lock_dir"
+exec 9>"$lock_dir/helix-update.lock"
+if ! flock -n 9; then
+  printf 'Another helix-update is already running.\n' >&2
+  exit 1
+fi
+
 # Never let repository-local Git configuration run commands here.
 if [[ -n $(git -c core.fsmonitor=false -c core.hooksPath=/dev/null \
   status --porcelain --untracked-files=normal) ]]; then
@@ -62,23 +72,28 @@ candidate=$(readlink -f "$out_link")
 printf 'Candidate package changes:\n'
 nvd diff /run/current-system "$candidate"
 previous=$(readlink -f /run/current-system)
-printf 'Test-activating candidate...\n'
-sudo "$candidate/bin/switch-to-configuration" test
-printf 'Running candidate runtime health gate...\n'
-if ! "$candidate/sw/bin/helix-health" --check; then
-  printf 'Candidate health check failed; restoring previous running configuration...\n' >&2
-  sudo "$previous/bin/switch-to-configuration" test
+previous_profile=$(readlink -f /nix/var/nix/profiles/system)
+if [[ $previous != "$previous_profile" ]]; then
+  printf 'Refusing ambiguous activation: running and selected system generations differ.\n' >&2
+  printf 'Running:    %s\nPersistent: %s\n' "$previous" "$previous_profile" >&2
   exit 1
 fi
-printf 'Candidate health check passed; registering system generation...\n'
-sudo nix-env --profile /nix/var/nix/profiles/system --set "$candidate"
-printf 'Selecting registered generation for boot...\n'
-if ! sudo "$candidate/bin/switch-to-configuration" switch; then
-  printf 'Final activation failed; restoring previous system generation...\n' >&2
-  sudo nix-env --profile /nix/var/nix/profiles/system --set "$previous"
-  sudo "$previous/bin/switch-to-configuration" switch
+if [[ ! -x $previous/bin/switch-to-configuration ]]; then
+  printf 'Previous running generation is not a usable recovery target.\n' >&2
   exit 1
 fi
+printf 'Verifying the currently running generation before protecting it...\n'
+"$previous/sw/bin/helix-health" --check
+
+# The guarded helper protects the old closure from GC, test-activates the
+# candidate, and rolls both the profile and runtime back on any error or
+# interrupt. Its failure paths are exercised without root/activation in CI.
+sudo -v
+# shellcheck source=scripts/helix-update-transaction.sh
+source "$repo/scripts/helix-update-transaction.sh"
+helix_guarded_promote "$candidate" "$previous" "$previous_profile" \
+  /nix/var/nix/gcroots/helix-known-good
+
 profile=$(readlink -f /nix/var/nix/profiles/system)
 generation=$(sudo nix-env --profile /nix/var/nix/profiles/system --list-generations |
   awk '$0 ~ /current/ { print $1 }')
