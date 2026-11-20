@@ -18,6 +18,9 @@ onepassword_cli=$(readlink -f "$artifacts/1password-cli")
 printf 'Checking Helix health and update command surfaces...\n'
 "$system_closure/sw/bin/helix-health" --help | grep -qF -- '--check'
 grep -qF 'helix-health' "$system_closure/sw/bin/helix-update"
+"$system_closure/sw/bin/helix-deploy-isolated" --help | grep -qF -- '--execute'
+grep -qF 'worktree add --detach' "$system_closure/sw/bin/helix-deploy-isolated"
+grep -qF 'switch-to-configuration" test' "$system_closure/sw/bin/helix-deploy-isolated"
 grep -qF 'nix-env --profile /nix/var/nix/profiles/system --set "$candidate"' \
   "$system_closure/sw/bin/helix-update"
 # hamCade and emulation are left out of this disposable closure because their
