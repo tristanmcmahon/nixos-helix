@@ -41,6 +41,9 @@ assert builtins.elem "nix-output-monitor" packageNames;
 assert builtins.elem "nvd" packageNames;
 assert builtins.elem "helix-health" packageNames;
 assert builtins.elem "helix-update" packageNames;
+# Clean-main deployments must be possible without modifying Claude's
+# uncommitted canonical checkout; the alternate path is declaratively present.
+assert builtins.elem "helix-deploy-isolated" packageNames;
 assert builtins.elem "helix-git-credential-repair" packageNames;
 assert builtins.elem "gh" packageNames;
 assert !(builtins.elem "zen-browser" packageNames);
