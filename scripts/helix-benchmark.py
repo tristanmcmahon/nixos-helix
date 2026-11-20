@@ -437,6 +437,8 @@ def run_history(count: int) -> int:
     for line in lines:
         record = json.loads(line)
         compute = record.get("compute", {})
+        profile = record.get("profile", {})
+        power = profile.get("gpu", {}) if isinstance(profile, dict) else {}
         gpu = record.get("gpu", {})
         llm = record.get("llm", {})
         cyberpunk = gpu.get("cyberpunk_2077", {}) if isinstance(gpu, dict) else {}
@@ -446,7 +448,10 @@ def run_history(count: int) -> int:
             f"compute={compute.get('sysbench_all_threads_events_per_sec', '-')}  "
             f"vkmark={vkmark.get('score', vkmark.get('error', '-'))}  "
             f"cyberpunk_fps={cyberpunk.get('avg_fps', '-')}  "
-            f"llm_tok/s={llm.get('generated_tokens_per_sec', '-')}"
+            f"llm_tok/s={llm.get('generated_tokens_per_sec', '-')}  "
+            f"boot_s={profile.get('boot_seconds', '-')}  "
+            f"closure_bytes={profile.get('system_closure_bytes', '-')}  "
+            f"gpu_watts={power.get('power_watts', '-')}"
         )
     return 0
 
