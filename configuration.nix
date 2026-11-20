@@ -26,6 +26,7 @@ in
     ./hardware/corsair-k70.nix
 
     ./desktop/plasma.nix
+    ./desktop/ham-status-plasmoid.nix
     ./desktop/applications.nix
     ./desktop/fonts.nix
     ./desktop/ghostty.nix
