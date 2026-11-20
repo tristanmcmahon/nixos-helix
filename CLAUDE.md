@@ -3,8 +3,9 @@
 Helix is one NixOS 26.05 workstation configured declaratively with ordinary
 NixOS modules and the Nixpkgs release pinned in `nixpkgs.json` (bump it with
 `scripts/bump-nixpkgs.sh`, in a PR). There are no flakes, no Home
-Manager and no host framework. Read `docs/architecture.md` before structural
-changes; it is the authority on ownership, state, safety and network rules.
+Manager and no host framework. Read `docs/architecture.md` and `docs/survivability-contract.md` before
+structural changes; they are the authority on ownership, recovery guarantees,
+state, safety, and network rules.
 
 ## Rules
 
