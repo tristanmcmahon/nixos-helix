@@ -24,9 +24,6 @@ let
     let
       result = import check.file;
     in
-    if result == true then
-      true
-    else
-      throw "Helix invariant ${check.name} returned a non-true result";
+    if result == true then true else throw "Helix invariant ${check.name} returned a non-true result";
 in
 builtins.all verify checks
