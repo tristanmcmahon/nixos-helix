@@ -46,8 +46,13 @@ sudo nix-env --profile /nix/var/nix/profiles/system --list-generations
 sudo nixos-rebuild switch --rollback
 ```
 
-Automatic Nix garbage collection deletes generations older than 14 days, so recent rollback
-generations remain available without a repository-owned generation manager.
+Automatic Nix garbage collection deletes ordinary generations older than 14
+days. The attended `helix-update` transaction additionally pins its verified
+previous generation at `/nix/var/nix/gcroots/helix-known-good` so at least one
+recently qualified fallback remains in the store independent of that age limit.
+This is a protected store closure, not an autonomous boot watchdog. On boot
+failure select the prior generation from systemd-boot, then inspect state
+before manually promoting anything else.
 The generated hardware configuration contains no swap, so hibernation is not
 supported unless swap is deliberately designed later.
 
