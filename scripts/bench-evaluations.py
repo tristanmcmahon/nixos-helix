@@ -41,7 +41,7 @@ def measure(paths):
         )
         if completed.stdout.strip() != "true":
             raise RuntimeError(f"{path} did not return true: {completed.stdout!r}")
-        usage = re.search(r"HELIX_PEAK_KIB=(\\d+)", completed.stderr)
+        usage = re.search(r"HELIX_PEAK_KIB=(\d+)", completed.stderr)
         if usage:
             peak_kib = max(peak_kib or 0, int(usage.group(1)))
     return round(time.perf_counter() - started, 4), peak_kib
