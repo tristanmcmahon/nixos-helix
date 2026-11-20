@@ -45,7 +45,7 @@ run_case() {
     set -euo pipefail
     # shellcheck source=scripts/helix-update-transaction.sh
     source "$source_script"
-    helix_guarded_promote "$candidate" "$fixture_previous"" "$fixture_previous"" "$root"
+    helix_guarded_promote "$candidate" "$fixture_previous" "$fixture_previous" "$root"
   )
 }
 for scenario in TEST HEALTH PROFILE SWITCH; do
@@ -67,8 +67,8 @@ for scenario in TEST HEALTH PROFILE SWITCH; do
     printf 'Fault scenario %s never restored the prior system\n' "$scenario" >&2
     exit 1
   }
-  grep -Fq "profile --profile /nix/var/nix/profiles/system --set $fixture_previous"" "$HELIX_TEST_LOG"
-  [[ $(readlink "$root") == "$fixture_previous"" ]]
+  grep -Fq "profile --profile /nix/var/nix/profiles/system --set $fixture_previous" "$HELIX_TEST_LOG"
+  [[ $(readlink "$root") == "$fixture_previous" ]]
 done
 run_case >/dev/null
 grep -Fxq 'candidate test' "$HELIX_TEST_LOG"
@@ -78,5 +78,5 @@ if grep -Fxq 'previous switch' "$HELIX_TEST_LOG"; then
   echo 'Successful promotion performed rollback' >&2
   exit 1
 fi
-[[ $(readlink "$root") == "$fixture_previous"" ]]
+[[ $(readlink "$root") == "$fixture_previous" ]]
 echo 'Guarded activation failure-injection tests passed.'
