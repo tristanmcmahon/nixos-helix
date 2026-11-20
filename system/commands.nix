@@ -39,6 +39,7 @@ let
       nix-output-monitor
       nixfmt
       nvd
+      util-linux
       shellcheck
       statix
     ];
