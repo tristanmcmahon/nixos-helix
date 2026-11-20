@@ -88,6 +88,8 @@ For normal maintenance:
   diffs, tests and switches. It never runs garbage collection. Nixpkgs updates
   are pull requests made with `./scripts/bump-nixpkgs.sh`; a weekly workflow
   proposes one with a version summary.
+- `helix-recovery --check` audits backup freshness independently of the
+  NAS-free `helix-health --check` upgrade gate.
 - Restic backs up home, secrets and machine identity to Infernalnexus nightly;
   see [docs/backup.md](docs/backup.md).
 - `helix-git-credential-repair` repairs GitHub HTTPS authentication without
