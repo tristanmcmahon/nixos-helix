@@ -313,6 +313,103 @@ def run_llm(num_predict: int) -> Result:
     return Result("llm", metrics)
 
 
+
+def _read_command(argv: list[str], *, timeout: int = 12) -> str | None:
+    """Bound each optional probe; a missing tool must not spoil the snapshot."""
+    try:
+        return subprocess.run(
+            argv, capture_output=True, text=True, timeout=timeout, check=True
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
+def _parse_duration_seconds(text: str) -> float | None:
+    """Parse systemd-analyze's total after '=', including ms and minutes."""
+    match = re.search(r"=\s*([\d.]+)(ms|min|s)\b", text)
+    if not match:
+        return None
+    number = float(match.group(1))
+    return round(number * {"ms": 0.001, "s": 1, "min": 60}[match.group(2)], 3)
+
+
+def _parse_pressure_avg10(text: str) -> float | None:
+    match = re.search(r"^some\s+avg10=([\d.]+)", text, re.MULTILINE)
+    return float(match.group(1)) if match else None
+
+
+def _parse_closure_bytes(text: str) -> int | None:
+    try:
+        info = json.loads(text)
+        if not isinstance(info, dict) or len(info) != 1:
+            return None
+        entry = next(iter(info.values()))
+        value = entry.get("closureSize")
+        return value if type(value) is int and value >= 0 else None
+    except (ValueError, AttributeError, TypeError):
+        return None
+
+
+def run_profile() -> Result:
+    """Read-only production baseline; not a stress test or idle certification."""
+    metrics: dict[str, Any] = {
+        "sample_type": "uncontrolled single snapshot; repeat at similar idle/load",
+        "kernel": os.uname().release,
+        "system_generation": str(pathlib.Path("/run/current-system").resolve()),
+    }
+
+    boot_report = _read_command(["systemd-analyze", "time"])
+    metrics["boot_seconds"] = _parse_duration_seconds(boot_report or "")
+    metrics["boot_report"] = boot_report
+    blame = _read_command(["systemd-analyze", "blame", "--no-pager"])
+    metrics["longest_starting_units"] = (blame.splitlines()[:8] if blame else [])
+
+    # -S asks for the *transitive* closure size, not only the system symlink's
+    # small root derivation. This does not build or garbage-collect anything.
+    closure = _read_command(["nix", "path-info", "--json", "-S", "/run/current-system"], timeout=20)
+    metrics["system_closure_bytes"] = _parse_closure_bytes(closure) if closure else None
+
+    for pressure in ("cpu", "memory", "io"):
+        try:
+            source = pathlib.Path("/proc/pressure") / pressure
+            metrics[f"psi_{pressure}_some_avg10_percent"] = _parse_pressure_avg10(
+                source.read_text(encoding="utf-8")
+            )
+        except OSError:
+            metrics[f"psi_{pressure}_some_avg10_percent"] = None
+
+    # A single non-stress NVIDIA sample; utilisation is recorded to expose
+    # invalid 'idle' comparisons rather than pretend every sample was idle.
+    gpu_report = _read_command([
+        "nvidia-smi",
+        "--query-gpu=driver_version,power.draw,utilization.gpu,memory.used",
+        "--format=csv,noheader,nounits",
+    ])
+    gpu: dict[str, Any] = {}
+    if gpu_report:
+        try:
+            driver, power, util, memory = (
+                part.strip() for part in gpu_report.splitlines()[0].split(",")
+            )
+            gpu = {
+                "driver": driver,
+                "power_watts": float(power),
+                "utilization_percent": float(util),
+                "vram_used_mib": float(memory),
+            }
+        except ValueError:
+            gpu = {"error": "unparseable NVIDIA power snapshot"}
+    metrics["gpu"] = gpu
+
+    meminfo = pathlib.Path("/proc/meminfo").read_text(encoding="utf-8")
+    for field_name in ("MemTotal", "MemAvailable", "SwapTotal", "SwapFree"):
+        match = re.search(rf"^{field_name}:\s+(\d+)\s+kB", meminfo, re.MULTILINE)
+        metrics[f"{field_name.lower()}_kib"] = int(match.group(1)) if match else None
+    metrics["load_average_1m"] = round(os.getloadavg()[0], 3)
+    metrics["logical_cpus"] = os.cpu_count()
+
+    return Result("profile", metrics)
+
 def _print_result(result: Result) -> None:
     print(f"\n== {result.category} ==")
     if result.skipped:
@@ -340,6 +437,8 @@ def run_history(count: int) -> int:
     for line in lines:
         record = json.loads(line)
         compute = record.get("compute", {})
+        profile = record.get("profile", {})
+        power = profile.get("gpu", {}) if isinstance(profile, dict) else {}
         gpu = record.get("gpu", {})
         llm = record.get("llm", {})
         cyberpunk = gpu.get("cyberpunk_2077", {}) if isinstance(gpu, dict) else {}
@@ -349,7 +448,10 @@ def run_history(count: int) -> int:
             f"compute={compute.get('sysbench_all_threads_events_per_sec', '-')}  "
             f"vkmark={vkmark.get('score', vkmark.get('error', '-'))}  "
             f"cyberpunk_fps={cyberpunk.get('avg_fps', '-')}  "
-            f"llm_tok/s={llm.get('generated_tokens_per_sec', '-')}"
+            f"llm_tok/s={llm.get('generated_tokens_per_sec', '-')}  "
+            f"boot_s={profile.get('boot_seconds', '-')}  "
+            f"closure_bytes={profile.get('system_closure_bytes', '-')}  "
+            f"gpu_watts={power.get('power_watts', '-')}"
         )
     return 0
 
@@ -358,7 +460,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "command",
-        choices=("system", "compute", "gpu", "llm", "all", "history"),
+        choices=("system", "profile", "compute", "gpu", "llm", "all", "history"),
         nargs="?",
         default="all",
     )
@@ -402,11 +504,13 @@ def main() -> int:
 
     categories = {
         "system": lambda: run_system(),
+        "profile": lambda: run_profile(),
         "compute": lambda: run_compute(args.compute_duration),
         "gpu": lambda: run_gpu(args.gpu_load_wait, args.gpu_log_duration),
         "llm": lambda: run_llm(args.llm_tokens),
     }
-    selected = list(categories) if args.command == "all" else [args.command]
+    # Preserve the established all-order and cost; profile remains opt-in.
+    selected = ["system", "compute", "gpu", "llm"] if args.command == "all" else [args.command]
 
     results = []
     try:
