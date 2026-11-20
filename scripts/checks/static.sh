@@ -123,6 +123,7 @@ python3 scripts/test-fan-commission.py
 python3 scripts/test-zed-agent-setup.py
 bash scripts/test-openclaw-mcp.sh
 ./scripts/test-wait-for-nas.sh
+./scripts/test-recovery.sh
 
 ./scripts/reinstall/test-safety.sh
 ./scripts/reinstall/test-restore.sh
