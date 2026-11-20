@@ -48,5 +48,13 @@ cd ~/Projects/nixos-helix/plasmoids/org.alienrobot.hamstatus
 
 Then enter Plasma panel Edit Mode and add **alienrobot Service Health**.
 
-This first pass is user-local only. NixOS packaging/integration should be added
-after the concurrent Helix refactor settles, keeping this package unchanged.
+Helix now also packages this widget declaratively via
+`desktop/ham-status-plasmoid.nix`. For regular operation prefer the system
+package, which survives reinstall and rebuild without a manual command.
+If an older user-local copy shadows it, remove that copy with
+`./install.sh remove` **after** verifying the system package is available.
+This helper remains useful for temporary development versions.
+
+The hamFence feed measures socket reachability, not application readiness:
+the pips mean reachable / partially reachable / unreachable / unknown, not
+a guarantee that an application is healthy.
