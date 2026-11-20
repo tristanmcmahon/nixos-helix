@@ -82,6 +82,9 @@ on_exit() {
       printf 'CRITICAL: unable to restore previous runtime; use the boot menu.\n' >&2
     fi
   fi
+  # Never try to remove a worktree while our shell's working directory
+  # is inside it. The separate in-progress checkout remains untouched.
+  cd -- "$source_checkout" || true
   # Only the path created by this invocation may be removed. Never force
   # removal: a concurrent actor who modified it needs their work preserved.
   if ((registered)); then
