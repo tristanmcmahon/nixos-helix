@@ -85,6 +85,13 @@ if grep -RqiE 'arcade|mame' profiles/emulation.nix profiles/emulation; then
   exit 1
 fi
 
+printf 'Checking Ghostty event-loop backend policy...\n'
+# A regression to io_uring on Helix's current kernel produces false iowait,
+# even with idle storage. The repo-owned config must carry this workaround:
+# helix-ghostty-config replaces the deployed user baseline during login.
+[[ $(grep -Ec '^[[:space:]]*async-backend[[:space:]]*=' config/ghostty/config.ghostty) -eq 1 ]]
+grep -Eq '^async-backend[[:space:]]*=[[:space:]]*epoll[[:space:]]*$' config/ghostty/config.ghostty
+
 printf 'Checking Git whitespace...\n'
 git diff --check
 
