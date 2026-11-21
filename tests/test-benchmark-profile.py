@@ -39,6 +39,16 @@ def fake_command(args, **kwargs):
     if tool == "systemd-analyze" and args[1] == "blame":
         return "12.300s first.service\n 5.000s second.service"
     if tool == "nix":
+        assert args == [
+            "nix",
+            "--extra-experimental-features",
+            "nix-command",
+            "path-info",
+            "--json",
+            "-S",
+            "/run/current-system",
+        ]
+        assert kwargs["timeout"] == 20
         return json.dumps(closure_array)
     if tool == "nvidia-smi":
         return "620.70.06, 32.40, 1, 410"
