@@ -10,6 +10,12 @@ Qualified on Helix generation 72 on 2026-11-09: production activation and
 post-reboot `helix-health --check` passed on NVIDIA 620.70.06, and the boot
 journal contained no NVIDIA Xid or CTX SWITCH TIMEOUT.
 
+A later post-reboot check on 2026-11-21 reported `helix-health --check:
+PASS`, Ghostty `async-backend = epoll`, `procs_blocked=0`, and I/O PSI
+`full avg10=1.86`. This confirms the observed runtime baseline, **not**
+the separate full release closure gate. Run `check.sh --full` on Helix
+before creating the release tag.
+
 ### Changed
 
 - NVIDIA 620.70.06 is now the explicit production driver for the RTX 5080,
@@ -21,6 +27,13 @@ journal contained no NVIDIA Xid or CTX SWITCH TIMEOUT.
 
 ### Added
 
+- `helix-deploy-isolated` provides an attended route to deploy a reviewed
+  `origin/main` from an independent worktree, even when the main checkout
+  contains uncommitted work or is on another branch. It leaves that working
+  tree untouched and protects the previous qualified closure before
+  activation. See `docs/operations.md`.
+- Performance-evaluation tooling and a recorded baseline were added under
+  `scripts/bench-evaluations.py` and `docs/performance-evaluation-20261121.md`.
 - `helix-benchmark` (`helix.benchmark`, on by default): lightweight,
   on-demand self-benchmarking for raw CPU compute (`sysbench`), GPU (`vkmark`,
   plus a real-world Cyberpunk 2077 FPS capture via MangoHud if it's
@@ -34,6 +47,15 @@ journal contained no NVIDIA Xid or CTX SWITCH TIMEOUT.
 
 ### Fixed
 
+- Ghostty now uses `async-backend = epoll` in its repository-managed
+  baseline. The high kernel I/O-wait readings observed earlier are absent
+  after a fresh launch and reboot; `docs/benchmarking.md` records why the
+  observations are **not** a controlled io_uring-versus-epoll A/B.
+  The full desktop release check also validates the installed configuration,
+  not just the source.
+- `helix-benchmark profile` accepts both known Nix `path-info --json`
+  shapes and opts in to `nix-command` for that read-only query instead
+  of changing system-wide experimental features.
 - The nightly backups after waking from suspend: a resume fires every
   `Persistent` backup timer missed while asleep, a few seconds before Wi-Fi
   has reconnected, so `hamology-backup` failed every time. Both backup units
@@ -43,6 +65,15 @@ journal contained no NVIDIA Xid or CTX SWITCH TIMEOUT.
   forever and never raise its alert (`tests/invariants/core.nix` keeps it so).
   The NAS mount's start-limit is unchanged until a failure log shows which
   unit latches.
+
+### Deliberately excluded
+
+- Experimental recovery/survivability drafts #121–#124 were closed without
+  merging. Their proposed retention, update-transaction, declarative
+  plasmoid, and archive-sealing changes are **not** included in this alpha.
+- The newer Nixpkgs bump proposed by #120 is still a separate open PR.
+  This release candidate retains the pin in `nixpkgs.json`:
+  `nixos-26.05.12400.da6dc0e7b260`.
 
 ## v0.3.0-alpha.7
 

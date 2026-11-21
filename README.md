@@ -1,9 +1,8 @@
 # Helix NixOS configuration
 
-Prepared alpha target: `v0.3.0-alpha.8` (release notes committed, not yet
-tagged; the last published Git tag is `v0.3.0-alpha.7`). See the
-[changelog](CHANGELOG.md) and complete the local full release gate before
-creating an annotated tag.
+Release history and candidate notes are recorded in the
+[changelog](CHANGELOG.md). Creating a release tag requires the local
+full release gate on Helix; ordinary pull-request CI alone is insufficient.
 
 This is the canonical configuration for Helix, a NixOS 26.05 workstation with
 Plasma 6 and an NVIDIA RTX 5080. It uses
@@ -44,7 +43,7 @@ reformat it during ordinary changes.
 ## Routine operation
 
 When the normal Helix checkout has uncommitted work (including an
-in-progress Claude refactor), **do not stash or clean it** merely to deploy
+experimental branch), **do not stash or clean it** merely to deploy
 reviewed `main`. Use the independent, attended
 `helix-deploy-isolated --execute` path documented in
 [operations](docs/operations.md#deploy-reviewed-main-while-the-canonical-checkout-is-dirty).
