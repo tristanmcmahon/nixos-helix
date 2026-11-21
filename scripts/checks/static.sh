@@ -90,51 +90,7 @@ printf 'Checking Ghostty event-loop backend policy...\n'
 # even with idle storage. The repo-owned config must carry this workaround:
 # helix-ghostty-config replaces the deployed user baseline during login.
 [[ $(grep -Ec '^[[:space:]]*async-backend[[:space:]]*=' config/ghostty/config.ghostty) -eq 1 ]]
-grep -Eq '^async-backend[[:space:]]*=[[:space:]]*epoll[[:space:]]*
-git diff --check
-
-printf 'Checking documentation links and tracked secrets...\n'
-python3 scripts/check-docs.py
-python3 scripts/check-modules.py
-if git ls-files | grep -Eq '(^|/)(id_(rsa|dsa|ecdsa|ed25519)|.*credentials.*|infernalnexus-smb)$'; then
-  printf 'A credential or private-key-shaped file is tracked.\n' >&2
-  exit 1
-fi
-if git ls-files | grep -Ei \
-  '(^|/)(COMPLETE|SHA256SUMS|.*\.(tar|tar\.(gz|xz|zst)|tgz|zip|7z))$'; then
-  printf 'A backup marker, checksum manifest, or archive-shaped file is tracked.\n' >&2
-  exit 1
-fi
-if git grep -Il '' -- ':!.git' | xargs grep -El \
-  -- '-----BEGIN (OPENSSH|RSA|EC|DSA) PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{20,}' >/dev/null; then
-  printf 'A private key or token-shaped value is present in tracked content.\n' >&2
-  exit 1
-fi
-
-printf 'Checking vendored snapshot provenance...\n'
-python3 - <<'PY'
-import json, pathlib, re
-sources = json.loads(pathlib.Path("vendor/sources.json").read_text(encoding="utf-8"))
-for name, source in sources.items():
-    assert re.fullmatch(r"[0-9a-f]{40}", source["commit"]), name
-    for path in source["paths"]:
-        assert (pathlib.Path("vendor") / name / path).exists(), f"vendor/{name}/{path}"
-assert sorted(sources) == sorted(p.name for p in pathlib.Path("vendor").iterdir() if p.is_dir())
-PY
-
-printf 'Validating the Helix theme family and merge fixtures...\n'
-python3 scripts/test-theme-settings.py
-python3 scripts/test-fan-commission.py
-python3 tests/test-benchmark-profile.py
-python3 scripts/test-zed-agent-setup.py
-bash scripts/test-openclaw-mcp.sh
-./scripts/test-wait-for-nas.sh
-./scripts/test-helix-deploy-isolated.sh
-
-./scripts/reinstall/test-safety.sh
-./scripts/reinstall/test-restore.sh
-
- config/ghostty/config.ghostty
+grep -Eq '^async-backend[[:space:]]*=[[:space:]]*epoll[[:space:]]*$' config/ghostty/config.ghostty
 
 printf 'Checking Git whitespace...\n'
 git diff --check
