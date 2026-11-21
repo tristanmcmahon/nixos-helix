@@ -123,8 +123,11 @@ if [[ -n $(git -c core.fsmonitor=false -c core.hooksPath=/dev/null status --porc
 fi
 # shellcheck source=/dev/null
 source "$staged/scripts/release-environment.sh"
-printf 'Validating reviewed candidate %s...\n' "$commit"
-./scripts/check.sh --quick
+printf 'Validating reviewed candidate %s in its pinned development shell...\n' "$commit"
+# check.sh intentionally requires deadnix, nixfmt, shellcheck and statix from
+# shell.nix, not the installed workstation PATH. Keep the developer shell's
+# Nixpkgs pin tied to this staged checkout, never Claude's active tree.
+./scripts/dev-shell.sh --run './scripts/check.sh --quick'
 
 if [[ $mode == --check ]]; then
   printf 'Isolated candidate validation passed. No NixOS activation performed.\n'
