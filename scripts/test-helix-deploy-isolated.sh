@@ -7,6 +7,17 @@ tool="$repo_root/scripts/helix-deploy-isolated.sh"
 bash "$tool" --help | grep -Fq 'Usage: helix-deploy-isolated'
 bash "$tool" --help | grep -Fq 'Does not stash, reset'
 
+# Regression: validation tools live in the staged worktree's pinned
+# development shell, not necessarily on the deployed host's PATH.
+if [[ $(grep -Fc "./scripts/dev-shell.sh --run './scripts/check.sh --quick'" "$tool") -ne 1 ]]; then
+  printf 'Deployment must run its quick gate inside the pinned development shell\n' >&2
+  exit 1
+fi
+if grep -Fqx './scripts/check.sh --quick' "$tool"; then
+  printf 'Deployment directly invoked the quick gate outside the development shell\n' >&2
+  exit 1
+fi
+
 if bash "$tool" --unexpected-argument >/dev/null 2>&1; then
   printf 'Invalid deploy argument unexpectedly succeeded\n' >&2
   exit 1
