@@ -2,13 +2,10 @@
 # result or an assertion failure counts as failure; evaluation is shared.
 checks:
 let
-  outcomes = map (
-    check:
-    {
-      inherit (check) name;
-      passed = (builtins.tryEval (if check.value == true then true else throw "non-true check")).success;
-    }
-  ) checks;
+  outcomes = map (check: {
+    inherit (check) name;
+    passed = (builtins.tryEval (if check.value == true then true else throw "non-true check")).success;
+  }) checks;
   failures = builtins.filter (result: !result.passed) outcomes;
   names = builtins.concatStringsSep ", " (map (result: result.name) failures);
 in
