@@ -10,9 +10,9 @@ Qualified on Helix generation 72 on 2026-11-09: production activation and
 post-reboot `helix-health --check` passed on NVIDIA 620.70.06, and the boot
 journal contained no NVIDIA Xid or CTX SWITCH TIMEOUT.
 
-A later post-reboot check on 2026-11-21 reported `helix-health --check:
-PASS`, Ghostty `async-backend = epoll`, `procs_blocked=0`, and I/O PSI
-`full avg10=1.86`. This confirms the observed runtime baseline, **not**
+A later post-reboot check on 2026-11-21 reported
+`Helix runtime health: PASS`, Ghostty `async-backend = epoll`,
+`procs_blocked=0`, and I/O PSI `full avg10=1.86`. This confirms the observed runtime baseline, **not**
 the separate full release closure gate. Run `check.sh --full` on Helix
 before creating the release tag.
 
