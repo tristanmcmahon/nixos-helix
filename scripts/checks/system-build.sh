@@ -3,12 +3,16 @@
 # Sourced by scripts/check.sh; shares its strict mode and validation context.
 
 printf 'Building the complete default system closure...\n'
+closure_started=$SECONDS
 system_closure=$(nix-build --no-out-link '<nixpkgs/nixos>' -A system \
   -I "nixos-config=$repo_root/tests/build-configuration.nix")
+printf 'HELIX_TIMING subphase=system-closure seconds=%s\n' "$((SECONDS - closure_started))"
 
 # One evaluation of the canonical configuration supplies every other artifact.
 printf 'Building inspected artifacts from the canonical configuration...\n'
+artifacts_started=$SECONDS
 artifacts=$(nix-build --no-out-link tests/artifacts.nix)
+printf 'HELIX_TIMING subphase=inspected-artifacts seconds=%s\n' "$((SECONDS - artifacts_started))"
 session_data=$(readlink -f "$artifacts/session-data")
 # shellcheck disable=SC2034 # Used by the sourced applications checks.
 onepassword_gui=$(readlink -f "$artifacts/1password-gui")
