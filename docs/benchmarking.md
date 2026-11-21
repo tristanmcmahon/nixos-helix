@@ -121,6 +121,34 @@ sample count, medians and variability, workload and environmental conditions,
 and an explicit rollback. Do not enable a daemon, disable a health check,
 change GPU clocks or reduce recovery retention to win a synthetic score.
 
+## Ghostty and misleading kernel I/O pressure (2026-11-21)
+
+Helix kernel 6.18.57 reported `procs_blocked=6`, I/O PSI
+`full avg10=89.90` and CPU I/O wait of approximately 37% with
+almost no NVMe queueing or utilisation. Six Ghostty threads were sleeping
+in `io_cqring_wait` (state `S`), and no `D`-state threads were observed.
+A subsequent fresh Ghostty launch using `--async-backend=epoll`
+left `procs_blocked=0`, I/O PSI `full avg10=0.09`, and CPU I/O wait
+at 0%; no `io_cqring_wait` threads remained.
+
+This strongly supports Ghostty/io_uring wait-accounting inflation on
+this kernel. It **does not** indicate failing storage, prove that all
+high PSI on future kernels is spurious, or justify disabling global
+pressure monitoring. The controlled alternative backend is recorded in
+`config/ghostty/config.ghostty` as `async-backend = epoll`. That baseline
+is installed to the user's writable config by the `helix-ghostty-config`
+user service; configure it in the repository rather than manually changing
+`/etc` or silently replacing Ghostty's user preferences.
+
+If the workaround needs revisiting after a future Ghostty/kernel upgrade,
+compare the exact six-waiter signature against independent device I/O
+(`iostat -xz 1 5`), thread wait channels
+(`ps -eLo pid,tid,stat,wchan:32,comm`) and PSI, then decide whether
+to remove the setting. A restart of all Ghostty processes is required for
+a valid backend A/B; GTK single-instance launches may otherwise reattach
+to an existing process. Keep active terminal work safely detached before
+any such test.
+
 ## Caveats that only a human can resolve
 
 - **No MangoHud log at all usually means the one-time Steam setup above was
