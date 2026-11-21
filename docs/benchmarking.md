@@ -123,31 +123,47 @@ change GPU clocks or reduce recovery retention to win a synthetic score.
 
 ## Ghostty and misleading kernel I/O pressure (2026-11-21)
 
-Helix kernel 6.18.57 reported `procs_blocked=6`, I/O PSI
-`full avg10=89.90` and CPU I/O wait of approximately 37% with
-almost no NVMe queueing or utilisation. Six Ghostty threads were sleeping
-in `io_cqring_wait` (state `S`), and no `D`-state threads were observed.
-A subsequent fresh Ghostty launch using `--async-backend=epoll`
-left `procs_blocked=0`, I/O PSI `full avg10=0.09`, and CPU I/O wait
-at 0%; no `io_cqring_wait` threads remained.
+On Helix kernel 6.18.57, the initial observation was
+`procs_blocked=6`, I/O PSI `full avg10=89.90`, and CPU I/O wait
+of approximately 37% despite little reported NVMe activity.
+The snapshot script counted six threads in `io_cqring_wait`, but it
+did **not** filter those threads by owning process despite labelling
+the count "Ghostty"; their ownership was not established in that output.
 
-This strongly supports Ghostty/io_uring wait-accounting inflation on
-this kernel. It **does not** indicate failing storage, prove that all
-high PSI on future kernels is spurious, or justify disabling global
-pressure monitoring. The controlled alternative backend is recorded in
-`config/ghostty/config.ghostty` as `async-backend = epoll`. That baseline
-is installed to the user's writable config by the `helix-ghostty-config`
-user service; configure it in the repository rather than manually changing
-`/etc` or silently replacing Ghostty's user preferences.
+An attempt to switch Ghostty to `epoll` changed the writable config,
+but the restart script assumed the executable path ended in
+`/bin/ghostty`. The NixOS wrapper defeated that process detector,
+and its immediate post-launch readings remained abnormal:
+`procs_blocked=6`, `full avg10=91.87`, I/O wait approximately 36%.
+That attempt was **not** a verified restart.
 
-If the workaround needs revisiting after a future Ghostty/kernel upgrade,
-compare the exact six-waiter signature against independent device I/O
-(`iostat -xz 1 5`), thread wait channels
-(`ps -eLo pid,tid,stat,wchan:32,comm`) and PSI, then decide whether
-to remove the setting. A restart of all Ghostty processes is required for
-a valid backend A/B; GTK single-instance launches may otherwise reattach
-to an existing process. Keep active terminal work safely detached before
-any such test.
+When a corrected independent launch test ran later, its **before**
+readings were **already** normal: `procs_blocked=0`,
+`full avg10=0.39`, and no `io_cqring_wait` threads. Ghostty reported
+`async-backend = epoll` as the effective configuration. After launching
+with `--gtk-single-instance=false --async-backend=epoll`, the system
+still reported `procs_blocked=0`, `full avg10=0.09`, no
+`io_cqring_wait` threads, and 0% CPU I/O wait.
+
+These observations are **consistent with** a Ghostty/io_uring
+wait-accounting problem and confirm a healthy `epoll` instance,
+but **do not constitute a controlled io_uring-versus-epoll A/B**:
+the high-to-low transition was not captured with verified Ghostty
+process ownership and complete termination. Do not interpret the
+initial PSI as evidence of failed storage or assume future pressure
+measurements are spurious. The conservative, host-specific workaround
+is `async-backend = epoll` in `config/ghostty/config.ghostty`,
+deployed to the user's writable baseline by `helix-ghostty-config`
+on login. Retain this until a controlled retest or an upstream fix
+justifies removing it.
+
+For a future test, record device activity (`iostat -xz 1 5`),
+process and thread ownership (`ps -eLo pid,tid,stat,wchan:32,comm`
+plus `/proc/<pid>/exe`), I/O PSI and `procs_blocked` for each backend.
+Verify the original Ghostty process has exited before launching the
+other backend: GTK single-instance invocations can join a still-running
+server. Save or detach active terminal work first. Test activation
+and runtime measurements remain Helix-only operations.
 
 ## Caveats that only a human can resolve
 

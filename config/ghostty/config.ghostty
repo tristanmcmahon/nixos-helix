@@ -7,13 +7,10 @@
 # touching the repository-owned baseline configuration.
 config-file = /home/tristan/.config/ghostty/profile.ghostty
 
-# Kernel 6.18.57 on Helix: six sleeping io_uring Ghostty event loops inflated
-# procs_blocked (6), I/O PSI full (~90%) and CPU iowait (~37%) with idle disks.
-# A controlled fresh launch using epoll removed the six waiters, brought
-# procs_blocked to 0 and CPU iowait to 0%, and dropped PSI full below 0.1%.
-# This is an event-loop accounting workaround, not a storage-performance tweak.
-# Keep it in the repository-owned baseline: the user config is deployed from
-# /etc/helix/ghostty/config.ghostty by helix-ghostty-config on login.
+# On Helix kernel 6.18.57, six io_cqring_wait threads coincided with
+# implausibly high I/O pressure despite quiet storage. A fresh epoll instance
+# ran cleanly; the high-to-low transition was not a controlled A/B test.
+# Keep this host-specific workaround until it can be retested (docs/benchmarking.md).
 async-backend = epoll
 
 # Start the first terminal immediately. Every later Ghostty surface runs the
