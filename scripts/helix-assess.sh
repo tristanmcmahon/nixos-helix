@@ -29,7 +29,7 @@ esac
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
 cd -- "$repo_root"
 state_root=${XDG_STATE_HOME:-$HOME/.local/state}/helix/assessments
-mkdir -p -m 0700 -- "$state_root"
+install -d -m 0700 -- "$state_root"
 revision=$(git rev-parse --short=12 HEAD)
 stamp=$(date -u '+%Y%m%dT%H%M%SZ')
 result_dir=$state_root/$stamp-$revision
