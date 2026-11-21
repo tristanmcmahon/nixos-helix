@@ -339,11 +339,22 @@ def _parse_pressure_avg10(text: str) -> float | None:
 
 
 def _parse_closure_bytes(text: str) -> int | None:
+    """Accept both documented Nix path-info JSON shapes across versions.
+
+    Older Nix releases emit an array of path objects; others produce a
+    store-path-keyed object. Require exactly one result and a numeric byte
+    count rather than silently treating a different format as zero bytes.
+    """
     try:
         info = json.loads(text)
-        if not isinstance(info, dict) or len(info) != 1:
+        if isinstance(info, list) and len(info) == 1:
+            entry = info[0]
+        elif isinstance(info, dict) and len(info) == 1:
+            entry = next(iter(info.values()))
+        else:
             return None
-        entry = next(iter(info.values()))
+        if not isinstance(entry, dict):
+            return None
         value = entry.get("closureSize")
         return value if type(value) is int and value >= 0 else None
     except (ValueError, AttributeError, TypeError):
@@ -368,6 +379,12 @@ def run_profile() -> Result:
     # small root derivation. This does not build or garbage-collect anything.
     closure = _read_command(["nix", "path-info", "--json", "-S", "/run/current-system"], timeout=20)
     metrics["system_closure_bytes"] = _parse_closure_bytes(closure) if closure else None
+    if metrics["system_closure_bytes"] is None:
+        metrics["system_closure_note"] = (
+            "nix path-info unavailable or failed"
+            if closure is None
+            else "unrecognised nix path-info JSON shape or missing closureSize"
+        )
 
     for pressure in ("cpu", "memory", "io"):
         try:

@@ -22,7 +22,13 @@ assert module._parse_pressure_avg10("some avg10=0.42 avg60=0.1 total=1\nfull avg
 assert module._parse_pressure_avg10("full avg10=0.42") is None
 
 closure = {"/nix/store/fake-system": {"narSize": 1000, "closureSize": 8000000000}}
+closure_array = [
+    {"path": "/nix/store/fake-system", "narSize": 1000, "closureSize": 8000000000}
+]
 assert module._parse_closure_bytes(json.dumps(closure)) == 8000000000
+assert module._parse_closure_bytes(json.dumps(closure_array)) == 8000000000
+assert module._parse_closure_bytes(json.dumps([])) is None
+assert module._parse_closure_bytes(json.dumps(closure_array * 2)) is None
 assert module._parse_closure_bytes('{"path": {"narSize": 200}}') is None
 assert module._parse_closure_bytes("invalid") is None
 
@@ -33,7 +39,7 @@ def fake_command(args, **kwargs):
     if tool == "systemd-analyze" and args[1] == "blame":
         return "12.300s first.service\n 5.000s second.service"
     if tool == "nix":
-        return json.dumps(closure)
+        return json.dumps(closure_array)
     if tool == "nvidia-smi":
         return "620.70.06, 32.40, 1, 410"
     raise AssertionError(args)
