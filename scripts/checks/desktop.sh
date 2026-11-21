@@ -87,12 +87,15 @@ require_contains "$helix_theme" 'kwriteconfig6 --file kdeglobals --group KDE --k
 require_contains "$helix_theme" 'kwriteconfig6 --file kwinrc --group Plugins --key blurEnabled false'
 require_contains "$helix_theme" 'kwriteconfig6 --file kwinrc --group Compositing --key AllowTearing true'
 require_contains "$helix_theme" 'balooctl6 disable'
-# Validate the managed Ghostty config with every built profile it may include,
-# substituting a temporary path for the per-user profile file.
+# Validate the installed Ghostty baseline, not merely the repository source,
+# with every built profile it may include.
+ghostty_installed_config=$system_closure/etc/helix/ghostty/config.ghostty
+require_readable "$ghostty_installed_config"
+grep -Eq '^async-backend[[:space:]]*=[[:space:]]*epoll[[:space:]]*$' "$ghostty_installed_config"
 ghostty_validation_profile=$temporary_directory/ghostty-profile.ghostty
 ghostty_validation_config=$temporary_directory/ghostty-config.ghostty
 sed "s|^config-file = .*|config-file = $ghostty_validation_profile|" \
-  config/ghostty/config.ghostty > "$ghostty_validation_config"
+  "$ghostty_installed_config" > "$ghostty_validation_config"
 grep -qxF "config-file = $ghostty_validation_profile" "$ghostty_validation_config"
 ghostty_profile_count=0
 for ghostty_profile in "$system_closure"/etc/helix/ghostty/profiles/*.ghostty; do
