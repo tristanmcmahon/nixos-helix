@@ -65,11 +65,33 @@ let
       ;
   };
 in
-assert import ./invariants/core.nix context;
-assert import ./invariants/monitoring.nix context;
-assert import ./invariants/storage.nix context;
-assert import ./invariants/desktop.nix context;
-assert import ./invariants/emulation.nix context;
-assert import ./invariants/llm.nix context;
-assert import ./invariants/network-security.nix context;
-true
+import ./lib/named-checks.nix [
+  {
+    name = "core";
+    value = import ./invariants/core.nix context;
+  }
+  {
+    name = "monitoring";
+    value = import ./invariants/monitoring.nix context;
+  }
+  {
+    name = "storage";
+    value = import ./invariants/storage.nix context;
+  }
+  {
+    name = "desktop";
+    value = import ./invariants/desktop.nix context;
+  }
+  {
+    name = "emulation";
+    value = import ./invariants/emulation.nix context;
+  }
+  {
+    name = "llm";
+    value = import ./invariants/llm.nix context;
+  }
+  {
+    name = "network-security";
+    value = import ./invariants/network-security.nix context;
+  }
+]

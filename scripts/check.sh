@@ -31,7 +31,9 @@ done
 temporary_directory=$(mktemp -d)
 trap 'rm -rf -- "$temporary_directory"' EXIT
 # Many checks are bare tests; name the one that failed instead of exiting silently.
-trap 'printf "check failed: %s line %s: %s\n" "${BASH_SOURCE[0]}" "$LINENO" "$BASH_COMMAND" >&2' ERR
+phase=initialisation
+phase_start=$SECONDS
+trap 'printf "check failed: phase=%s elapsed=%ss location=%s:%s command=%s\n" "$phase" "$((SECONDS - phase_start))" "${BASH_SOURCE[0]}" "$LINENO" "$BASH_COMMAND" >&2' ERR
 
 # Fail unless the runtime closure of $1 provides bin/<command> for every
 # remaining argument. The closure is queried once.
@@ -51,29 +53,51 @@ require_closure_commands() {
   done
 }
 
+# Preserve set -e for sourced checks; record wall-clock costs per phase.
+phase=static
+phase_start=$SECONDS
 # shellcheck source=scripts/checks/static.sh
 source "$repo_root/scripts/checks/static.sh"
+printf 'HELIX_TIMING phase=static seconds=%s\n' "$((SECONDS - phase_start))"
 
+phase=evaluation
+phase_start=$SECONDS
 # shellcheck source=scripts/checks/evaluation.sh
 source "$repo_root/scripts/checks/evaluation.sh"
+printf 'HELIX_TIMING phase=evaluation seconds=%s\n' "$((SECONDS - phase_start))"
 
 if [[ $mode == full ]]; then
   printf 'Running explicit full-system release validation...\n'
 
+  phase=system-build
+  phase_start=$SECONDS
   # shellcheck source=scripts/checks/system-build.sh
   source "$repo_root/scripts/checks/system-build.sh"
+  printf 'HELIX_TIMING phase=system-build seconds=%s\n' "$((SECONDS - phase_start))"
 
+  phase=desktop
+  phase_start=$SECONDS
   # shellcheck source=scripts/checks/desktop.sh
   source "$repo_root/scripts/checks/desktop.sh"
+  printf 'HELIX_TIMING phase=desktop seconds=%s\n' "$((SECONDS - phase_start))"
 
+  phase=monitoring
+  phase_start=$SECONDS
   # shellcheck source=scripts/checks/monitoring.sh
   source "$repo_root/scripts/checks/monitoring.sh"
+  printf 'HELIX_TIMING phase=monitoring seconds=%s\n' "$((SECONDS - phase_start))"
 
+  phase=network
+  phase_start=$SECONDS
   # shellcheck source=scripts/checks/network.sh
   source "$repo_root/scripts/checks/network.sh"
+  printf 'HELIX_TIMING phase=network seconds=%s\n' "$((SECONDS - phase_start))"
 
+  phase=applications
+  phase_start=$SECONDS
   # shellcheck source=scripts/checks/applications.sh
   source "$repo_root/scripts/checks/applications.sh"
+  printf 'HELIX_TIMING phase=applications seconds=%s\n' "$((SECONDS - phase_start))"
 else
   printf 'Quick validation passed. Use scripts/check.sh --full for release closure checks.\n'
 fi

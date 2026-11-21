@@ -121,6 +121,43 @@ sample count, medians and variability, workload and environmental conditions,
 and an explicit rollback. Do not enable a daemon, disable a health check,
 change GPU clocks or reduce recovery retention to win a synthetic score.
 
+## Alpha 8 baseline and closure timing
+
+Run the non-interactive collector on Helix:
+
+```bash
+./scripts/helix-assess.sh                 # baseline plus full release gate
+./scripts/helix-assess.sh --quick         # baseline plus quick checks
+./scripts/helix-assess.sh --profile-only  # no builds or release checks
+```
+
+Private results go under
+`~/.local/state/helix/assessments/<timestamp>-<revision>/`.
+`SUMMARY.txt` records each probe's duration and status; `CLOSURE_TIMINGS.txt`
+extracts `HELIX_TIMING` lines from the release gate. Full validation now times
+the system closure separately from the inspected artifacts, and then the
+desktop, monitoring, network, and application checks independently.
+
+The `closure-size`, `closure-eval` and `closure-plan` probes distinguish
+transitive size, Nix evaluation and a dry-run substitution/build plan.
+A `nix-build` duration *includes* evaluating the configuration, downloading
+substitutes, and compiling missing dependencies; its elapsed time is not an
+isolated compiler benchmark. A repeat build against an unchanged pinned
+Nixpkgs can be much faster due to the already-populated store.
+
+The script does not install packages, change drivers, enable global Nix
+experimental features, switch system generations, or touch backups. It may
+launch the synthetic Vulkan `vkmark` in a graphical session, but deliberately
+does not launch or kill a Steam game. `helix-benchmark` writes to its existing
+user-local results history; the collector creates private logs.
+The current NVIDIA Xid snapshot alone is **not** a controlled driver
+qualification. Compare the Xid 109 case file and a repeatable gameplay run
+before promoting any different driver.
+
+`tests/system-invariants.nix` now reports the names of failing invariant
+modules in one evaluation. Individual source assertions still require
+inspection within the reported module.
+
 ## Ghostty and misleading kernel I/O pressure (2026-11-21)
 
 On Helix kernel 6.18.57, the initial observation was
