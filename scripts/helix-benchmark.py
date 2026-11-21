@@ -377,7 +377,21 @@ def run_profile() -> Result:
 
     # -S asks for the *transitive* closure size, not only the system symlink's
     # small root derivation. This does not build or garbage-collect anything.
-    closure = _read_command(["nix", "path-info", "--json", "-S", "/run/current-system"], timeout=20)
+    # Keep nix-command opt-in for this read-only query: Helix intentionally
+    # uses the stable, non-flake Nix CLI by default. Do not enable either
+    # nix-command or flakes system-wide just to obtain a size measurement.
+    closure = _read_command(
+        [
+            "nix",
+            "--extra-experimental-features",
+            "nix-command",
+            "path-info",
+            "--json",
+            "-S",
+            "/run/current-system",
+        ],
+        timeout=20,
+    )
     metrics["system_closure_bytes"] = _parse_closure_bytes(closure) if closure else None
     if metrics["system_closure_bytes"] is None:
         metrics["system_closure_note"] = (
