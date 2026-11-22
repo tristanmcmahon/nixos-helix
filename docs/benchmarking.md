@@ -160,6 +160,17 @@ before promoting any different driver.
 modules in one evaluation. Individual source assertions still require
 inspection within the reported module.
 
+### Static fixture profiling
+
+The quick/full gate writes `HELIX_TIMING subphase=fixture-*` markers for
+each existing static fixture. These are nested within
+`subphase=static-fixtures`; do not add the parent and child times together.
+The NAS wait fixture formerly imposed a fixed three-second timeout merely
+to prove that decimal `08` was accepted. It now uses a one-second deadline
+and still asserts that the process remains active until `timeout` exits 124.
+This shortens a deliberate test wait without removing the decimal-parsing
+regression check or changing the production NAS waiter.
+
 ## Ghostty and misleading kernel I/O pressure (2026-11-21)
 
 On Helix kernel 6.18.57, the initial observation was

@@ -33,8 +33,9 @@ status() {
 # Port 1 is never open on loopback.
 [[ $(status 1 0) == 1 ]]
 # A leading-zero limit is decimal: 08 must still be waiting when timeout stops
-# it, not dead at once on an octal parse error.
-[[ $(timeout 3 "$script" 1 08 >/dev/null 2>&1; printf '%s' "$?") == 124 ]]
+# it, not dead at once on an octal parse error. One second is enough to
+# distinguish the two without a three-second intentional stall.
+[[ $(timeout 1 "$script" 1 08 >/dev/null 2>&1; printf '%s' "$?") == 124 ]]
 [[ $(status abc) == 2 ]]
 [[ $(status "$open_port" 5 extra) == 2 ]]
 [[ $(status) == 2 ]]
