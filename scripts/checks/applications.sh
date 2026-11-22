@@ -51,6 +51,8 @@ grep -qF 'Expose the existing Helix OpenClaw Gateway to MCP clients over stdio' 
 [[ -r $system_closure/etc/systemd/system/ollama-model-loader.service ]]
 grep -qF 'BindsTo=ollama.service' \
   "$system_closure/etc/systemd/system/ollama-model-loader.service"
+[[ -x $system_closure/sw/bin/helix-game-benchmarks ]]
+"$system_closure/sw/bin/helix-game-benchmarks" --help | grep -qF 'history'
 [[ -x $system_closure/sw/bin/helix-benchmark ]]
 helix_benchmark=$(readlink -f "$system_closure/sw/bin/helix-benchmark")
 require_closure_commands "$helix_benchmark" python3 sysbench vkmark pkill

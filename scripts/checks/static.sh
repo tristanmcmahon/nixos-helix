@@ -165,6 +165,7 @@ helix_timing "subphase=fixture-fan seconds=$((SECONDS - fixture_started))"
 
 fixture_started=$SECONDS
 python3 tests/test-benchmark-profile.py
+python3 tests/test-game-benchmarks.py
 helix_timing "subphase=fixture-benchmark-profile seconds=$((SECONDS - fixture_started))"
 
 fixture_started=$SECONDS
