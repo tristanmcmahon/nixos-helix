@@ -134,7 +134,9 @@ Run the non-interactive collector on Helix:
 Private results go under
 `~/.local/state/helix/assessments/<timestamp>-<revision>/`.
 `SUMMARY.txt` records each probe's duration and status; `CLOSURE_TIMINGS.txt`
-extracts `HELIX_TIMING` lines from the release gate. Full validation now times
+is written directly by the gate through `HELIX_TIMING_FILE`, so Nix's progress
+redraws and control bytes cannot hide the timing markers. The raw gate log is
+retained separately for diagnosis. Full validation now times
 the system closure separately from the inspected artifacts, and then the
 desktop, monitoring, network, and application checks independently.
 

@@ -88,26 +88,46 @@ fi
 optional_probe nvidia-smi nvidia-smi \
   --query-gpu=name,driver_version,power.draw,utilization.gpu,memory.used \
   --format=csv,noheader,nounits
-optional_probe nvidia-xids journalctl -k -b --no-pager \
-  -g 'NVRM: Xid|CTX SWITCH TIMEOUT'
+# journalctl -g exits nonzero when no entries match, which is not a probe error.
+# Read the boot journal and distinguish a clean match-free boot from failure.
+read_nvidia_xids() {
+  journalctl -k -b --no-pager |
+    awk '/NVRM: Xid|CTX SWITCH TIMEOUT/ { found = 1; print }
+      END { if (!found) print "No matching GPU faults in accessible boot journal." }'
+}
+optional_probe nvidia-xids read_nvidia_xids
 # Never use helix-benchmark gpu here: that command may launch and terminate a
 # running Cyberpunk game. vkmark only is safe for a non-interactive profile.
-if [[ -n ${DISPLAY:-}${WAYLAND_DISPLAY:-} ]] && command -v vkmark >/dev/null 2>&1; then
-  optional_probe gpu-vkmark timeout 300 vkmark --present-mode immediate
-else
-  printf 'PROBE gpu-vkmark                SKIPPED (no GUI session or vkmark)\n' \
+if [[ -z ${DISPLAY:-}${WAYLAND_DISPLAY:-} ]]; then
+  printf 'PROBE gpu-vkmark                SKIPPED (no graphical session)\n' \
     | tee -a "$summary"
+elif ! command -v vkmark >/dev/null 2>&1; then
+  printf 'PROBE gpu-vkmark                SKIPPED (vkmark unavailable)\n' \
+    | tee -a "$summary"
+else
+  optional_probe gpu-vkmark timeout 300 vkmark --present-mode immediate
 fi
 
+# Record timing markers directly in a separate log, independent of Nix output.
+timing_file=$result_dir/CLOSURE_TIMINGS.txt
 case $mode in
-  full) probe full-gate ./scripts/dev-shell.sh --run './scripts/check.sh --full' ;;
-  quick) probe quick-gate ./scripts/dev-shell.sh --run './scripts/check.sh --quick' ;;
+  full)
+    probe full-gate env HELIX_TIMING_FILE="$timing_file" \
+      ./scripts/dev-shell.sh --run './scripts/check.sh --full'
+    gate_log=$result_dir/full-gate.log
+    ;;
+  quick)
+    probe quick-gate env HELIX_TIMING_FILE="$timing_file" \
+      ./scripts/dev-shell.sh --run './scripts/check.sh --quick'
+    gate_log=$result_dir/quick-gate.log
+    ;;
+  *) gate_log= ;;
 esac
 
-if [[ -f $result_dir/full-gate.log ]]; then
-  grep '^HELIX_TIMING ' "$result_dir/full-gate.log" > "$result_dir/CLOSURE_TIMINGS.txt" || true
-elif [[ -f $result_dir/quick-gate.log ]]; then
-  grep '^HELIX_TIMING ' "$result_dir/quick-gate.log" > "$result_dir/CLOSURE_TIMINGS.txt" || true
+# Support historic output if the instrumented gate is not in this checkout.
+if [[ -n $gate_log && ! -s $timing_file ]]; then
+  grep -aoE 'HELIX_TIMING (phase|subphase)=[^[:cntrl:]]+' \
+    "$gate_log" > "$timing_file" || true
 fi
 
 printf 'RESULT_DIR=%s\nRequired probe failures: %s\n' "$result_dir" "$failures" | tee -a "$summary"
