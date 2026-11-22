@@ -155,16 +155,44 @@ helix_timing "subphase=static-vendor-provenance seconds=$((SECONDS - static_star
 
 static_started=$SECONDS
 printf 'Validating the Helix theme family and merge fixtures...\n'
+fixture_started=$SECONDS
 python3 scripts/test-theme-settings.py
-python3 scripts/test-fan-commission.py
-python3 tests/test-benchmark-profile.py
-python3 scripts/test-zed-agent-setup.py
-bash scripts/test-openclaw-mcp.sh
-./scripts/test-wait-for-nas.sh
-./scripts/test-helix-deploy-isolated.sh
-./scripts/test-named-checks.sh
+helix_timing "subphase=fixture-theme seconds=$((SECONDS - fixture_started))"
 
+fixture_started=$SECONDS
+python3 scripts/test-fan-commission.py
+helix_timing "subphase=fixture-fan seconds=$((SECONDS - fixture_started))"
+
+fixture_started=$SECONDS
+python3 tests/test-benchmark-profile.py
+helix_timing "subphase=fixture-benchmark-profile seconds=$((SECONDS - fixture_started))"
+
+fixture_started=$SECONDS
+python3 scripts/test-zed-agent-setup.py
+helix_timing "subphase=fixture-zed-agent seconds=$((SECONDS - fixture_started))"
+
+fixture_started=$SECONDS
+bash scripts/test-openclaw-mcp.sh
+helix_timing "subphase=fixture-openclaw-mcp seconds=$((SECONDS - fixture_started))"
+
+fixture_started=$SECONDS
+./scripts/test-wait-for-nas.sh
+helix_timing "subphase=fixture-nas-wait seconds=$((SECONDS - fixture_started))"
+
+fixture_started=$SECONDS
+./scripts/test-helix-deploy-isolated.sh
+helix_timing "subphase=fixture-isolated-deploy seconds=$((SECONDS - fixture_started))"
+
+fixture_started=$SECONDS
+./scripts/test-named-checks.sh
+helix_timing "subphase=fixture-named-invariants seconds=$((SECONDS - fixture_started))"
+
+fixture_started=$SECONDS
 ./scripts/reinstall/test-safety.sh
+helix_timing "subphase=fixture-reinstall-safety seconds=$((SECONDS - fixture_started))"
+
+fixture_started=$SECONDS
 ./scripts/reinstall/test-restore.sh
+helix_timing "subphase=fixture-reinstall-restore seconds=$((SECONDS - fixture_started))"
 
 helix_timing "subphase=static-fixtures seconds=$((SECONDS - static_started))"
