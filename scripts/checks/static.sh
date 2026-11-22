@@ -2,6 +2,7 @@
 
 # Sourced by scripts/check.sh; shares its strict mode and validation context.
 
+static_started=$SECONDS
 printf 'Checking deterministic release selection...\n'
 expected_release=$(nix-instantiate --eval --raw -E '(import ./release.nix).nixosRelease')
 selected_nixpkgs=$HELIX_SELECTED_NIXPKGS
@@ -39,6 +40,9 @@ pinned_selection=$(
 )
 [[ $pinned_selection == "$expected_release|$(readlink -f "$pinned_nixpkgs")" ]]
 
+helix_timing "subphase=static-release-selection seconds=$((SECONDS - static_started))"
+
+static_started=$SECONDS
 printf 'Checking Nix formatting...\n'
 PYTHONPYCACHEPREFIX=$temporary_directory \
   python3 -m py_compile scripts/*.py scripts/reinstall/*.py
@@ -54,6 +58,9 @@ while IFS= read -r nix_file; do
   fi
 done < <(find . -name '*.nix' -type f ! -name hardware-configuration.nix -print | sort)
 
+helix_timing "subphase=static-nix-format seconds=$((SECONDS - static_started))"
+
+static_started=$SECONDS
 printf 'Checking shell syntax...\n'
 mapfile -t shell_files < <(find scripts -type f -name '*.sh' -print | sort)
 bash -n "${shell_files[@]}"
@@ -68,13 +75,22 @@ if grep -Eq '\b(mkfs|parted|fdisk|sgdisk|wipefs|mount|umount|swapon|swapoff|mksw
   exit 1
 fi
 
+helix_timing "subphase=static-shell-syntax seconds=$((SECONDS - static_started))"
+
+static_started=$SECONDS
 printf 'Running ShellCheck...\n'
 shellcheck -x "${top_level_shell_files[@]}"
 
+helix_timing "subphase=static-shellcheck seconds=$((SECONDS - static_started))"
+
+static_started=$SECONDS
 printf 'Checking Nix dead code and lint...\n'
 deadnix --fail --exclude hardware-configuration.nix -- .
 statix check . -i hardware-configuration.nix
 
+helix_timing "subphase=static-nix-lint seconds=$((SECONDS - static_started))"
+
+static_started=$SECONDS
 printf 'Checking repository-local module boundaries...\n'
 if grep -Rqs '../../hamCade' profiles; then
   printf 'A NixOS profile still imports the sibling private hamCade checkout.\n' >&2
@@ -85,15 +101,24 @@ if grep -RqiE 'arcade|mame' profiles/emulation.nix profiles/emulation; then
   exit 1
 fi
 
+helix_timing "subphase=static-module-boundaries seconds=$((SECONDS - static_started))"
+
+static_started=$SECONDS
 printf 'Checking Ghostty event-loop backend policy...\n'
 # Preserve the tested epoll workaround while the kernel/Ghostty attribution
 # remains under investigation. The repo owns the user baseline deployed at login.
 [[ $(grep -Ec '^[[:space:]]*async-backend[[:space:]]*=' config/ghostty/config.ghostty) -eq 1 ]]
 grep -Eq '^async-backend[[:space:]]*=[[:space:]]*epoll[[:space:]]*$' config/ghostty/config.ghostty
 
+helix_timing "subphase=static-ghostty seconds=$((SECONDS - static_started))"
+
+static_started=$SECONDS
 printf 'Checking Git whitespace...\n'
 git diff --check
 
+helix_timing "subphase=static-whitespace seconds=$((SECONDS - static_started))"
+
+static_started=$SECONDS
 printf 'Checking documentation links and tracked secrets...\n'
 python3 scripts/check-docs.py
 python3 scripts/check-modules.py
@@ -112,6 +137,9 @@ if git grep -Il '' -- ':!.git' | xargs grep -El \
   exit 1
 fi
 
+helix_timing "subphase=static-docs-and-secrets seconds=$((SECONDS - static_started))"
+
+static_started=$SECONDS
 printf 'Checking vendored snapshot provenance...\n'
 python3 - <<'PY'
 import json, pathlib, re
@@ -123,6 +151,9 @@ for name, source in sources.items():
 assert sorted(sources) == sorted(p.name for p in pathlib.Path("vendor").iterdir() if p.is_dir())
 PY
 
+helix_timing "subphase=static-vendor-provenance seconds=$((SECONDS - static_started))"
+
+static_started=$SECONDS
 printf 'Validating the Helix theme family and merge fixtures...\n'
 python3 scripts/test-theme-settings.py
 python3 scripts/test-fan-commission.py
@@ -136,3 +167,4 @@ bash scripts/test-openclaw-mcp.sh
 ./scripts/reinstall/test-safety.sh
 ./scripts/reinstall/test-restore.sh
 
+helix_timing "subphase=static-fixtures seconds=$((SECONDS - static_started))"
