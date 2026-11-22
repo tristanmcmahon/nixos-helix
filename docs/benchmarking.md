@@ -21,23 +21,52 @@ Every run (except `history`) appends one JSON line to
 state, like the rest of `~/.local/state/helix/`; it is never read by any other
 Helix module and is safe to delete.
 
-## One-time setup for the Cyberpunk 2077 FPS capture
+## Automatic Steam game-session captures
 
-Enable MangoHud for Cyberpunk 2077 once, by hand, in Steam: right-click it ->
-Properties, and either tick its "Enable Mangohud" option, or set Launch
-Options to `mangohud %command%`. This is a deliberate manual step, not
-something `helix-benchmark` does for you: Steam's client is normally already
-running, so a fresh `steam steam://rungameid/...` call only messages that
-existing client over IPC — environment variables set on that call never reach
-the game process it actually launches. Helix also must not edit Steam's own
-launch-options VDF to force this; that file is Steam's mutable state, not
-Helix's to own.
+The Helix gaming profile configures Steam (not the entire desktop) to
+enable MangoHud's Vulkan layer and record samples every 100ms, starting
+five seconds after a game initializes. Logging continues until stopped
+or the game exits. Timestamped CSVs accumulate privately in
+`~/.local/state/helix/game-benchmarks`; the normal MangoHud metadata
+header records hardware, kernel and the driver in use at capture time.
+Uploads are disabled. No game is launched, killed or monitored by a daemon.
 
-Once MangoHud is enabled for the game by either of those means,
-`helix-benchmark gpu` writes `~/.config/MangoHud/Cyberpunk2077.exe.conf` with
-the current `--gpu-log-duration` before every launch, which MangoHud reads by
-executable name regardless of how its layer was turned on. No further setup
-is needed after that.
+After activating a Helix generation that contains this change, **fully
+quit and relaunch Steam once**. Steam processes already running when the
+configuration changes retain their previous environment. The NixOS
+user-tmpfiles rule creates the logging directory on a fresh user login.
+Existing manually set per-game launch options are neither inspected nor
+rewritten; a game-specific `MANGOHUD_CONFIG` takes precedence.
+
+```bash
+helix-game-benchmarks status
+helix-game-benchmarks history --limit 20
+helix-game-benchmarks latest
+```
+
+The history command reads existing CSVs, never alters them. It shows the
+filename-derived game, capture file timestamp, recorded driver, average
+sampled FPS, and mean of the lowest 1% of sampled FPS observations.
+Those are indicative session-wide numbers, **not** a frame-weighted
+or controlled-sequence 1%-low benchmark. Menus, loading and idle scenes
+affect their comparability. Preserve game settings, resolution, driver
+and workload when comparing sessions. No automatic retention purge is
+configured; delete old CSVs deliberately if you no longer want them.
+
+Automatic activation applies to supported Vulkan/Proton games; OpenGL
+titles may still need a per-game `mangohud %command%` launch option.
+Steam-specific anti-cheat, gamescope and wrapper behaviour require
+on-Helix qualification. If a game becomes unstable, remove its MangoHud
+launch option (if any) or disable the Steam-scoped injection before
+concluding that it is a game or NVIDIA driver regression.
+
+### Managed GPU benchmarking is separate
+
+`helix-benchmark gpu` is an older, explicitly invoked benchmarking mode
+that can launch and terminate Cyberpunk 2077. It must not be used for
+ordinary passive logging. Its MangoHud-specific launch configuration and
+MangoHud/Steam compatibility assumptions remain separate from the
+automatic per-session history described above.
 
 ## What each category measures
 
