@@ -53,18 +53,27 @@ require_closure_commands() {
   done
 }
 
+# Record timings outside the combined log, which may include terminal control bytes.
+helix_timing() {
+  local entry=$1
+  printf 'HELIX_TIMING %s\n' "$entry"
+  if [[ -n ${HELIX_TIMING_FILE:-} ]]; then
+    printf 'HELIX_TIMING %s\n' "$entry" >> "$HELIX_TIMING_FILE"
+  fi
+}
+
 # Preserve set -e for sourced checks; record wall-clock costs per phase.
 phase=static
 phase_start=$SECONDS
 # shellcheck source=scripts/checks/static.sh
 source "$repo_root/scripts/checks/static.sh"
-printf 'HELIX_TIMING phase=static seconds=%s\n' "$((SECONDS - phase_start))"
+helix_timing "phase=static seconds=$((SECONDS - phase_start))"
 
 phase=evaluation
 phase_start=$SECONDS
 # shellcheck source=scripts/checks/evaluation.sh
 source "$repo_root/scripts/checks/evaluation.sh"
-printf 'HELIX_TIMING phase=evaluation seconds=%s\n' "$((SECONDS - phase_start))"
+helix_timing "phase=evaluation seconds=$((SECONDS - phase_start))"
 
 if [[ $mode == full ]]; then
   printf 'Running explicit full-system release validation...\n'
@@ -73,31 +82,31 @@ if [[ $mode == full ]]; then
   phase_start=$SECONDS
   # shellcheck source=scripts/checks/system-build.sh
   source "$repo_root/scripts/checks/system-build.sh"
-  printf 'HELIX_TIMING phase=system-build seconds=%s\n' "$((SECONDS - phase_start))"
+  helix_timing "phase=system-build seconds=$((SECONDS - phase_start))"
 
   phase=desktop
   phase_start=$SECONDS
   # shellcheck source=scripts/checks/desktop.sh
   source "$repo_root/scripts/checks/desktop.sh"
-  printf 'HELIX_TIMING phase=desktop seconds=%s\n' "$((SECONDS - phase_start))"
+  helix_timing "phase=desktop seconds=$((SECONDS - phase_start))"
 
   phase=monitoring
   phase_start=$SECONDS
   # shellcheck source=scripts/checks/monitoring.sh
   source "$repo_root/scripts/checks/monitoring.sh"
-  printf 'HELIX_TIMING phase=monitoring seconds=%s\n' "$((SECONDS - phase_start))"
+  helix_timing "phase=monitoring seconds=$((SECONDS - phase_start))"
 
   phase=network
   phase_start=$SECONDS
   # shellcheck source=scripts/checks/network.sh
   source "$repo_root/scripts/checks/network.sh"
-  printf 'HELIX_TIMING phase=network seconds=%s\n' "$((SECONDS - phase_start))"
+  helix_timing "phase=network seconds=$((SECONDS - phase_start))"
 
   phase=applications
   phase_start=$SECONDS
   # shellcheck source=scripts/checks/applications.sh
   source "$repo_root/scripts/checks/applications.sh"
-  printf 'HELIX_TIMING phase=applications seconds=%s\n' "$((SECONDS - phase_start))"
+  helix_timing "phase=applications seconds=$((SECONDS - phase_start))"
 else
   printf 'Quick validation passed. Use scripts/check.sh --full for release closure checks.\n'
 fi
