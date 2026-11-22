@@ -66,6 +66,13 @@ let
     ];
     text = builtins.readFile ../scripts/helix-doom-setup.sh;
   };
+  gameBenchmarkHistory = pkgs.writeShellApplication {
+    name = "helix-game-benchmarks";
+    runtimeInputs = [ pkgs.python3 ];
+    text = ''
+      exec python3 ${../scripts/helix-game-benchmarks.py} "$@"
+    '';
+  };
   # The SSD list comes from config/helix.nix so the script never repeats it.
   falloutLondonSetup = pkgs.writeShellApplication {
     name = "helix-fallout-london-setup";
@@ -89,13 +96,27 @@ in
   config = lib.mkIf cfg.enable {
     # Steam's NixOS integration installs the client and its controller udev rules.
     programs = {
-      steam.enable = true;
+      steam = {
+        enable = true;
+        # Steam-scoped MangoHud Vulkan activation: don't change the global
+        # desktop environment or edit Steam's mutable launch preferences.
+        package = pkgs.steam.override {
+          extraEnv = {
+            MANGOHUD = "1";
+            MANGOHUD_CONFIG = "autostart_log=5,log_duration=0,log_interval=100,output_folder=${helix.home}/.local/state/helix/game-benchmarks,permit_upload=0";
+          };
+        };
+      };
       gamemode.enable = true;
       gamescope = {
         enable = true;
         capSysNice = false;
       };
     };
+    # User tmpfiles creates a private writable log directory at login.
+    systemd.user.tmpfiles.rules = [
+      "d %h/.local/state/helix/game-benchmarks 0700 - - -"
+    ];
     hardware.graphics.enable32Bit = true;
     services.pipewire.alsa.support32Bit = true;
 
@@ -105,6 +126,7 @@ in
       doomRunnerCommand
       doomSetup
       falloutLondonSetup
+      gameBenchmarkHistory
       gzdoom
       heroic
       # Lutris for Battle.net: Blizzard ships no native Linux client, and
