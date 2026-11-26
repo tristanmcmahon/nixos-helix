@@ -1,6 +1,6 @@
 {
-  "release": "nixos-26.05.12400.da6dc0e7b260",
-  "revision": "da6dc0e7b26060f2f71ce3ef7088fb56ee44fa36",
-  "url": "https://releases.nixos.org/nixos/26.05/nixos-26.05.12400.da6dc0e7b260/nixexprs.tar.xz",
-  "sha256": "06jqjygmzs6caliicwa9jhqhsfsl46642gclpxkdgvhm53ijwndb"
+  "release": "nixos-26.05.14979.94c3211b0ee8",
+  "revision": "94c3211b0ee8ba969a3f12eb4aff8ba0f72971dd",
+  "url": "https://releases.nixos.org/nixos/26.05/nixos-26.05.14979.94c3211b0ee8/nixexprs.tar.xz",
+  "sha256": "035lf8y3f8ldhki77v9vccmknb52h7k7vp028hgbvwbqbnwkicx4"
 }
