@@ -55,13 +55,29 @@ scenes can dominate a whole-session capture: the figures are only
 comparable when graphics settings, resolution, driver and scene are
 comparable. No retention purge is configured; remove CSVs intentionally.
 
-Steam's FHS wrapper now adds MangoHud's **OpenGL preload shim** alongside
+Steam's FHS wrapper adds MangoHud's **OpenGL preload shim** alongside
 the Vulkan layer. Both 64-bit and 32-bit MangoHud library paths are
 available to Steam, including 32-bit Windows OpenGL games running through
-Proton, such as Noita. We preload `libMangoHud_shim.so`, not the eager
-overlay library, and preserve existing `LD_PRELOAD` entries. This is
+Proton, such as Noita. We preload `libMangoHud_shim.so` by absolute store
+path (not a bare filename, and not the eager overlay library). This is
 limited to Steam; there is no system-wide injection, daemon or mutation
-of Steam's launch preferences.
+of any game's Steam launch options.
+
+This is set via `extraBwrapArgs = [ "--setenv ..." ]`, directly on the
+bubblewrap invocation that creates Steam's sandbox, not via `extraProfile`.
+`extraEnv` and `extraProfile` render into the exact same generated FHS
+profile script (confirmed in nixpkgs' `pkgs/by-name/st/steam/package.nix`:
+both land in one `set -a; <extraEnv>; set +a; <extraProfile>` block), so
+an earlier `extraProfile`-based `LD_PRELOAD` export never reached any
+game — live process inspection on real hardware showed `MANGOHUD=1`
+(set via `extraEnv`) surviving into every process down to the Wine-hosted
+game binary itself, while the `extraProfile`-exported `LD_PRELOAD` was
+absent from the very first process inside Steam's own sandbox. The
+Steam-blessed `mangohud %command%` launch-option pattern works because it
+execs as the immediate parent of Steam's per-game launch chain, with no
+client-startup step in between to discard it; `extraBwrapArgs` reproduces
+that by setting the variable directly on the sandbox's init process,
+before any shell-profile script (or Steam's own `steam.sh`) runs at all.
 
 **After activation, fully quit and restart Steam.** A reboot also starts
 a fresh client. Keep Noita open for more than the five-second delayed

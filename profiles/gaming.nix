@@ -98,8 +98,8 @@ in
     programs = {
       steam = {
         enable = true;
-        # Steam-scoped MangoHud Vulkan activation: don't change the global
-        # desktop environment or edit Steam's mutable launch preferences.
+        # Steam-scoped MangoHud activation: don't change the global desktop
+        # environment or edit any game's Steam launch options.
         package = pkgs.steam.override {
           extraEnv = {
             MANGOHUD = "1";
@@ -107,17 +107,30 @@ in
             MANGOHUD_DLSYM = "1";
             MANGOHUD_CONFIG = "autostart_log=5,log_duration=0,log_interval=100,output_folder=${helix.home}/.local/state/helix/game-benchmarks,permit_upload=0";
           };
-          # Steam's FHS environment needs 64-bit and 32-bit MangoHud libraries
-          # for native OpenGL and 32-bit OpenGL through Proton (e.g. Noita).
-          # The shim loads the actual overlay only when it sees a GL context.
-          # Preserve other preloads; do not change the desktop environment.
-          extraProfile = ''
-            export LD_LIBRARY_PATH="${pkgs.mangohud}/lib/mangohud:${pkgs.pkgsi686Linux.mangohud}/lib/mangohud''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-            case " ''${LD_PRELOAD:-} " in
-              *"libMangoHud_shim.so"*) ;;
-              *) export LD_PRELOAD="''${LD_PRELOAD:+$LD_PRELOAD:}libMangoHud_shim.so" ;;
-            esac
-          '';
+          # `extraProfile` renders into the exact same generated FHS profile
+          # script as `extraEnv` (nixpkgs steam package.nix: both land in one
+          # `set -a; <extraEnv>; set +a; <extraProfile>` block), so it cannot
+          # reach OpenGL games any differently than extraEnv does — confirmed
+          # by live process inspection: MANGOHUD=1 (extraEnv) survives into
+          # the game process every time, but a prior extraProfile-based
+          # `export LD_PRELOAD=libMangoHud_shim.so` never did, at any point
+          # in the launch chain. `mangohud %command%` (Steam's own supported
+          # wrapper pattern) does work, because it execs as the immediate
+          # parent of Steam's per-game launch (reaper/pressure-vessel), with
+          # no intervening client-startup step to discard it.
+          #
+          # extraBwrapArgs sets these directly on bubblewrap's container-init
+          # process (bypassing FHS profile scripts and Steam's own internal
+          # LD_LIBRARY_PATH handling in steam.sh) so the values are ambient
+          # from the very first process in the sandbox, same as a %command%
+          # wrapper would provide, without touching any game's launch
+          # options. Absolute paths avoid relying on LD_LIBRARY_PATH-based
+          # bare-filename resolution for LD_PRELOAD specifically.
+          extraBwrapArgs = [
+            "--setenv LD_PRELOAD ${pkgs.mangohud}/lib/mangohud/libMangoHud_shim.so:${pkgs.pkgsi686Linux.mangohud}/lib/mangohud/libMangoHud_shim.so"
+            "--setenv LD_LIBRARY_PATH ${pkgs.mangohud}/lib/mangohud:${pkgs.pkgsi686Linux.mangohud}/lib/mangohud"
+            "--setenv XDG_DATA_DIRS ${pkgs.mangohud}/share"
+          ];
         };
       };
       gamemode.enable = true;
