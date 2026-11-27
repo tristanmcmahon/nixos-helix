@@ -2,7 +2,7 @@ context:
 let
   inherit (context) config lib;
   steamArgs = config.programs.steam.package.passthru.args;
-  profile = steamArgs.profile;
+  inherit (steamArgs) profile;
   bwrapArgsText = lib.concatStringsSep "\n" steamArgs.extraBwrapArgs;
 in
 assert config.programs.steam.enable;
