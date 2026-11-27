@@ -44,14 +44,16 @@ helix-game-benchmarks history --limit 20
 helix-game-benchmarks latest
 ```
 
-The history command reads existing CSVs, never alters them. It shows the
-filename-derived game, capture file timestamp, recorded driver, average
-sampled FPS, and mean of the lowest 1% of sampled FPS observations.
-Those are indicative session-wide numbers, **not** a frame-weighted
-or controlled-sequence 1%-low benchmark. Menus, loading and idle scenes
-affect their comparability. Preserve game settings, resolution, driver
-and workload when comparing sessions. No automatic retention purge is
-configured; delete old CSVs deliberately if you no longer want them.
+The history command reads existing CSVs, never alters them. It prefers
+MangoHud's companion `_summary.csv` for the frame-time-derived average
+FPS and **1%-low FPS** when available, and clearly labels its fallback
+as sampled FPS statistics rather than pretending they are standard
+frame-time lows. Games, dates and driver are read from the original
+capture; blank driver metadata is reported as `unknown`, never guessed
+from whichever driver happens to be running now. Menus, loading, and idle
+scenes can dominate a whole-session capture: the figures are only
+comparable when graphics settings, resolution, driver and scene are
+comparable. No retention purge is configured; remove CSVs intentionally.
 
 Steam's FHS wrapper now adds MangoHud's **OpenGL preload shim** alongside
 the Vulkan layer. Both 64-bit and 32-bit MangoHud library paths are
