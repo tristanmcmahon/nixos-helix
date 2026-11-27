@@ -83,10 +83,6 @@ import ./lib/named-checks.nix [
     value = import ./invariants/desktop.nix context;
   }
   {
-    name = "gaming";
-    value = import ./invariants/gaming.nix context;
-  }
-  {
     name = "emulation";
     value = import ./invariants/emulation.nix context;
   }

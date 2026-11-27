@@ -55,30 +55,19 @@ scenes can dominate a whole-session capture: the figures are only
 comparable when graphics settings, resolution, driver and scene are
 comparable. No retention purge is configured; remove CSVs intentionally.
 
-For OpenGL games, Steam needs to invoke MangoHud's preload wrapper close
-to the game's launch. The outer Steam FHS profile's `LD_PRELOAD` was lost
-before Noita started, even though the `MANGOHUD` logging settings survived.
-A manual `mangohud %command%` launch was confirmed to record Noita.
+Steam's FHS wrapper now adds MangoHud's **OpenGL preload shim** alongside
+the Vulkan layer. Both 64-bit and 32-bit MangoHud library paths are
+available to Steam, including 32-bit Windows OpenGL games running through
+Proton, such as Noita. We preload `libMangoHud_shim.so`, not the eager
+overlay library, and preserve existing `LD_PRELOAD` entries. This is
+limited to Steam; there is no system-wide injection, daemon or mutation
+of Steam's launch preferences.
 
-The candidate automatic implementation sets `STEAM_GAME_LAUNCH_SHELL`
-to a small, Steam-scoped shell wrapper. Steam executes each game's command
-using that shell (normally `/bin/sh -c ...`); our wrapper executes
-`mangohud /bin/sh "$@"`. This puts MangoHud immediately on the *per-game*
-launch path, without editing per-game options or preloading its libraries
-into the Steam client. The upstream Nixpkgs `mangohud` wrapper preserves
-existing `LD_PRELOAD`, `LD_LIBRARY_PATH` and `XDG_DATA_DIRS` values
-while exposing both 64-bit and 32-bit libraries.
-
-**This automatic route is not yet live-qualified.** Static Nix evaluation and
-CI can confirm the shell is configured, but cannot prove Steam will honor it
-for Noita on this machine.
-
-After activation, fully exit and relaunch Steam. Remove the temporary
-`mangohud %command%` override from Noita for a genuine automatic test,
-then play for more than five seconds and check `helix-game-benchmarks history`.
-Confirm that a new Noita CSV appears and that Tekken 7 (DXVK/Vulkan)
-still records with no manual launch option. Keep rollback to generation 76
-available if Steam or a game fails.
+**After activation, fully quit and restart Steam.** A reboot also starts
+a fresh client. Keep Noita open for more than the five-second delayed
+capture start and confirm a timestamped CSV appears. Then test an ordinary
+Vulkan/Proton game, to ensure the preload hasn't regressed the existing
+capture path. CI cannot establish end-to-end OpenGL compatibility.
 
 Some native launchers, Steam runtimes, anti-cheat and gamescope wrappers
 can filter or override `LD_PRELOAD`. If Steam or a game fails to launch,

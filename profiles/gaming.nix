@@ -66,12 +66,6 @@ let
     ];
     text = builtins.readFile ../scripts/helix-doom-setup.sh;
   };
-  # Steam uses STEAM_GAME_LAUNCH_SHELL to execute each game's launch command.
-  # Use the same MangoHud wrapper that works with "mangohud %command%", but
-  # only for the game command, never for the entire Steam client.
-  steamGameShell = pkgs.writeShellScript "helix-steam-game-shell" ''
-    exec ${pkgs.mangohud}/bin/mangohud /bin/sh "$@"
-  '';
   gameBenchmarkHistory = pkgs.writeShellApplication {
     name = "helix-game-benchmarks";
     runtimeInputs = [ pkgs.python3 ];
@@ -104,20 +98,26 @@ in
     programs = {
       steam = {
         enable = true;
-        # Steam-scoped MangoHud activation: don't change the global desktop
-        # environment or edit any game's Steam launch options.
+        # Steam-scoped MangoHud Vulkan activation: don't change the global
+        # desktop environment or edit Steam's mutable launch preferences.
         package = pkgs.steam.override {
           extraEnv = {
             MANGOHUD = "1";
-            STEAM_GAME_LAUNCH_SHELL = "${steamGameShell}";
             # OpenGL needs the loader shim rather than Vulkan's implicit layer.
             MANGOHUD_DLSYM = "1";
             MANGOHUD_CONFIG = "autostart_log=5,log_duration=0,log_interval=100,output_folder=${helix.home}/.local/state/helix/game-benchmarks,permit_upload=0";
           };
-          # Steam's client may discard LD_PRELOAD/LD_LIBRARY_PATH before
-          # launching games. Per-game shell selection above injects MangoHud
-          # after Steam has constructed the game's environment; no global
-          # preload, library-path replacement, or mutable launch option.
+          # Steam's FHS environment needs 64-bit and 32-bit MangoHud libraries
+          # for native OpenGL and 32-bit OpenGL through Proton (e.g. Noita).
+          # The shim loads the actual overlay only when it sees a GL context.
+          # Preserve other preloads; do not change the desktop environment.
+          extraProfile = ''
+            export LD_LIBRARY_PATH="${pkgs.mangohud}/lib/mangohud:${pkgs.pkgsi686Linux.mangohud}/lib/mangohud''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+            case " ''${LD_PRELOAD:-} " in
+              *"libMangoHud_shim.so"*) ;;
+              *) export LD_PRELOAD="''${LD_PRELOAD:+$LD_PRELOAD:}libMangoHud_shim.so" ;;
+            esac
+          '';
         };
       };
       gamemode.enable = true;
