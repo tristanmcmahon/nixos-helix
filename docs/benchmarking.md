@@ -44,21 +44,40 @@ helix-game-benchmarks history --limit 20
 helix-game-benchmarks latest
 ```
 
-The history command reads existing CSVs, never alters them. It shows the
-filename-derived game, capture file timestamp, recorded driver, average
-sampled FPS, and mean of the lowest 1% of sampled FPS observations.
-Those are indicative session-wide numbers, **not** a frame-weighted
-or controlled-sequence 1%-low benchmark. Menus, loading and idle scenes
-affect their comparability. Preserve game settings, resolution, driver
-and workload when comparing sessions. No automatic retention purge is
-configured; delete old CSVs deliberately if you no longer want them.
+The history command reads existing CSVs, never alters them. It prefers
+MangoHud's companion `_summary.csv` for the frame-time-derived average
+FPS and **1%-low FPS** when available, and clearly labels its fallback
+as sampled FPS statistics rather than pretending they are standard
+frame-time lows. Games, dates and driver are read from the original
+capture; blank driver metadata is reported as `unknown`, never guessed
+from whichever driver happens to be running now. Menus, loading, and idle
+scenes can dominate a whole-session capture: the figures are only
+comparable when graphics settings, resolution, driver and scene are
+comparable. No retention purge is configured; remove CSVs intentionally.
 
-Automatic activation applies to supported Vulkan/Proton games; OpenGL
-titles may still need a per-game `mangohud %command%` launch option.
-Steam-specific anti-cheat, gamescope and wrapper behaviour require
-on-Helix qualification. If a game becomes unstable, remove its MangoHud
-launch option (if any) or disable the Steam-scoped injection before
-concluding that it is a game or NVIDIA driver regression.
+Steam's FHS wrapper now adds MangoHud's **OpenGL preload shim** alongside
+the Vulkan layer. Both 64-bit and 32-bit MangoHud library paths are
+available to Steam, including 32-bit Windows OpenGL games running through
+Proton, such as Noita. We preload `libMangoHud_shim.so`, not the eager
+overlay library, and preserve existing `LD_PRELOAD` entries. This is
+limited to Steam; there is no system-wide injection, daemon or mutation
+of Steam's launch preferences.
+
+**After activation, fully quit and restart Steam.** A reboot also starts
+a fresh client. Keep Noita open for more than the five-second delayed
+capture start and confirm a timestamped CSV appears. Then test an ordinary
+Vulkan/Proton game, to ensure the preload hasn't regressed the existing
+capture path. CI cannot establish end-to-end OpenGL compatibility.
+
+Some native launchers, Steam runtimes, anti-cheat and gamescope wrappers
+can filter or override `LD_PRELOAD`. If Steam or a game fails to launch,
+use the previously working NixOS generation; don't diagnose a GPU-driver
+regression from that symptom alone. Disabling all preloads for an individual
+game may remove libraries it needs; do not use `LD_PRELOAD=` as a blanket
+workaround.
+
+A session shorter than five seconds may produce no CSV even when injection
+is working.
 
 ### Managed GPU benchmarking is separate
 
