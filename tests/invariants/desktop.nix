@@ -25,7 +25,8 @@ assert config.hardware.nvidia.powerManagement.enable;
 assert config.programs.steam.enable;
 assert builtins.elem "helix-game-benchmarks" packageNames;
 assert builtins.elem "mangohud" packageNames;
-assert builtins.elem "d %h/.local/state/helix/game-benchmarks 0700 - - -" config.systemd.user.tmpfiles.rules;
+assert builtins.elem "d %h/.local/state/helix/game-benchmarks 0700 - - -"
+  config.systemd.user.tmpfiles.rules;
 assert config.programs.gamemode.enable;
 assert config.programs.gamescope.enable;
 assert !config.programs.gamescope.capSysNice;

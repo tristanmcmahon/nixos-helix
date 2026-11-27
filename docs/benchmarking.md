@@ -72,9 +72,9 @@ capture path. CI cannot establish end-to-end OpenGL compatibility.
 Some native launchers, Steam runtimes, anti-cheat and gamescope wrappers
 can filter or override `LD_PRELOAD`. If Steam or a game fails to launch,
 use the previously working NixOS generation; don't diagnose a GPU-driver
-regression from that symptom alone. As a temporary game-specific bypass,
-`LD_PRELOAD= %command%` disables the shim for that launch. This is not a
-normal required setup step.
+regression from that symptom alone. Disabling all preloads for an individual
+game may remove libraries it needs; do not use `LD_PRELOAD=` as a blanket
+workaround.
 
 A session shorter than five seconds may produce no CSV even when injection
 is working.
