@@ -103,8 +103,21 @@ in
         package = pkgs.steam.override {
           extraEnv = {
             MANGOHUD = "1";
+            # OpenGL needs the loader shim rather than Vulkan's implicit layer.
+            MANGOHUD_DLSYM = "1";
             MANGOHUD_CONFIG = "autostart_log=5,log_duration=0,log_interval=100,output_folder=${helix.home}/.local/state/helix/game-benchmarks,permit_upload=0";
           };
+          # Steam's FHS environment needs 64-bit and 32-bit MangoHud libraries
+          # for native OpenGL and 32-bit OpenGL through Proton (e.g. Noita).
+          # The shim loads the actual overlay only when it sees a GL context.
+          # Preserve other preloads; do not change the desktop environment.
+          extraProfile = ''
+            export LD_LIBRARY_PATH="${pkgs.mangohud}/lib/mangohud:${pkgs.pkgsi686Linux.mangohud}/lib/mangohud''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+            case " ''${LD_PRELOAD:-} " in
+              *"libMangoHud_shim.so"*) ;;
+              *) export LD_PRELOAD="''${LD_PRELOAD:+$LD_PRELOAD:}libMangoHud_shim.so" ;;
+            esac
+          '';
         };
       };
       gamemode.enable = true;

@@ -53,12 +53,29 @@ affect their comparability. Preserve game settings, resolution, driver
 and workload when comparing sessions. No automatic retention purge is
 configured; delete old CSVs deliberately if you no longer want them.
 
-Automatic activation applies to supported Vulkan/Proton games; OpenGL
-titles may still need a per-game `mangohud %command%` launch option.
-Steam-specific anti-cheat, gamescope and wrapper behaviour require
-on-Helix qualification. If a game becomes unstable, remove its MangoHud
-launch option (if any) or disable the Steam-scoped injection before
-concluding that it is a game or NVIDIA driver regression.
+Steam's FHS wrapper now adds MangoHud's **OpenGL preload shim** alongside
+the Vulkan layer. Both 64-bit and 32-bit MangoHud library paths are
+available to Steam, including 32-bit Windows OpenGL games running through
+Proton, such as Noita. We preload `libMangoHud_shim.so`, not the eager
+overlay library, and preserve existing `LD_PRELOAD` entries. This is
+limited to Steam; there is no system-wide injection, daemon or mutation
+of Steam's launch preferences.
+
+**After activation, fully quit and restart Steam.** A reboot also starts
+a fresh client. Keep Noita open for more than the five-second delayed
+capture start and confirm a timestamped CSV appears. Then test an ordinary
+Vulkan/Proton game, to ensure the preload hasn't regressed the existing
+capture path. CI cannot establish end-to-end OpenGL compatibility.
+
+Some native launchers, Steam runtimes, anti-cheat and gamescope wrappers
+can filter or override `LD_PRELOAD`. If Steam or a game fails to launch,
+use the previously working NixOS generation; don't diagnose a GPU-driver
+regression from that symptom alone. As a temporary game-specific bypass,
+`LD_PRELOAD= %command%` disables the shim for that launch. This is not a
+normal required setup step.
+
+A session shorter than five seconds may produce no CSV even when injection
+is working.
 
 ### Managed GPU benchmarking is separate
 
