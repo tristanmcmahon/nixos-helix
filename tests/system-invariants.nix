@@ -83,6 +83,10 @@ import ./lib/named-checks.nix [
     value = import ./invariants/desktop.nix context;
   }
   {
+    name = "steam-launch-safety";
+    value = import ./invariants/steam-launch-safety.nix context;
+  }
+  {
     name = "emulation";
     value = import ./invariants/emulation.nix context;
   }

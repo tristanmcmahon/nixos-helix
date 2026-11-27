@@ -55,29 +55,28 @@ scenes can dominate a whole-session capture: the figures are only
 comparable when graphics settings, resolution, driver and scene are
 comparable. No retention purge is configured; remove CSVs intentionally.
 
-Steam's FHS wrapper now adds MangoHud's **OpenGL preload shim** alongside
-the Vulkan layer. Both 64-bit and 32-bit MangoHud library paths are
-available to Steam, including 32-bit Windows OpenGL games running through
-Proton, such as Noita. We preload `libMangoHud_shim.so`, not the eager
-overlay library, and preserve existing `LD_PRELOAD` entries. This is
-limited to Steam; there is no system-wide injection, daemon or mutation
-of Steam's launch preferences.
+Automatic recording is qualified only for the observed Vulkan/Proton
+paths (including Space Marine 2 and Tekken 7). OpenGL games such as Noita
+are **not** instrumented automatically. A temporary per-game
+`mangohud %command%` launch option successfully recorded Noita in a live
+test. Do not install a Steam-wide preload, replace
+`STEAM_GAME_LAUNCH_SHELL`, modify Steam's bubblewrap environment, or change
+per-game launch options to make that automatic without prior explicit
+approval and a reversible, real-game test.
 
-**After activation, fully quit and restart Steam.** A reboot also starts
-a fresh client. Keep Noita open for more than the five-second delayed
-capture start and confirm a timestamped CSV appears. Then test an ordinary
-Vulkan/Proton game, to ensure the preload hasn't regressed the existing
-capture path. CI cannot establish end-to-end OpenGL compatibility.
+On 27 November 2026, the Steam-wide OpenGL preload added by #141 and
+the game-launch-shell hook in #142 caused failures launching Noita.
+PR #143 removed #142, and the remaining #141 loader injection was
+subsequently removed. Generation 75 (pre-#141) was restored and Noita
+launched normally after reboot. CI had passed for the bad changes; CI
+does not establish that Steam games can start or display a window.
+See [the incident record](mangohud-incident-2026-11-27.md).
 
-Some native launchers, Steam runtimes, anti-cheat and gamescope wrappers
-can filter or override `LD_PRELOAD`. If Steam or a game fails to launch,
-use the previously working NixOS generation; don't diagnose a GPU-driver
-regression from that symptom alone. Disabling all preloads for an individual
-game may remove libraries it needs; do not use `LD_PRELOAD=` as a blanket
-workaround.
-
-A session shorter than five seconds may produce no CSV even when injection
-is working.
+The next experiment, if any, belongs on an unmerged branch and must
+demonstrate normal Steam startup, visible game windows, a Noita session,
+and preservation of Vulkan logging on the actual workstation before
+promotion. In the absence of that evidence, keep the existing working
+Vulkan-only logging and accept that OpenGL requires an opt-in launch option.
 
 ### Managed GPU benchmarking is separate
 

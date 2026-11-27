@@ -33,6 +33,40 @@ state, safety, and network rules.
   rule, not to mirror implementation details. Keep docs in step: `check-docs.py`
   verifies some cross-file facts.
 
+## Runtime safety gate — 2026-11-27 Steam incident
+
+- **The ability to use the workstation is a hard invariant.** Game launch,
+  window display, inputs and Steam startup outrank optional instrumentation,
+  including FPS logging, monitoring, and convenience features.
+- Classify changes to Steam/Proton startup, wrapper or FHS environments,
+  `LD_PRELOAD`, `LD_LIBRARY_PATH`, `XDG_DATA_DIRS`, Vulkan layers,
+  `STEAM_GAME_LAUNCH_SHELL`, `extraProfile`, `extraBwrapArgs`, and
+  other game-launch hooks as **runtime-critical**.
+- For runtime-critical changes, CI, Nix evaluation, a full closure build,
+  a clean `helix-health --check`, and an apparently successful activation
+  are **not** evidence that games launch. No merge or release based solely
+  on those checks. Keep experiments on a branch; require the owner's
+  explicit permission for an isolated, reversible live test on Helix.
+- Before promoting such a change to `main`, record evidence from the
+  candidate itself: Steam starts; Noita starts **and displays a window**;
+  Tekken 7 and/or Space Marine 2 launch; existing Vulkan FPS recording
+  still produces a fresh CSV. For claimed automatic OpenGL support,
+  verify a new Noita CSV with **no per-game override**. Distinguish tested
+  cases from untested claims and preserve the old configuration for rollback.
+  Never substitute a sample from a different generation or a manual
+  `mangohud %command%` launch for automatic acceptance.
+- Never edit users' game launch options, bypass hamSteam, or introduce
+  Steam-wide loader preloads or game-launch overrides as a speculative
+  fix. Such mechanisms are not qualified by static checks and must not
+  enter `main` without the complete runtime evidence and owner approval.
+- At the first launch/display regression, stop. Restore the known-good
+  generation, restart/reboot as needed, and verify that games work.
+  Revert dangerous code from `main` before any future update; do not
+  stack further unqualified fixes on a broken baseline.
+- If a safe implementation is not demonstrated, leave the feature
+  incomplete. OpenGL recording is optional; working games are not.
+  See `docs/mangohud-incident-2026-11-27.md`.
+
 ## Validation
 
 ```bash
